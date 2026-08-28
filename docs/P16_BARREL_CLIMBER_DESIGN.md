@@ -1,8 +1,8 @@
 # P16 Barrel Climber — Clean-Room Gameplay and Visual Design
 
-Status: P16 implementation baseline  
-Canonical metadata: `src/games/barrel-climber/metadata.ts`  
-Canonical rules: `src/games/barrel-climber/design.ts`  
+Status: P16 implementation baseline
+Canonical metadata: `src/games/barrel-climber/metadata.ts`
+Canonical rules: `src/games/barrel-climber/design.ts`
 Canonical stages: `src/games/barrel-climber/stages.ts`
 
 ## 1. Product identity
