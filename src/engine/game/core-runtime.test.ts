@@ -10,11 +10,11 @@ import {
   type GameInstance,
   type GameMetadata,
   type GameModule,
-  type GameRenderer,
   type GameServices,
   type GameStartOptions,
 } from "../index.js";
 import { createFakeGameServices } from "../testing/fake-services.js";
+import { FakeGameRenderer } from "../testing/fake-renderer.js";
 import { assert, assertDeepEqual, type TestCase } from "../../test/harness.js";
 
 const START_OPTIONS: GameStartOptions = {
@@ -22,7 +22,7 @@ const START_OPTIONS: GameStartOptions = {
   difficulty: "normal",
   seed: 1234,
 };
-const RENDERER: GameRenderer = { logicalWidth: 320, logicalHeight: 240 };
+const RENDERER = new FakeGameRenderer();
 
 function hasRuntimeState(runtime: ActiveGameRuntime, expected: string): boolean {
   return runtime.state === expected;
