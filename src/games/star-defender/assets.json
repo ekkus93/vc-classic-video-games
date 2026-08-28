@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "star-defender.audio.engine",
+      "path": "audio/engine.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "star-defender.audio.lance",
+      "path": "audio/lance.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "star-defender.audio.emergency",
+      "path": "audio/emergency.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "star-defender.audio.impact",
+      "path": "audio/impact.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "star-defender.audio.rescue",
+      "path": "audio/rescue.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "star-defender.audio.wave",
+      "path": "audio/wave.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}

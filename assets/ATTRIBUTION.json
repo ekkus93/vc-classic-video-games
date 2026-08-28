@@ -40,6 +40,30 @@
     {
       "path": "src/games/barrel-climber/audio/goal.wav",
       "original": true
+    },
+    {
+      "path": "src/games/star-defender/audio/engine.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/star-defender/audio/lance.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/star-defender/audio/emergency.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/star-defender/audio/impact.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/star-defender/audio/rescue.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/star-defender/audio/wave.wav",
+      "original": true
     }
   ]
 }

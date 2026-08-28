@@ -3,6 +3,7 @@ import { BARREL_CLIMBER_MODULE } from "./barrel-climber/module.js";
 import { DEEP_DIGGER_MODULE } from "./deep-digger/module.js";
 import { RIVER_HOPPER_MODULE } from "./river-hopper/module.js";
 import { SPACE_ROCKS_MODULE } from "./space-rocks/module.js";
+import { STAR_DEFENDER_MODULE } from "./star-defender/module.js";
 
 /**
  * Canonical game-module list. Game phases append modules here; the launcher
@@ -13,6 +14,7 @@ export const GAME_MODULES: readonly GameModule[] = Object.freeze([
   DEEP_DIGGER_MODULE,
   BARREL_CLIMBER_MODULE,
   RIVER_HOPPER_MODULE,
+  STAR_DEFENDER_MODULE,
 ]);
 
 export function createGameRegistry(
