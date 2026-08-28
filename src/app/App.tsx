@@ -76,7 +76,7 @@ export function App({ controller }: AppProps = {}) {
       "canvas.game-viewport",
     );
     const context = canvas?.getContext("2d") ?? null;
-    if (game === null || canvas === undefined || context === null) {
+    if (game === null || canvas == null || context === null) {
       gameHost.setRenderer(null);
       return undefined;
     }
