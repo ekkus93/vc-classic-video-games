@@ -159,3 +159,68 @@ export type {
   GameLoopCallbacks,
   GameLoopDriverOptions,
 } from "./runtime/game-loop-driver.js";
+export { SharedWebAudioService } from "./audio/audio-service.js";
+export type {
+  AudioBufferResolver,
+  AudioBus,
+  AudioContextFactory,
+  SharedAudioSettings,
+} from "./audio/audio-service.js";
+export {
+  AssetCache,
+  RequiredAssetLoadError,
+  browserAssetFetcher,
+} from "./assets/asset-service.js";
+export type {
+  AssetFetchResponse,
+  AssetFetcher,
+  AssetValue,
+} from "./assets/asset-service.js";
+export {
+  ASSET_TYPES,
+  AssetManifestValidationError,
+  parseAssetManifest,
+} from "./assets/manifest.js";
+export type {
+  AssetManifest,
+  AssetManifestEntry,
+  AssetType,
+  SpriteMetadata,
+} from "./assets/manifest.js";
+export {
+  MemoryJsonDocumentStore,
+  TauriJsonDocumentStore,
+} from "./persistence/document-store.js";
+export type {
+  JsonDocumentStore,
+  PersistenceDocument,
+  TauriInvoke,
+} from "./persistence/document-store.js";
+export { NamespacedGameStorageService } from "./persistence/game-storage.js";
+export {
+  GlobalSettingsRepository,
+  GlobalSettingsValidationError,
+  PersistentInputSettingsStore,
+  createDefaultGlobalSettings,
+  parseGlobalSettings,
+} from "./persistence/settings.js";
+export type {
+  AudioSettings,
+  GlobalSettings,
+  RecoveryReporter,
+  RecoveryWarning,
+  VisualSettings,
+} from "./persistence/settings.js";
+export {
+  PersistentScoreService,
+  ScoreRepository,
+  ScoreValidationError,
+  compareScores,
+  createEmptyScoreDocument,
+  parseScoreDocument,
+  parseScoreEntry,
+} from "./scores/scores.js";
+export type {
+  ScoreDocument,
+  ScoreEntry,
+} from "./scores/scores.js";
