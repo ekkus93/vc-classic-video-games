@@ -5,6 +5,10 @@ import {
   ShellInputRouter,
   calculateViewport,
 } from "../../engine/index.js";
+import {
+  attachAudioUnlockGestures,
+  type AudioUnlock,
+} from "./audio-unlock-gesture.js";
 import type { ShellController } from "./controller.js";
 import type { ShellGameInputBridge } from "./input-bridge.js";
 
@@ -12,6 +16,7 @@ export function useShellInput(
   controller: ShellController,
   surfaceRef: RefObject<HTMLElement | null>,
   gameInput?: ShellGameInputBridge,
+  audioUnlock?: AudioUnlock,
 ): void {
   useEffect(() => {
     const surface = surfaceRef.current;
@@ -48,14 +53,20 @@ export function useShellInput(
       frame = window.requestAnimationFrame(poll);
     };
 
+    const detachAudioUnlock =
+      audioUnlock === undefined
+        ? () => undefined
+        : attachAudioUnlockGestures(window, surface, audioUnlock);
+
     input.attach();
     gameInput?.attach(input.input);
     frame = window.requestAnimationFrame(poll);
 
     return () => {
       window.cancelAnimationFrame(frame);
+      detachAudioUnlock();
       gameInput?.detach(input.input);
       input.detach();
     };
-  }, [controller, surfaceRef, gameInput]);
+  }, [controller, surfaceRef, gameInput, audioUnlock]);
 }
