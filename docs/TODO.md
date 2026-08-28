@@ -314,44 +314,44 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P6 — Launcher, settings, pause, and shell UX
 
-- [ ] **P6-001 — Build registry-driven game browser**
+- [x] **P6-001 — Build registry-driven game browser**
   - Render title/art/description/player count/high score from metadata.
   - Acceptance: adding dummy registry entry automatically adds a launcher card.
 
-- [ ] **P6-002 — Build controller/keyboard focus navigation**
+- [x] **P6-002 — Build controller/keyboard focus navigation**
   - Acceptance: every launcher game can be selected without pointer input.
 
-- [ ] **P6-003 — Build pre-game screen**
+- [x] **P6-003 — Build pre-game screen**
   - Start, difficulty, player count, controls/help, high scores.
   - Acceptance: options are metadata-driven where applicable.
 
-- [ ] **P6-004 — Implement game launch transition**
+- [x] **P6-004 — Implement game launch transition**
   - Loading/ready/error UI.
   - Acceptance: game launch does not reload the Tauri window.
 
-- [ ] **P6-005 — Implement global pause overlay**
+- [x] **P6-005 — Implement global pause overlay**
   - Resume/restart/controls/sound/return to launcher.
   - Acceptance: simulation and game-owned audio pause correctly.
 
-- [ ] **P6-006 — Implement restart flow**
+- [x] **P6-006 — Implement restart flow**
   - Acceptance: restart produces a clean new run with no stale entities/input/timers.
 
-- [ ] **P6-007 — Implement return-to-launcher flow**
+- [x] **P6-007 — Implement return-to-launcher flow**
   - Acceptance: active game is destroyed and launcher becomes interactive immediately.
 
-- [ ] **P6-008 — Build global settings screen**
+- [x] **P6-008 — Build global settings screen**
   - Volume/mute, fullscreen, controls, gamepads, visual toggles.
   - Acceptance: settings persist and apply without requiring manual file editing.
 
-- [ ] **P6-009 — Build high-score views**
+- [x] **P6-009 — Build high-score views**
   - Per-game and optional collection-wide view.
   - Acceptance: scores display by correct game/mode/difficulty.
 
-- [ ] **P6-010 — Add accessible status/error messaging**
+- [x] **P6-010 — Add accessible status/error messaging**
   - Focus, contrast, non-color-only state, keyboard operation.
   - Acceptance: shell UX passes documented keyboard-only manual checklist.
 
-- [ ] **P6-011 — Add fullscreen/startup preference**
+- [x] **P6-011 — Add fullscreen/startup preference**
   - Acceptance: fullscreen preference is remembered and failure to enter fullscreen remains recoverable.
 
 ---
