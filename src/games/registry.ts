@@ -3,6 +3,7 @@ import { BARREL_CLIMBER_MODULE } from "./barrel-climber/module.js";
 import { BUG_BARRAGE_MODULE } from "./bug-barrage/module.js";
 import { DEEP_DIGGER_MODULE } from "./deep-digger/module.js";
 import { MAZE_CHASE_MODULE } from "./maze-chase/module.js";
+import { MISSILE_DEFENSE_MODULE } from "./missile-defense/module.js";
 import { RIVER_HOPPER_MODULE } from "./river-hopper/module.js";
 import { SPACE_ROCKS_MODULE } from "./space-rocks/module.js";
 import { STAR_DEFENDER_MODULE } from "./star-defender/module.js";
@@ -19,6 +20,7 @@ export const GAME_MODULES: readonly GameModule[] = Object.freeze([
   STAR_DEFENDER_MODULE,
   MAZE_CHASE_MODULE,
   BUG_BARRAGE_MODULE,
+  MISSILE_DEFENSE_MODULE,
 ]);
 
 export function createGameRegistry(
