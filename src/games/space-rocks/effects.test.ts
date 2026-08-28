@@ -68,7 +68,10 @@ export const tests: readonly TestCase[] = [
       );
 
       effects.update(1);
-      assert(effects.particleCount === 0, "expired geometric particles must be released");
+      assert(
+        Number(effects.particleCount) === 0,
+        "expired geometric particles must be released",
+      );
     },
   },
   {
@@ -82,7 +85,10 @@ export const tests: readonly TestCase[] = [
 
       effects.destroy();
 
-      assert(effects.particleCount === 0, "destroy must release all visual effect entities");
+      assert(
+        Number(effects.particleCount) === 0,
+        "destroy must release all visual effect entities",
+      );
       assert(
         audio.stopped.filter((id) => id === SPACE_ROCKS_AUDIO_IDS.thrust).length === 1,
         "destroy must stop the game-owned thrust loop exactly once",
