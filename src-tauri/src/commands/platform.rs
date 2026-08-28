@@ -7,6 +7,16 @@ pub fn platform_info() -> (&'static str, &'static str, &'static str) {
     )
 }
 
+#[tauri::command]
+pub fn set_fullscreen(
+    window: tauri::WebviewWindow,
+    fullscreen: bool,
+) -> Result<(), String> {
+    window
+        .set_fullscreen(fullscreen)
+        .map_err(|error| format!("failed to change fullscreen state: {error}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::platform_info;
