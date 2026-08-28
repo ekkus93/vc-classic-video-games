@@ -55,29 +55,36 @@ function LauncherView({ controller, state }: ShellViewProps) {
         </div>
       ) : (
         <div className="game-grid" aria-label="Available games">
-          {games.map((game, index) => (
-            <button
-              className="game-card"
-              data-shell-focus={focused(state.launcherFocusIndex, index)}
-              key={game.id}
-              type="button"
-              onClick={() => controller.chooseGame(game.id)}
-            >
-              <span className="game-card__art" aria-hidden="true">
-                {game.title.slice(0, 2).toUpperCase()}
-              </span>
-              <span className="game-card__body">
-                <strong>{game.title}</strong>
-                <span>{game.description}</span>
-                <span className="game-card__meta">
-                  {game.players.join("/")} player
-                  {game.players.some((count) => count > 1) ? " options" : ""} ·{" "}
-                  {game.supportedInputs.join(" · ")}
+          {games.map((game, index) => {
+            const highScore = state.launcherHighScores[game.id] ?? null;
+            return (
+              <button
+                className="game-card"
+                data-shell-focus={focused(state.launcherFocusIndex, index)}
+                key={game.id}
+                type="button"
+                onClick={() => controller.chooseGame(game.id)}
+              >
+                <span className="game-card__art" aria-hidden="true">
+                  {game.title.slice(0, 2).toUpperCase()}
                 </span>
-                <span className="game-card__score">High scores available</span>
-              </span>
-            </button>
-          ))}
+                <span className="game-card__body">
+                  <strong>{game.title}</strong>
+                  <span>{game.description}</span>
+                  <span className="game-card__meta">
+                    {game.players.join("/")} player
+                    {game.players.some((count) => count > 1) ? " options" : ""} ·{" "}
+                    {game.supportedInputs.join(" · ")}
+                  </span>
+                  <span className="game-card__score">
+                    {highScore === null
+                      ? "No high score yet"
+                      : `High score: ${highScore.toLocaleString()}`}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
