@@ -9,7 +9,10 @@ import {
 } from "../../engine/index.js";
 import { assert, type TestCase } from "../../test/harness.js";
 import { ShellController } from "./controller.js";
-import type { ShellGameHost } from "./game-host.js";
+import type {
+  GameLaunchPhaseReporter,
+  ShellGameHost,
+} from "./game-host.js";
 
 function gameModule(id = "space-test", title = "Space Test"): GameModule {
   return {
@@ -50,11 +53,18 @@ class FakeGameHost implements ShellGameHost {
   public exitCount = 0;
   public failLaunch = false;
 
-  public launch(_module: GameModule, options: GameStartOptions): Promise<void> {
+  public launch(
+    _module: GameModule,
+    options: GameStartOptions,
+    reportPhase: GameLaunchPhaseReporter = () => undefined,
+  ): Promise<void> {
+    reportPhase("loading");
     if (this.failLaunch) {
       return Promise.reject(new Error("injected launch failure"));
     }
     this.launches.push(options);
+    reportPhase("ready");
+    reportPhase("running");
     return Promise.resolve();
   }
 
@@ -114,6 +124,39 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
+    name: "launch transition is observable as loading ready running on one shell controller",
+    run: async () => {
+      const { controller } = createController();
+      controller.chooseGame("space-test");
+      const phases: string[] = [];
+      let previous = controller.snapshot.launchPhase;
+      const unsubscribe = controller.subscribe((state) => {
+        if (state.launchPhase !== previous) {
+          phases.push(state.launchPhase);
+          previous = state.launchPhase;
+        }
+      });
+
+      await controller.launchSelected();
+      unsubscribe();
+
+      assert(
+        phases.join(",") === "loading,ready,running",
+        "shell must expose the ordered loading ready running transition",
+      );
+      assertScreen(
+        controller,
+        "game",
+        "running phase must enter game without reconstructing the shell",
+      );
+      assert(!controller.snapshot.busy, "running phase must clear launch busy state");
+      assert(
+        controller.snapshot.status === "Space Test running",
+        "running phase must remain visible through shell status UI",
+      );
+    },
+  },
+  {
     name: "controller-only route can launch pause resume and exit without reloading",
     run: async () => {
       const { controller, host } = createController();
@@ -146,6 +189,10 @@ export const tests: readonly TestCase[] = [
       assert(host.restartCount === 1, "restart must be delegated once");
       assertScreen(controller, "game", "restart must stay in game");
       assert(!controller.snapshot.gamePaused, "restart must resume simulation state");
+      assert(
+        controller.snapshot.launchPhase === "running",
+        "restart must leave shell in running launch phase",
+      );
     },
   },
   {
@@ -157,6 +204,10 @@ export const tests: readonly TestCase[] = [
       controller.chooseGame("space-test");
       await controller.launchSelected();
       assertScreen(controller, "pre-game", "failed launch must remain recoverable");
+      assert(
+        controller.snapshot.launchPhase === "error",
+        "failed launch must terminate in explicit error phase",
+      );
       assert(controller.snapshot.error?.includes("injected launch failure") === true, "failure must be visible");
     },
   },
