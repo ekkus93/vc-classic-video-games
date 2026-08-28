@@ -31,21 +31,14 @@ export interface SpaceRocksFrameInput {
 
 export type SpaceRocksSimulationEvent =
   | { readonly type: "pulse-fired" }
-  | { readonly type: "rock-fractured"; readonly size: SpaceRocksRockSize; readonly points: number }
+  | {
+      readonly type: "rock-fractured";
+      readonly size: SpaceRocksRockSize;
+      readonly points: number;
+    }
   | { readonly type: "ship-hit"; readonly livesRemaining: number }
   | { readonly type: "wave-cleared"; readonly wave: number; readonly bonus: number }
   | { readonly type: "game-over"; readonly score: number };
-
-export interface SpaceRocksSimulationSnapshot {
-  readonly ship: SpaceRocksShipState;
-  readonly rocks: readonly SpaceRocksRock[];
-  readonly bolts: ReturnType<SpaceRocksProjectileSystem["bolts"] extends never ? never : never>;
-  readonly lives: number;
-  readonly score: number;
-  readonly wave: number;
-  readonly invulnerabilitySeconds: number;
-  readonly gameOver: boolean;
-}
 
 export interface SpaceRocksSimulationOptions {
   readonly rng: RandomService;
@@ -70,8 +63,14 @@ function pointsForRock(size: SpaceRocksRockSize): number {
 }
 
 function intersectsWrappedCircles(
-  a: { readonly position: { readonly x: number; readonly y: number }; readonly radius: number },
-  b: { readonly position: { readonly x: number; readonly y: number }; readonly radius: number },
+  a: {
+    readonly position: { readonly x: number; readonly y: number };
+    readonly radius: number;
+  },
+  b: {
+    readonly position: { readonly x: number; readonly y: number };
+    readonly radius: number;
+  },
 ): boolean {
   const radius = a.radius + b.radius;
   return wrappedSpaceRocksDistanceSquared(a.position, b.position) <= radius * radius;
@@ -104,7 +103,9 @@ export class SpaceRocksSimulation {
       options.initialInvulnerabilitySeconds ??
       SPACE_ROCKS_DIFFICULTIES[options.difficulty].spawnProtectionSeconds;
     if (!Number.isFinite(this.invulnerabilityValue) || this.invulnerabilityValue < 0) {
-      throw new RangeError("initialInvulnerabilitySeconds must be non-negative and finite");
+      throw new RangeError(
+        "initialInvulnerabilitySeconds must be non-negative and finite",
+      );
     }
   }
 
@@ -194,7 +195,9 @@ export class SpaceRocksSimulation {
       this.projectiles.remove(bolt.id);
       const points = pointsForRock(hit.size);
       this.scoreValue += points;
-      events.push(Object.freeze({ type: "rock-fractured", size: hit.size, points }));
+      events.push(
+        Object.freeze({ type: "rock-fractured", size: hit.size, points }),
+      );
     }
     this.rockState = Object.freeze(rocks);
   }
@@ -214,7 +217,9 @@ export class SpaceRocksSimulation {
     }
 
     this.livesValue -= 1;
-    events.push(Object.freeze({ type: "ship-hit", livesRemaining: this.livesValue }));
+    events.push(
+      Object.freeze({ type: "ship-hit", livesRemaining: this.livesValue }),
+    );
     if (this.livesValue <= 0) {
       this.gameOverValue = true;
       this.projectiles.reset();
@@ -235,7 +240,9 @@ export class SpaceRocksSimulation {
     const clearedWave = this.waveValue;
     const bonus = spaceRocksWaveClearScore(clearedWave);
     this.scoreValue += bonus;
-    events.push(Object.freeze({ type: "wave-cleared", wave: clearedWave, bonus }));
+    events.push(
+      Object.freeze({ type: "wave-cleared", wave: clearedWave, bonus }),
+    );
     this.waveValue += 1;
     this.rockState = this.rockFactory.createInitialWave(this.waveValue);
   }
