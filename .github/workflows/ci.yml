@@ -44,6 +44,9 @@ jobs:
       - name: Check application metadata consistency
         run: npm run metadata:check
 
+      - name: Validate assets and attribution
+        run: npm run assets:check
+
       - name: Typecheck
         run: npm run typecheck
 
