@@ -45,44 +45,44 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P0 — Repository and engineering foundation
 
-- [ ] **P0-001 — Establish canonical project toolchain**
+- [x] **P0-001 — Establish canonical project toolchain**
   - Choose and record supported Node/package-manager workflow and Rust toolchain policy.
   - Commit lockfiles/configuration required for reproducible installs.
   - Acceptance: clean checkout can install frontend and Rust dependencies without undocumented local setup.
 
-- [ ] **P0-002 — Scaffold formatting and linting policy**
+- [x] **P0-002 — Scaffold formatting and linting policy**
   - Configure TypeScript/JavaScript formatting and linting.
   - Configure `cargo fmt` and Clippy expectations.
   - Acceptance: documented commands exist for format-check and lint-check; clean scaffold passes.
 
-- [ ] **P0-003 — Enable strict TypeScript configuration**
+- [x] **P0-003 — Enable strict TypeScript configuration**
   - Use strict type checking.
   - Enable additional safe compiler checks where compatible with the chosen stack.
   - Acceptance: `typecheck` script passes with no ignored baseline errors.
 
-- [ ] **P0-004 — Establish unit-test infrastructure**
+- [x] **P0-004 — Establish unit-test infrastructure**
   - Add frontend/engine unit-test runner.
   - Add a minimal deterministic smoke test.
   - Confirm Rust tests run from repository commands.
   - Acceptance: both TypeScript and Rust test commands pass from clean checkout.
 
-- [ ] **P0-005 — Define source directory boundaries**
+- [x] **P0-005 — Define source directory boundaries**
   - Create `src/app`, `src/engine`, `src/games`, and `src-tauri` organization consistent with the spec.
   - Add import aliases only where they improve clarity.
   - Acceptance: boundaries are documented and no game-specific code lives in shared runtime directories.
 
-- [ ] **P0-006 — Add asset/license provenance policy**
+- [x] **P0-006 — Add asset/license provenance policy**
   - Create a machine-readable or documented attribution mechanism for third-party assets.
   - Add guidance forbidding copied ROM/assets/level data.
   - Acceptance: repository has a clear place/process to record each non-original asset license.
 
-- [ ] **P0-007 — Add bounded GitHub Actions CI**
+- [x] **P0-007 — Add bounded GitHub Actions CI**
   - Run formatting, lint, typecheck, unit tests, Rust fmt/Clippy/tests, and a production frontend build.
   - Add reasonable per-job timeouts.
   - Use lockfile/frozen dependency installs.
   - Acceptance: CI passes on `master` from a clean checkout and cannot run indefinitely.
 
-- [ ] **P0-008 — Add basic developer documentation**
+- [x] **P0-008 — Add basic developer documentation**
   - Document install, dev-run, test, lint, and build commands.
   - Acceptance: a developer unfamiliar with the repository can start the app using only repository docs.
 
