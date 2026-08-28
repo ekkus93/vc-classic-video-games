@@ -158,7 +158,7 @@ export class FakeGameStorageService implements GameStorageService {
 }
 
 export class SeededRandomService implements RandomService {
-  private readonly rng: XorShift32;
+  private rng: XorShift32;
 
   public constructor(seed: number) {
     this.rng = new XorShift32(seed);
@@ -170,6 +170,10 @@ export class SeededRandomService implements RandomService {
 
   public nextFloat(): number {
     return this.nextUint32() / 0x1_0000_0000;
+  }
+
+  public reset(seed: number): void {
+    this.rng = new XorShift32(seed);
   }
 }
 
