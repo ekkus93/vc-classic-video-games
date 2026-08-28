@@ -12,8 +12,29 @@ export const tests: readonly TestCase[] = [
       );
       assert(registry.has("river-hopper"), "River Hopper must be launcher-registered");
       assert(registry.has("space-rocks"), "Space Rocks reference game must remain registered");
-      assert(registry.getModule("river-hopper").resolveAssetUrl !== undefined, "River Hopper asset resolver must survive registry validation");
-      assert(registry.getModule("space-rocks").resolveAssetUrl !== undefined, "shared resolver fix must preserve Space Rocks production assets too");
+      assert(
+        registry.getModule("river-hopper").resolveAssetUrl !== undefined,
+        "River Hopper asset resolver must survive registry validation",
+      );
+      assert(
+        registry.getModule("space-rocks").resolveAssetUrl !== undefined,
+        "shared resolver fix must preserve Space Rocks production assets too",
+      );
+    },
+  },
+  {
+    name: "P10-011 canonical registry exposes Maze Chase as a first-class module",
+    run: () => {
+      const registry = createGameRegistry();
+      assert(registry.has("space-rocks"), "reference game must remain registered");
+      assert(
+        registry.has("maze-chase"),
+        "Maze Chase must be discoverable without launcher ID branching",
+      );
+      assert(
+        registry.getModule("maze-chase").resolveAssetUrl?.("assets.json") !== null,
+        "canonical registry must preserve Maze Chase bundled asset resolution",
+      );
     },
   },
 ];
