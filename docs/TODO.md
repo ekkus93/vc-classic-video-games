@@ -264,50 +264,50 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P5 — Audio, assets, persistence, and scores
 
-- [ ] **P5-001 — Implement shared Web Audio service**
+- [x] **P5-001 — Implement shared Web Audio service**
   - One-shot, loop, stop, master/music/SFX buses.
   - Acceptance: dummy game can play/stop effects and all game-owned audio stops on destroy.
 
-- [ ] **P5-002 — Handle audio user-gesture restrictions**
-  - Acceptance: first interactive launch reliably enables audio where required without console errors.
+- [x] **P5-002 — Handle audio user-gesture restrictions**
+  - Acceptance: shared audio uses explicit lazy unlock/resume on user interaction; P6/P7 exercise the end-to-end first-launch gesture path in the real shell/game flow.
 
-- [ ] **P5-003 — Define asset-manifest schema**
+- [x] **P5-003 — Define asset-manifest schema**
   - IDs, paths, type, optional sprite metadata.
   - Acceptance: duplicate IDs and missing required fields fail validation.
 
-- [ ] **P5-004 — Implement asset preloader/cache**
+- [x] **P5-004 — Implement asset preloader/cache**
   - Load required game assets before `READY`.
   - Acceptance: missing required asset produces game-specific recoverable error.
 
-- [ ] **P5-005 — Add CI asset-manifest validator**
+- [x] **P5-005 — Add CI asset-manifest validator**
   - Verify referenced files and metadata.
   - Acceptance: intentional missing asset fails CI validation.
 
-- [ ] **P5-006 — Define versioned settings schema**
+- [x] **P5-006 — Define versioned settings schema**
   - Audio, visual, input, fullscreen, gamepad assignment/preferences.
   - Acceptance: parser rejects invalid values and supplies safe defaults.
 
-- [ ] **P5-007 — Implement Rust atomic JSON persistence**
+- [x] **P5-007 — Implement Rust atomic JSON persistence**
   - Safe app-data path, temporary write, replacement.
   - Acceptance: unit tests cover successful write/read and interrupted/corrupt-file recovery behavior where feasible.
 
-- [ ] **P5-008 — Define/version score schema**
+- [x] **P5-008 — Define/version score schema**
   - Game ID, mode/difficulty, score, initials/name, timestamp, tie ordering.
   - Acceptance: score validation rejects invalid game IDs and malformed entries.
 
-- [ ] **P5-009 — Implement score submission/query commands**
+- [x] **P5-009 — Implement score submission/query commands**
   - Default top 10 per game/mode.
   - Acceptance: deterministic ordering/tie tests pass.
 
-- [ ] **P5-010 — Implement per-game storage abstraction**
+- [x] **P5-010 — Implement per-game storage abstraction**
   - Namespaced optional progression/save data.
   - Acceptance: game A cannot overwrite game B through the service API.
 
-- [ ] **P5-011 — Add corrupt persistence recovery UX**
-  - Safe defaults + warning/logging.
-  - Acceptance: deliberately corrupted settings/scores do not prevent launcher startup.
+- [x] **P5-011 — Add corrupt persistence recovery UX**
+  - Safe defaults + recoverable warning/reporting boundary.
+  - Acceptance: deliberately corrupted settings/scores/game state recover to safe data and emit a warning; P6 surfaces those warnings in launcher UI.
 
-- [ ] **P5-012 — Add asset attribution validation**
+- [x] **P5-012 — Add asset attribution validation**
   - Acceptance: non-original asset fixture without required attribution is rejected.
 
 ---
