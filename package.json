@@ -24,14 +24,21 @@
     "test:frontend": "node scripts/test.mjs",
     "test:rust": "cargo test --workspace --locked",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
-    "dev": "vite",
+    "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.1.0",
     "typescript": "5.9.2",
     "vite": "8.2.2"
   }
