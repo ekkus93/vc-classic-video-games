@@ -8,24 +8,43 @@ import {
   invokeNative,
   setApplicationFullscreen,
 } from "../../native/commands.js";
+import { BrowserGameServices } from "./browser-game-services.js";
 import { ShellController } from "./controller.js";
-import { UnavailableGameHost } from "./game-host.js";
+import { ShellGameInputBridge } from "./input-bridge.js";
+import { LoopingGameHost } from "./looping-game-host.js";
 
-export function createDefaultShellController(): ShellController {
+export interface DefaultShellRuntime {
+  readonly controller: ShellController;
+  readonly gameHost: LoopingGameHost;
+  readonly gameInput: ShellGameInputBridge;
+}
+
+export function createDefaultShellRuntime(): DefaultShellRuntime {
   const native = hasNativeBridge();
   const documents = native
     ? new TauriJsonDocumentStore(invokeNative)
     : new MemoryJsonDocumentStore();
+  const gameInput = new ShellGameInputBridge();
+  const gameServices = new BrowserGameServices(documents, gameInput);
+  const gameHost = new LoopingGameHost((module, options) =>
+    gameServices.create(module, options),
+  );
   const common = {
     registry: createGameRegistry(),
     documents,
-    gameHost: new UnavailableGameHost(),
+    gameHost,
+    audio: gameServices.audio,
   };
-
-  return native
+  const controller = native
     ? new ShellController({
         ...common,
         fullscreen: { setFullscreen: setApplicationFullscreen },
       })
     : new ShellController(common);
+
+  return Object.freeze({ controller, gameHost, gameInput });
+}
+
+export function createDefaultShellController(): ShellController {
+  return createDefaultShellRuntime().controller;
 }
