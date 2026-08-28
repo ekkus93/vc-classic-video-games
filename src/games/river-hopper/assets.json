@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "river-hopper.audio.current",
+      "path": "audio/current.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "river-hopper.audio.hop",
+      "path": "audio/hop.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "river-hopper.audio.impact",
+      "path": "audio/impact.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "river-hopper.audio.splash",
+      "path": "audio/splash.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "river-hopper.audio.goal",
+      "path": "audio/goal.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "river-hopper.audio.round",
+      "path": "audio/round.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}
