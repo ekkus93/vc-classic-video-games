@@ -4,9 +4,60 @@ import {
 } from "../../engine/index.js";
 import { createFakeGameServices } from "../../engine/testing/fake-services.js";
 import { assert, type TestCase } from "../../test/harness.js";
-import { LifecycleGameHost } from "./game-host.js";
+import {
+  LifecycleGameHost,
+  type GameLaunchPhase,
+} from "./game-host.js";
 
 export const tests: readonly TestCase[] = [
+  {
+    name: "lifecycle host reports loading ready running in verified runtime order",
+    run: async () => {
+      const services = createFakeGameServices();
+      const phases: GameLaunchPhase[] = [];
+      const module: GameModule = {
+        metadata: defineGameMetadata({
+          id: "phase-test",
+          title: "Phase Test",
+          description: "Launch phase acceptance fixture",
+          version: 1,
+          players: [1],
+          supportedInputs: ["keyboard"],
+          logicalWidth: 320,
+          logicalHeight: 240,
+          defaultDifficulty: "normal",
+          difficulties: [{ id: "normal", label: "Normal" }],
+          controls: [],
+          assetManifest: "assets.json",
+        }),
+        create: () => ({
+          start: () => undefined,
+          update: () => undefined,
+          render: () => undefined,
+          pause: () => undefined,
+          resume: () => undefined,
+          reset: () => undefined,
+          destroy: () => undefined,
+        }),
+      };
+      const host = new LifecycleGameHost(() => services);
+
+      await host.launch(
+        module,
+        { players: 1, difficulty: "normal", seed: 3 },
+        (phase) => phases.push(phase),
+      );
+
+      assert(
+        phases.join(",") === "loading,ready,running",
+        "launch phases must follow verified P2 runtime state order",
+      );
+      assert(
+        host.activeGameId === "phase-test",
+        "running transition must retain active game ownership",
+      );
+    },
+  },
   {
     name: "lifecycle host pauses audio simulation and performs clean restart exit",
     run: async () => {
