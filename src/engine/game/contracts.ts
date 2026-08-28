@@ -1,15 +1,13 @@
 import type { GameMetadata } from "./metadata.js";
 import type { GameServices } from "./services.js";
+import type { GameRenderer } from "../render/renderer.js";
+
+export type { GameRenderer } from "../render/renderer.js";
 
 export interface GameStartOptions {
   readonly players: number;
   readonly difficulty: string;
   readonly seed: number;
-}
-
-export interface GameRenderer {
-  readonly logicalWidth: number;
-  readonly logicalHeight: number;
 }
 
 export interface GameInstance {
