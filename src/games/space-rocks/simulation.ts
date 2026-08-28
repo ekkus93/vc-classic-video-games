@@ -1,4 +1,4 @@
-import type { RandomService } from "../../engine/index.js";
+import type { RandomService, Vector2 } from "../../engine/index.js";
 import {
   SPACE_ROCKS_DIFFICULTIES,
   SPACE_ROCKS_RUN_RULES,
@@ -30,13 +30,18 @@ export interface SpaceRocksFrameInput {
 }
 
 export type SpaceRocksSimulationEvent =
-  | { readonly type: "pulse-fired" }
+  | { readonly type: "pulse-fired"; readonly position: Vector2 }
   | {
       readonly type: "rock-fractured";
       readonly size: SpaceRocksRockSize;
       readonly points: number;
+      readonly position: Vector2;
     }
-  | { readonly type: "ship-hit"; readonly livesRemaining: number }
+  | {
+      readonly type: "ship-hit";
+      readonly livesRemaining: number;
+      readonly position: Vector2;
+    }
   | { readonly type: "wave-cleared"; readonly wave: number; readonly bonus: number }
   | { readonly type: "game-over"; readonly score: number };
 
@@ -160,7 +165,12 @@ export class SpaceRocksSimulation {
     });
 
     if (input.fire && this.projectiles.tryFire(this.shipState)) {
-      events.push(Object.freeze({ type: "pulse-fired" }));
+      const bolt = this.projectiles.bolts[this.projectiles.bolts.length - 1];
+      if (bolt !== undefined) {
+        events.push(
+          Object.freeze({ type: "pulse-fired", position: bolt.position }),
+        );
+      }
     }
     this.projectiles.update(dtSeconds);
     this.rockState = Object.freeze(
@@ -196,7 +206,12 @@ export class SpaceRocksSimulation {
       const points = pointsForRock(hit.size);
       this.scoreValue += points;
       events.push(
-        Object.freeze({ type: "rock-fractured", size: hit.size, points }),
+        Object.freeze({
+          type: "rock-fractured",
+          size: hit.size,
+          points,
+          position: hit.position,
+        }),
       );
     }
     this.rockState = Object.freeze(rocks);
@@ -216,9 +231,14 @@ export class SpaceRocksSimulation {
       return;
     }
 
+    const collisionPosition = this.shipState.position;
     this.livesValue -= 1;
     events.push(
-      Object.freeze({ type: "ship-hit", livesRemaining: this.livesValue }),
+      Object.freeze({
+        type: "ship-hit",
+        livesRemaining: this.livesValue,
+        position: collisionPosition,
+      }),
     );
     if (this.livesValue <= 0) {
       this.gameOverValue = true;
