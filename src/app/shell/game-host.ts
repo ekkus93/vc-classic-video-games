@@ -6,8 +6,15 @@ import {
   type GameStartOptions,
 } from "../../engine/index.js";
 
+export type GameLaunchPhase = "loading" | "ready" | "running";
+export type GameLaunchPhaseReporter = (phase: GameLaunchPhase) => void;
+
 export interface ShellGameHost {
-  launch(module: GameModule, options: GameStartOptions): Promise<void>;
+  launch(
+    module: GameModule,
+    options: GameStartOptions,
+    reportPhase?: GameLaunchPhaseReporter,
+  ): Promise<void>;
   pause(): void;
   resume(): void;
   restart(): Promise<void>;
@@ -46,8 +53,11 @@ export class LifecycleGameHost implements ShellGameHost {
   public async launch(
     module: GameModule,
     options: GameStartOptions,
+    reportPhase: GameLaunchPhaseReporter = () => undefined,
   ): Promise<void> {
     this.exit();
+    reportPhase("loading");
+
     const services = await this.createServices(module, options);
     const runtime = new ActiveGameRuntime(services, (event) => {
       this.reportError(
@@ -63,8 +73,11 @@ export class LifecycleGameHost implements ShellGameHost {
 
     await runtime.load(module);
     this.requireState("ready", "load game");
+    reportPhase("ready");
+
     await runtime.start(options);
     this.requireState("running", "start game");
+    reportPhase("running");
   }
 
   public pause(): void {
@@ -143,7 +156,12 @@ export class LifecycleGameHost implements ShellGameHost {
 }
 
 export class UnavailableGameHost implements ShellGameHost {
-  public launch(): Promise<void> {
+  public launch(
+    _module: GameModule,
+    _options: GameStartOptions,
+    reportPhase: GameLaunchPhaseReporter = () => undefined,
+  ): Promise<void> {
+    reportPhase("loading");
     return Promise.reject(
       new Error("No playable game runtime is registered yet"),
     );
