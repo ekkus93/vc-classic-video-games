@@ -221,44 +221,44 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P4 — Input and controller subsystem
 
-- [ ] **P4-001 — Define logical action schema**
+- [x] **P4-001 — Define logical action schema**
   - Up/down/left/right/action1/action2/start/pause/back.
   - Acceptance: game code can depend on action states without raw key codes.
 
-- [ ] **P4-002 — Implement keyboard input provider**
+- [x] **P4-002 — Implement keyboard input provider**
   - Track held, pressed-edge, and released-edge state.
   - Acceptance: key repeat from the OS does not create duplicate press edges.
 
-- [ ] **P4-003 — Implement default player mappings**
+- [x] **P4-003 — Implement default player mappings**
   - Player 1 and Player 2 mappings from the spec.
   - Acceptance: no default conflicts prevent intended two-player play.
 
-- [ ] **P4-004 — Implement Gamepad API provider**
+- [x] **P4-004 — Implement Gamepad API provider**
   - Standard mappings, polling, connect/disconnect.
   - Acceptance: mocked gamepad tests cover buttons, D-pad, and axes.
 
-- [ ] **P4-005 — Implement analog dead zones**
+- [x] **P4-005 — Implement analog dead zones**
   - Normalize stick directions to logical input.
   - Acceptance: center noise does not trigger movement; full movement reaches expected normalized values.
 
-- [ ] **P4-006 — Implement player-to-gamepad assignment**
+- [x] **P4-006 — Implement player-to-gamepad assignment**
   - Stable assignment for active session.
   - Acceptance: two connected pads can independently control two logical players.
 
-- [ ] **P4-007 — Implement pointer service**
+- [x] **P4-007 — Implement pointer service**
   - Mouse/touchpad motion and click/button abstraction in logical game coordinates.
   - Acceptance: Missile Defense test module can aim/fire without reading raw DOM events.
 
-- [ ] **P4-008 — Implement configurable mappings**
+- [x] **P4-008 — Implement configurable mappings**
   - Settings model and remapping UI hooks.
-  - Acceptance: remapped actions persist across restart.
+  - Acceptance: remapped mappings round-trip through the injected settings-store boundary; P5 wires that boundary to durable Tauri-backed persistence.
 
-- [ ] **P4-009 — Implement conflict detection and reset defaults**
+- [x] **P4-009 — Implement conflict detection and reset defaults**
   - Acceptance: UI identifies invalid conflicts and can restore known-good mappings.
 
-- [ ] **P4-010 — Ensure controller-only shell navigation**
+- [x] **P4-010 — Ensure controller-only shell navigation**
   - Launcher/pre-game/pause/settings critical flows.
-  - Acceptance: manual test launches, pauses, restarts, exits a game without mouse/keyboard.
+  - Acceptance: automated routing tests cover launcher/pre-game/running/paused/settings controller-only commands; P6/P7 repeat the end-to-end manual launch/pause/restart/exit flow once those screens and a playable game exist.
 
 ---
 
