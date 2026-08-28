@@ -1,19 +1,20 @@
 import { assert, type TestCase } from "../../test/harness.js";
+import { defineGameMetadata } from "./metadata.js";
 import { GameRegistry } from "./registry.js";
 import type { GameModule } from "./contracts.js";
 
-const MODULE_WITH_ASSETS: GameModule = Object.freeze({
-  metadata: Object.freeze({
-    id: "asset-game",
-    title: "Asset Game",
-    description: "Registry asset resolver regression fixture.",
+const MODULE: GameModule = {
+  metadata: defineGameMetadata({
+    id: "asset-resolver-test",
+    title: "Asset Resolver Test",
+    description: "Registry resolver preservation fixture",
     version: 1,
     players: [1],
-    supportedInputs: ["keyboard"] as const,
+    supportedInputs: ["keyboard"],
     logicalWidth: 320,
     logicalHeight: 240,
     defaultDifficulty: "normal",
-    difficulties: [Object.freeze({ id: "normal", label: "Normal" })],
+    difficulties: [{ id: "normal", label: "Normal" }],
     controls: [],
     assetManifest: "assets.json",
   }),
@@ -26,19 +27,16 @@ const MODULE_WITH_ASSETS: GameModule = Object.freeze({
     reset: () => undefined,
     destroy: () => undefined,
   }),
-  resolveAssetUrl: (path: string) => (path === "assets.json" ? "fixture://assets.json" : null),
-});
+  resolveAssetUrl: (path) => `bundle://${path}`,
+};
 
 export const tests: readonly TestCase[] = [
   {
-    name: "P11 shared registry validation preserves optional module asset resolvers",
+    name: "P9 shared registry preserves optional bundled asset resolver after metadata validation",
     run: () => {
-      const module = new GameRegistry([MODULE_WITH_ASSETS]).getModule("asset-game");
-      assert(module.resolveAssetUrl !== undefined, "registered module must retain its resolver");
-      assert(
-        module.resolveAssetUrl("assets.json") === "fixture://assets.json",
-        "registered resolver must preserve original behavior",
-      );
+      const registered = new GameRegistry([MODULE]).getModule(MODULE.metadata.id);
+      assert(registered.resolveAssetUrl !== undefined, "validated registry module must retain its asset resolver");
+      assert(registered.resolveAssetUrl?.("assets.json") === "bundle://assets.json", "preserved resolver must retain module behavior");
     },
   },
 ];

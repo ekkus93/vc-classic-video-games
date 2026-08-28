@@ -22,6 +22,26 @@
       "original": true
     },
     {
+      "path": "src/games/barrel-climber/audio/roll.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/barrel-climber/audio/jump.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/barrel-climber/audio/vault.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/barrel-climber/audio/hit.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/barrel-climber/audio/goal.wav",
+      "original": true
+    },
+    {
       "path": "src/games/bug-barrage/audio/spark.wav",
       "original": true
     },

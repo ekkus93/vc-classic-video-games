@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "deep-digger.audio.dig",
+      "path": "audio/dig.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "deep-digger.audio.pump",
+      "path": "audio/pump.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "deep-digger.audio.defeat",
+      "path": "audio/defeat.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "deep-digger.audio.rock",
+      "path": "audio/rock.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "deep-digger.audio.hit",
+      "path": "audio/hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "deep-digger.audio.wave",
+      "path": "audio/wave.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}
