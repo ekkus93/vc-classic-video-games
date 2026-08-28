@@ -110,4 +110,44 @@ export const tests: readonly TestCase[] = [
       assert(renders === 5, "paused loop may continue rendering shell/overlay frames");
     },
   },
+  {
+    name: "new-run reset clears stale timing and resumes simulation",
+    run: () => {
+      const scheduler = new FakeFrameScheduler();
+      let updates = 0;
+      const driver = new GameLoopDriver(
+        {
+          update: () => {
+            updates += 1;
+          },
+          render: () => undefined,
+        },
+        { scheduler },
+      );
+      const stepMilliseconds = 1000 / 60;
+
+      driver.start();
+      scheduler.fire(0);
+      scheduler.fire(stepMilliseconds / 2);
+      assert(
+        driver.getLastAdvance().interpolationAlpha > 0,
+        "fixture must accumulate a partial stale step",
+      );
+
+      driver.pauseSimulation();
+      assert(driver.isSimulationPaused(), "fixture must enter paused timing state");
+      driver.resetForNewRun();
+
+      assert(!driver.isSimulationPaused(), "new run must resume simulation timing");
+      assert(
+        driver.getLastAdvance().interpolationAlpha === 0,
+        "new run must discard stale interpolation accumulator",
+      );
+
+      scheduler.fire(10000);
+      assert(updates === 0, "first new-run frame must establish a fresh baseline");
+      scheduler.fire(10000 + stepMilliseconds);
+      assert(updates === 1, "new run must advance from the fresh baseline");
+    },
+  },
 ];
