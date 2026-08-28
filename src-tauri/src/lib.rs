@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod commands;
+mod persistence;
 
 pub const APP_NAME: &str = "VC Classic Video Games";
 
@@ -10,6 +11,8 @@ pub fn run() -> tauri::Result<()> {
         .invoke_handler(tauri::generate_handler![
             commands::diagnostics::diagnostic_ping,
             commands::platform::platform_info,
+            commands::persistence::load_json_document,
+            commands::persistence::save_json_document,
         ])
         .run(tauri::generate_context!())
 }
