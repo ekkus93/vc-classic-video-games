@@ -1,10 +1,15 @@
 import type { ScoreService } from "../../engine/index.js";
 import type { SpaceRocksSimulationEvent } from "./simulation.js";
 
+export type SpaceRocksScoreSubmitErrorHandler = (error: unknown) => void;
+
 export class SpaceRocksScoreCommitter {
   private submitted = false;
 
-  public constructor(private readonly scores: ScoreService) {}
+  public constructor(
+    private readonly scores: ScoreService,
+    private readonly reportError: SpaceRocksScoreSubmitErrorHandler = () => undefined,
+  ) {}
 
   public handle(events: readonly SpaceRocksSimulationEvent[]): void {
     if (this.submitted) {
@@ -15,10 +20,14 @@ export class SpaceRocksScoreCommitter {
       return;
     }
     this.submitted = true;
-    void this.scores.submit({
-      score: gameOver.score,
-      mode: "default",
-    });
+    void this.scores
+      .submit({
+        score: gameOver.score,
+        mode: "default",
+      })
+      .catch((error: unknown) => {
+        this.reportError(error);
+      });
   }
 
   public reset(): void {
