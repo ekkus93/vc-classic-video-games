@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { shouldInjectFailure } from "./failure-injection.js";
 import { ShellView } from "./shell/ShellView.js";
 import { createDefaultShellController } from "./shell/default-controller.js";
+import { moveFocusToShellSelection } from "./shell/focus-management.js";
 import { useShellInput } from "./shell/use-shell-input.js";
 import type { ShellController, ShellState } from "./shell/controller.js";
 import {
@@ -55,6 +56,20 @@ export function App({ controller }: AppProps = {}) {
   }, [shell]);
 
   useEffect(() => {
+    const surface = shellSurface.current;
+    if (surface !== null) {
+      moveFocusToShellSelection(surface);
+    }
+  }, [
+    shellState.screen,
+    shellState.launcherFocusIndex,
+    shellState.preGameFocusIndex,
+    shellState.pauseFocusIndex,
+    shellState.settingsFocusIndex,
+    shellState.gamePaused,
+  ]);
+
+  useEffect(() => {
     let cancelled = false;
 
     void Promise.resolve()
@@ -89,7 +104,12 @@ export function App({ controller }: AppProps = {}) {
   }
 
   return (
-    <main className="app-shell" ref={shellSurface}>
+    <main
+      className="app-shell"
+      ref={shellSurface}
+      tabIndex={-1}
+      aria-label="VC Classic Video Games shell"
+    >
       <ShellView controller={shell} state={shellState} />
 
       <footer className="shell-footer" aria-label="Application diagnostics">
