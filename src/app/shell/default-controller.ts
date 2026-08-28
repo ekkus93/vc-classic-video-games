@@ -16,13 +16,16 @@ export function createDefaultShellController(): ShellController {
   const documents = native
     ? new TauriJsonDocumentStore(invokeNative)
     : new MemoryJsonDocumentStore();
-
-  return new ShellController({
+  const common = {
     registry: createGameRegistry(),
     documents,
     gameHost: new UnavailableGameHost(),
-    fullscreen: native
-      ? { setFullscreen: setApplicationFullscreen }
-      : undefined,
-  });
+  };
+
+  return native
+    ? new ShellController({
+        ...common,
+        fullscreen: { setFullscreen: setApplicationFullscreen },
+      })
+    : new ShellController(common);
 }
