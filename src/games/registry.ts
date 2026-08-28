@@ -6,6 +6,7 @@ import { JUNGLE_QUEST_MODULE } from "./jungle-quest/module.js";
 import { MAZE_CHASE_MODULE } from "./maze-chase/module.js";
 import { MISSILE_DEFENSE_MODULE } from "./missile-defense/module.js";
 import { RIVER_HOPPER_MODULE } from "./river-hopper/module.js";
+import { SKY_RIDERS_MODULE } from "./sky-riders/module.js";
 import { SPACE_ROCKS_MODULE } from "./space-rocks/module.js";
 import { STAR_DEFENDER_MODULE } from "./star-defender/module.js";
 
@@ -23,6 +24,7 @@ export const GAME_MODULES: readonly GameModule[] = Object.freeze([
   BUG_BARRAGE_MODULE,
   MISSILE_DEFENSE_MODULE,
   JUNGLE_QUEST_MODULE,
+  SKY_RIDERS_MODULE,
 ]);
 
 export function createGameRegistry(

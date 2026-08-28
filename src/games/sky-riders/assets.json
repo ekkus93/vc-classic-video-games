@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "sky-riders.audio.flap",
+      "path": "audio/flap.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "sky-riders.audio.clash",
+      "path": "audio/clash.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "sky-riders.audio.defeat",
+      "path": "audio/defeat.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "sky-riders.audio.hit",
+      "path": "audio/hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "sky-riders.audio.recovery",
+      "path": "audio/recovery.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "sky-riders.audio.wave-clear",
+      "path": "audio/wave-clear.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}
