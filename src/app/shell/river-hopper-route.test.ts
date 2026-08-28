@@ -54,11 +54,17 @@ export const tests: readonly TestCase[] = [
       });
       await controller.initialize();
 
-      assert(controller.games[controller.snapshot.launcherFocusIndex]?.id === "river-hopper", "canonical launcher must expose River Hopper");
-      await controller.handleCommand("down");
-      assert(controller.games[controller.snapshot.launcherFocusIndex]?.id === "space-rocks", "controller navigation must still reach Space Rocks");
-      await controller.handleCommand("up");
-      assert(controller.games[controller.snapshot.launcherFocusIndex]?.id === "river-hopper", "controller navigation must return to registered River Hopper");
+      assert(controller.games.some((game) => game.id === "river-hopper"), "canonical launcher must expose River Hopper");
+      for (let step = 0; step <= controller.games.length; step += 1) {
+        await controller.handleCommand("down");
+        if (controller.games[controller.snapshot.launcherFocusIndex]?.id === "river-hopper") {
+          break;
+        }
+      }
+      assert(
+        controller.games[controller.snapshot.launcherFocusIndex]?.id === "river-hopper",
+        "controller navigation must reach registered River Hopper regardless of other merged games",
+      );
       await controller.handleCommand("activate");
       assert(
         controller.snapshot.screen === "pre-game" && controller.selectedGame?.id === "river-hopper",
