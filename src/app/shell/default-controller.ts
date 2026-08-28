@@ -28,8 +28,12 @@ export function createDefaultShellRuntime(): DefaultShellRuntime {
     : new MemoryJsonDocumentStore();
   const gameInput = new ShellGameInputBridge();
   const gameServices = new BrowserGameServices(documents, gameInput);
-  const gameHost = new LoopingGameHost((module, options) =>
-    gameServices.create(module, options),
+  let controller: ShellController | null = null;
+  const gameHost = new LoopingGameHost(
+    (module, options) => gameServices.create(module, options),
+    (message, error) => {
+      controller?.recoverFromGameFailure(message, error);
+    },
   );
   const common = {
     registry: createGameRegistry(),
@@ -37,7 +41,7 @@ export function createDefaultShellRuntime(): DefaultShellRuntime {
     gameHost,
     audio: gameServices.audio,
   };
-  const controller = native
+  controller = native
     ? new ShellController({
         ...common,
         fullscreen: { setFullscreen: setApplicationFullscreen },
