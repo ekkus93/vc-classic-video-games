@@ -44,17 +44,21 @@ export const tests: readonly TestCase[] = [
     run: () => {
       const system = new SpaceRocksProjectileSystem();
       const ship = {
-        ...createSpaceRocksShip({ x: 160, y: 3 }),
+        ...createSpaceRocksShip({ x: 160, y: 15 }),
         velocity: { x: 0, y: 0 },
         facingRadians: 0,
       };
       assert(system.tryFire(ship), "fixture must fire a bolt");
       const initial = system.bolts[0];
       assert(initial !== undefined, "fixture must expose the fired bolt");
+      assert(initial.position.y === 5, "fixture bolt must begin just above the top edge");
       system.update(0.1);
       const wrapped = system.bolts[0];
       assert(wrapped !== undefined, "bolt must still be alive after short update");
-      assert(wrapped.position.y > 220, "upward bolt crossing the top must wrap to bottom");
+      assert(
+        wrapped.position.y > 220 && wrapped.position.y < 240,
+        "upward bolt crossing the top must wrap to bottom while preserving overshoot",
+      );
 
       system.update(SPACE_ROCKS_PROJECTILE_RULES.lifetimeSeconds);
       assert(system.bolts.length === 0, "expired projectiles must be removed");
