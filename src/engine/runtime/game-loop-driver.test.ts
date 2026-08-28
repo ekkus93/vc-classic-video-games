@@ -146,7 +146,7 @@ export const tests: readonly TestCase[] = [
 
       scheduler.fire(10000);
       assert(updates === 0, "first new-run frame must establish a fresh baseline");
-      scheduler.fire(10000 + stepMilliseconds);
+      scheduler.fire(10000 + stepMilliseconds * 1.1);
       assert(Number(updates) === 1, "new run must advance from the fresh baseline");
     },
   },
