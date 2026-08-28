@@ -389,6 +389,22 @@ export class ShellController {
     void this.refreshLauncherHighScores();
   }
 
+  public recoverFromGameFailure(message: string, error: unknown): void {
+    this.options.gameHost.exit();
+    this.patch({
+      screen: "launcher",
+      launcherFocusIndex: 0,
+      gamePaused: false,
+      selection: null,
+      scores: Object.freeze([]),
+      launchPhase: "error",
+      busy: false,
+      status: null,
+      error: `${message}: ${describeError(error)}`,
+    });
+    void this.refreshLauncherHighScores();
+  }
+
   public openSettings(returnScreen: ReturnScreen = this.defaultReturnScreen()): void {
     this.settingsReturnScreen = returnScreen;
     this.patch({ screen: "settings", settingsFocusIndex: 0, error: null });
