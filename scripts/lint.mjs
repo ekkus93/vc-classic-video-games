@@ -1,6 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 
+import {
+  extractModuleSpecifiers,
+  findCrossGameImport,
+} from "./lib/game-import-boundary.mjs";
+
 const root = process.cwd();
 const excludedDirectories = new Set([
   ".git",
@@ -68,6 +73,18 @@ for (const path of await collect(root)) {
     failures += 1;
     console.error(
       `${relative(root, path)}: game code must use the shared seeded RNG service`,
+    );
+  }
+
+  for (const specifier of extractModuleSpecifiers(source)) {
+    const violation = findCrossGameImport(root, path, specifier);
+    if (violation === null) {
+      continue;
+    }
+
+    failures += 1;
+    console.error(
+      `${relative(root, path)}: game ${violation.sourceGame} must not import internals from game ${violation.targetGame} (${specifier})`,
     );
   }
 }
