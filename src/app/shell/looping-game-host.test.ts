@@ -132,7 +132,7 @@ export const tests: readonly TestCase[] = [
         assert(host.activeGameId === null, "exit must release active game ownership");
         assert(!host.loopRunning, "exit must stop the frame driver");
         assert(
-          scheduler.pendingCount === 0,
+          Number(scheduler.pendingCount) === 0,
           "exit must cancel the final pending animation frame",
         );
         assert(
