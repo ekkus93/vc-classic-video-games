@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "jungle-quest.audio.jump",
+      "path": "audio/jump.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "jungle-quest.audio.relic",
+      "path": "audio/relic.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "jungle-quest.audio.hit",
+      "path": "audio/hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "jungle-quest.audio.vine-loop",
+      "path": "audio/vine-loop.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "jungle-quest.audio.checkpoint",
+      "path": "audio/checkpoint.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "jungle-quest.audio.finish",
+      "path": "audio/finish.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}

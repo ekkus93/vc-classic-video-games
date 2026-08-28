@@ -23,6 +23,10 @@ export const tests: readonly TestCase[] = [
         "canonical registry must surface the first playable game",
       );
       assert(
+        markup.includes("Jungle Quest"),
+        "canonical registry must surface the P13 playable game",
+      );
+      assert(
         markup.includes("Available games"),
         "registered games must render through the launcher collection",
       );

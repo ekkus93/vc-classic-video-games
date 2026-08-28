@@ -1,0 +1,3 @@
+import { assert, assertDeepEqual, type TestCase } from "../test/harness.js";
+import { GAME_MODULES, createGameRegistry } from "./registry.js";
+export const tests: readonly TestCase[]=[{name:"P13-010 canonical registry composes Jungle Quest alongside Space Rocks",run:()=>{assert(GAME_MODULES.length===2,"canonical registry must contain both completed games");assert(GAME_MODULES.some((module)=>module.metadata.id==="jungle-quest"),"Jungle Quest must be registered");assertDeepEqual(createGameRegistry().listMetadata().map((metadata)=>metadata.id),["jungle-quest","space-rocks"],"registry metadata order must remain deterministic");}}];
