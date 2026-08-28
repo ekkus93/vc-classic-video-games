@@ -53,7 +53,12 @@ export function App({ controller }: AppProps = {}) {
   });
   const shellSurface = useRef<HTMLElement | null>(null);
 
-  useShellInput(shell, shellSurface, runtime?.gameInput);
+  useShellInput(
+    shell,
+    shellSurface,
+    runtime?.gameInput,
+    runtime?.unlockAudio,
+  );
 
   useEffect(() => shell.subscribe(setShellState), [shell]);
 
