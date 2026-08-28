@@ -186,8 +186,13 @@ export const tests: readonly TestCase[] = [
         "falling rock must crush a stalker occupying its deterministic path",
       );
       assert(
-        falling.some((event) => event.type === "rock-landed"),
-        "rock must stop when the deterministic fall path ends",
+        !falling.some((event) => event.type === "rock-landed"),
+        "shake time must not be reused to accelerate the rock to its landing",
+      );
+      const landed = simulation.update({ move: null, attack: false }, 0.13);
+      assert(
+        landed.some((event) => event.type === "rock-landed"),
+        "rock must stop after the remaining deterministic fall time elapses",
       );
     },
   },
