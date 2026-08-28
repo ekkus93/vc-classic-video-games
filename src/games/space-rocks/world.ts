@@ -21,3 +21,14 @@ export function advanceWrappedSpaceRocksPosition(
     y: position.y + velocity.y * dtSeconds,
   });
 }
+
+export function wrappedSpaceRocksDistanceSquared(
+  a: Vector2,
+  b: Vector2,
+): number {
+  const rawDx = Math.abs(a.x - b.x);
+  const rawDy = Math.abs(a.y - b.y);
+  const dx = Math.min(rawDx, SPACE_ROCKS_RUN_RULES.logicalWidth - rawDx);
+  const dy = Math.min(rawDy, SPACE_ROCKS_RUN_RULES.logicalHeight - rawDy);
+  return dx * dx + dy * dy;
+}
