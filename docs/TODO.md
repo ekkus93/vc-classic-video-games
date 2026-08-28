@@ -174,46 +174,46 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P3 — Rendering and timing
 
-- [ ] **P3-001 — Implement fixed-step simulation loop**
+- [x] **P3-001 — Implement fixed-step simulation loop**
   - Default 60 Hz simulation.
   - Acceptance: synthetic timing tests verify expected update counts.
 
-- [ ] **P3-002 — Bound frame catch-up behavior**
+- [x] **P3-002 — Bound frame catch-up behavior**
   - Clamp large deltas and cap fixed updates per rendered frame.
   - Reset accumulator appropriately.
   - Acceptance: a simulated multi-second stall cannot produce an unbounded update burst.
 
-- [ ] **P3-003 — Implement `requestAnimationFrame` render driver**
+- [x] **P3-003 — Implement `requestAnimationFrame` render driver**
   - Decouple render cadence from fixed simulation updates.
   - Acceptance: runtime performs one owned RAF chain and cancels/halts it cleanly.
 
-- [ ] **P3-004 — Implement game logical framebuffer**
+- [x] **P3-004 — Implement game logical framebuffer**
   - Default 320x240; support declared alternate logical sizes.
   - Acceptance: dummy landscape and portrait games both render through the same runtime.
 
-- [ ] **P3-005 — Implement aspect-preserving viewport scaling**
+- [x] **P3-005 — Implement aspect-preserving viewport scaling**
   - Prefer integer nearest-neighbor scale.
   - Fractional nearest-neighbor fallback.
   - Letterbox/pillarbox without stretching.
   - Acceptance: tests cover common Chromebook viewport sizes including 1366x768.
 
-- [ ] **P3-006 — Normalize pointer coordinates into game space**
+- [x] **P3-006 — Normalize pointer coordinates into game space**
   - Account for letterboxing and scale.
   - Acceptance: corners/center map correctly under integer and fractional scaling.
 
-- [ ] **P3-007 — Implement baseline renderer abstraction**
+- [x] **P3-007 — Implement baseline renderer abstraction**
   - Canvas 2D target with primitives/sprites/text required by launch games.
   - Acceptance: games do not need direct knowledge of DOM layout or CSS scaling.
 
-- [ ] **P3-008 — Add sprite animation utility**
+- [x] **P3-008 — Add sprite animation utility**
   - Fixed-step/time-based animation independent of monitor refresh rate.
   - Acceptance: deterministic animation-frame tests pass.
 
-- [ ] **P3-009 — Add common math/collision primitives**
+- [x] **P3-009 — Add common math/collision primitives**
   - Vector helpers, AABB, circle tests, wrapping coordinates, segment intersection as justified.
   - Acceptance: edge/corner collision cases have unit tests.
 
-- [ ] **P3-010 — Add pause/suspend timing behavior**
+- [x] **P3-010 — Add pause/suspend timing behavior**
   - Freeze simulation and clear stale accumulated delta.
   - Acceptance: resume after synthetic long suspension does not jump the game forward.
 
