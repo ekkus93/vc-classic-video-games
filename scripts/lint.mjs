@@ -9,7 +9,7 @@ const excludedDirectories = new Set([
   "node_modules",
   "target",
 ]);
-const sourceExtensions = new Set([".js", ".mjs", ".ts"]);
+const sourceExtensions = new Set([".js", ".jsx", ".mjs", ".ts", ".tsx"]);
 
 const rules = [
   { pattern: /\bdebugger\s*;/u, message: "debugger statements are forbidden" },

@@ -3,6 +3,12 @@ export interface TestCase {
   readonly run: () => void | Promise<void>;
 }
 
+export function assert(condition: boolean, message: string): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
 export function assertDeepEqual<T>(
   actual: readonly T[],
   expected: readonly T[],

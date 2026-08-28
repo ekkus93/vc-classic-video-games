@@ -19,9 +19,11 @@ const textExtensions = new Set([
   ".html",
   ".js",
   ".json",
+  ".jsx",
   ".mjs",
   ".toml",
   ".ts",
+  ".tsx",
   ".yaml",
   ".yml",
 ]);

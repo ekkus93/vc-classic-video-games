@@ -1,0 +1,80 @@
+:root {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color: #f4f4f5;
+  background: #09090b;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 2rem;
+  display: grid;
+  place-items: center;
+}
+
+.launcher {
+  width: min(60rem, 100%);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.launcher__header p {
+  margin-bottom: 0;
+  color: #a1a1aa;
+  line-height: 1.6;
+}
+
+.launcher__preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.game-surface {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #020617;
+  border: 1px solid #52525b;
+  image-rendering: pixelated;
+}
+
+.launcher__status {
+  border: 1px solid #3f3f46;
+  padding: 1.5rem;
+}
+
+.launcher__status h2 {
+  margin-top: 0;
+}
+
+.launcher__status p {
+  color: #a1a1aa;
+  line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .launcher__preview {
+    grid-template-columns: 1fr;
+  }
+}
