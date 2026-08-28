@@ -168,8 +168,8 @@ export const tests: readonly TestCase[] = [
       host.update(0.25);
       assert(oldRun.entityCount === 2, "destroyed entities must never update again");
       assert(oldRun.timerSeconds === 0.5, "destroyed timers must never advance again");
-      assert(newRun.entityCount === 2, "only fresh entities may update after restart");
-      assert(newRun.timerSeconds === 0.25, "only fresh timers may advance after restart");
+      assert(Number(newRun.entityCount) === 2, "only fresh entities may update after restart");
+      assert(Number(newRun.timerSeconds) === 0.25, "only fresh timers may advance after restart");
 
       host.exit();
       assert(newRun.destroyed, "exit must destroy the replacement instance");
