@@ -9,7 +9,7 @@ const MODULE_WITH_ASSET_RESOLVER: GameModule = Object.freeze({
     description: "Registry asset-resolver preservation fixture.",
     version: 1,
     players: Object.freeze([1]),
-    supportedInputs: Object.freeze(["keyboard"]),
+    supportedInputs: Object.freeze(["keyboard"] as const),
     logicalWidth: 320,
     logicalHeight: 240,
     defaultDifficulty: "default",
