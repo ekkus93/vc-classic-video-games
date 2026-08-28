@@ -17,7 +17,7 @@
     "format:check:frontend": "node scripts/format.mjs --check",
     "format:check:rust": "cargo fmt --all -- --check",
     "lint": "npm run lint:frontend && npm run lint:rust",
-    "lint:frontend": "node scripts/lint.mjs",
+    "lint:frontend": "node scripts/lint.mjs && node scripts/lint-game-boundaries.test.mjs",
     "metadata:check": "node scripts/check-project-metadata.mjs",
     "lint:rust": "cargo clippy --workspace --all-targets --locked -- -D warnings",
     "typecheck": "tsc -p tsconfig.json --noEmit",
