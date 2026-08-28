@@ -40,7 +40,10 @@ export const tests: readonly TestCase[] = [
       simulation.update(NEUTRAL_INPUT, 0.25);
       assert(simulation.lives === 3, "protected spawn must ignore overlapping hazard");
       const events = simulation.update(NEUTRAL_INPUT, 0.25);
-      assert(simulation.lives === 2, "collision must cost one hull when protection expires");
+      assert(
+        Number(simulation.lives) === 2,
+        "collision must cost one hull when protection expires",
+      );
       assert(
         events.some((event) => event.type === "ship-hit"),
         "hull loss must emit a ship-hit event",
@@ -51,7 +54,10 @@ export const tests: readonly TestCase[] = [
       );
 
       simulation.update(NEUTRAL_INPUT, 0.01);
-      assert(simulation.lives === 2, "overlapping respawn hazard must not cause immediate repeat death");
+      assert(
+        Number(simulation.lives) === 2,
+        "overlapping respawn hazard must not cause immediate repeat death",
+      );
     },
   },
   {
