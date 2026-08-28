@@ -9,6 +9,10 @@ import {
 export type GameLaunchPhase = "loading" | "ready" | "running";
 export type GameLaunchPhaseReporter = (phase: GameLaunchPhase) => void;
 
+export interface GameRunTimingPort {
+  resetForNewRun(): void;
+}
+
 export interface ShellGameHost {
   launch(
     module: GameModule,
@@ -35,6 +39,10 @@ function asError(error: unknown, fallback: string): Error {
   return error instanceof Error ? error : new Error(`${fallback}: ${String(error)}`);
 }
 
+const NOOP_TIMING_PORT: GameRunTimingPort = Object.freeze({
+  resetForNewRun: () => undefined,
+});
+
 /**
  * Owns the P2 game lifecycle for the shell. P7 attaches its P3 frame driver to
  * update/render; pause/restart/exit semantics are already centralized here.
@@ -48,6 +56,7 @@ export class LifecycleGameHost implements ShellGameHost {
   public constructor(
     private readonly createServices: GameServicesFactory,
     private readonly reportError: GameHostErrorReporter = () => undefined,
+    private readonly timing: GameRunTimingPort = NOOP_TIMING_PORT,
   ) {}
 
   public async launch(
@@ -59,12 +68,7 @@ export class LifecycleGameHost implements ShellGameHost {
     reportPhase("loading");
 
     const services = await this.createServices(module, options);
-    const runtime = new ActiveGameRuntime(services, (event) => {
-      this.reportError(
-        `Game ${event.gameId ?? "unknown"} failed during ${event.phase}`,
-        event.error,
-      );
-    });
+    const runtime = this.createRuntime(services);
 
     this.runtime = runtime;
     this.services = services;
@@ -96,17 +100,26 @@ export class LifecycleGameHost implements ShellGameHost {
 
   public async restart(): Promise<void> {
     const runtime = this.requireRuntime("restart");
+    const services = this.services;
+    const module = this.module;
     const options = this.options;
-    if (options === null) {
-      throw new Error("Cannot restart without game start options");
+    if (services === null || module === null || options === null) {
+      throw new Error("Cannot restart without a complete active game run");
     }
 
-    this.services?.audio.stopAll();
-    runtime.reset();
-    this.requireState("ready", "reset game");
+    // A shell restart is deliberately stronger than GameInstance.reset(): the
+    // old instance is destroyed, all game-owned audio is stopped by the runtime,
+    // transient device state and fixed-step timing are cleared, and module.create
+    // is invoked again so entities and simulation timers cannot leak across runs.
+    runtime.destroy();
+    services.input.reset();
+    this.timing.resetForNewRun();
+
+    await runtime.load(module);
+    this.requireState("ready", "reload game for restart");
     await runtime.start(options);
     this.requireState("running", "restart game");
-    this.services?.audio.resumeAll();
+    services.audio.resumeAll();
   }
 
   public exit(): void {
@@ -127,6 +140,15 @@ export class LifecycleGameHost implements ShellGameHost {
 
   public get activeGameId(): string | null {
     return this.module?.metadata.id ?? null;
+  }
+
+  private createRuntime(services: GameServices): ActiveGameRuntime {
+    return new ActiveGameRuntime(services, (event) => {
+      this.reportError(
+        `Game ${event.gameId ?? "unknown"} failed during ${event.phase}`,
+        event.error,
+      );
+    });
   }
 
   private requireRuntime(operation: string): ActiveGameRuntime {
