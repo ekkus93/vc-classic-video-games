@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "barrel-climber.audio.roll",
+      "path": "audio/roll.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "barrel-climber.audio.jump",
+      "path": "audio/jump.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "barrel-climber.audio.vault",
+      "path": "audio/vault.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "barrel-climber.audio.hit",
+      "path": "audio/hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "barrel-climber.audio.goal",
+      "path": "audio/goal.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}
