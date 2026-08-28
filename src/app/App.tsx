@@ -1,7 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { GameSurface } from "./game-surface/GameSurface.js";
 import { shouldInjectFailure } from "./failure-injection.js";
+import { ShellView } from "./shell/ShellView.js";
+import { createDefaultShellController } from "./shell/default-controller.js";
+import { moveFocusToShellSelection } from "./shell/focus-management.js";
+import { useShellInput } from "./shell/use-shell-input.js";
+import type { ShellController, ShellState } from "./shell/controller.js";
 import {
   diagnosticPing,
   getPlatformInfo,
@@ -17,6 +21,10 @@ type NativeStatus =
     }
   | { readonly state: "preview" };
 
+export interface AppProps {
+  readonly controller?: ShellController;
+}
+
 function renderFailureRequested(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -28,10 +36,38 @@ function renderFailureRequested(): boolean {
   );
 }
 
-export function App() {
+export function App({ controller }: AppProps = {}) {
+  const shell = useMemo(
+    () => controller ?? createDefaultShellController(),
+    [controller],
+  );
+  const [shellState, setShellState] = useState<ShellState>(shell.snapshot);
   const [nativeStatus, setNativeStatus] = useState<NativeStatus>({
     state: "loading",
   });
+  const shellSurface = useRef<HTMLElement | null>(null);
+
+  useShellInput(shell, shellSurface);
+
+  useEffect(() => shell.subscribe(setShellState), [shell]);
+
+  useEffect(() => {
+    void shell.initialize();
+  }, [shell]);
+
+  useEffect(() => {
+    const surface = shellSurface.current;
+    if (surface !== null) {
+      moveFocusToShellSelection(surface);
+    }
+  }, [
+    shellState.screen,
+    shellState.launcherFocusIndex,
+    shellState.preGameFocusIndex,
+    shellState.pauseFocusIndex,
+    shellState.settingsFocusIndex,
+    shellState.gamePaused,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,57 +104,28 @@ export function App() {
   }
 
   return (
-    <main className="app-shell">
-      <section className="launcher" aria-labelledby="launcher-title">
-        <header className="launcher__header">
-          <p className="launcher__eyebrow">VC Classic Video Games</p>
-          <h1 id="launcher-title">Retro Arcade</h1>
-          <p>
-            One controller-first arcade shell. Game modules plug into the
-            shared runtime without owning application UI state.
-          </p>
-        </header>
+    <main
+      className="app-shell"
+      ref={shellSurface}
+      tabIndex={-1}
+      aria-label="VC Classic Video Games shell"
+    >
+      <ShellView controller={shell} state={shellState} />
 
-        <div className="launcher__preview">
-          <GameSurface />
-          <section className="launcher__status" aria-labelledby="preview-title">
-            <h2 id="preview-title">Runtime preview</h2>
-            <p>
-              The animated Canvas is driven by the engine frame loop, not by
-              React renders. React owns launcher composition and lifecycle only.
-            </p>
-
-            <dl className="launcher__diagnostics">
-              <div>
-                <dt>Native bridge</dt>
-                <dd>
-                  {nativeStatus.state === "loading"
-                    ? "Checking…"
-                    : nativeStatus.state === "connected"
-                      ? `Connected (${nativeStatus.echo})`
-                      : "Browser preview"}
-                </dd>
-              </div>
-              <div>
-                <dt>Platform</dt>
-                <dd>
-                  {nativeStatus.state === "connected"
-                    ? `${nativeStatus.platform.os} / ${nativeStatus.platform.arch}`
-                    : "Available in Tauri"}
-                </dd>
-              </div>
-              <div>
-                <dt>App version</dt>
-                <dd>
-                  {nativeStatus.state === "connected"
-                    ? nativeStatus.platform.appVersion
-                    : "0.1.0"}
-                </dd>
-              </div>
-            </dl>
-          </section>
-        </div>
-      </section>
+      <footer className="shell-footer" aria-label="Application diagnostics">
+        <span>
+          {nativeStatus.state === "loading"
+            ? "Native bridge: checking…"
+            : nativeStatus.state === "connected"
+              ? `Native bridge: connected (${nativeStatus.echo})`
+              : "Native bridge: browser preview"}
+        </span>
+        <span>
+          {nativeStatus.state === "connected"
+            ? `${nativeStatus.platform.os}/${nativeStatus.platform.arch} · v${nativeStatus.platform.appVersion}`
+            : "Tauri 2 · offline-first"}
+        </span>
+      </footer>
     </main>
   );
 }

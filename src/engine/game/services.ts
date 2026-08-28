@@ -6,6 +6,7 @@ export interface InputService {
   isHeld(player: number, action: LogicalAction): boolean;
   wasPressed(player: number, action: LogicalAction): boolean;
   wasReleased(player: number, action: LogicalAction): boolean;
+  reset(): void;
 }
 
 export interface AudioService {

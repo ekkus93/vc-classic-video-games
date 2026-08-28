@@ -52,26 +52,43 @@ export class FakeInputService implements InputService {
     this.pressed.clear();
     this.released.clear();
   }
+
+  public reset(): void {
+    this.held.clear();
+    this.pressed.clear();
+    this.released.clear();
+    this.pointer.set({
+      position: null,
+      inside: false,
+      primaryHeld: false,
+      primaryPressed: false,
+      primaryReleased: false,
+    });
+  }
 }
 
 export class FakeAudioService implements AudioService {
   public readonly playedEffects: string[] = [];
   public readonly playedLoops: string[] = [];
   public readonly stopped: string[] = [];
+  private readonly active = new Set<string>();
   public stopAllCount = 0;
   public pauseAllCount = 0;
   public resumeAllCount = 0;
 
   public playEffect(assetId: string): void {
     this.playedEffects.push(assetId);
+    this.active.add(assetId);
   }
 
   public playLoop(assetId: string): void {
     this.playedLoops.push(assetId);
+    this.active.add(assetId);
   }
 
   public stop(assetId: string): void {
     this.stopped.push(assetId);
+    this.active.delete(assetId);
   }
 
   public pauseAll(): void {
@@ -84,6 +101,15 @@ export class FakeAudioService implements AudioService {
 
   public stopAll(): void {
     this.stopAllCount += 1;
+    this.active.clear();
+  }
+
+  public isActive(assetId: string): boolean {
+    return this.active.has(assetId);
+  }
+
+  public get activeCount(): number {
+    return this.active.size;
   }
 }
 

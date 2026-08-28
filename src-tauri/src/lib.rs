@@ -11,6 +11,7 @@ pub fn run() -> tauri::Result<()> {
         .invoke_handler(tauri::generate_handler![
             commands::diagnostics::diagnostic_ping,
             commands::platform::platform_info,
+            commands::platform::set_fullscreen,
             commands::persistence::load_json_document,
             commands::persistence::save_json_document,
         ])

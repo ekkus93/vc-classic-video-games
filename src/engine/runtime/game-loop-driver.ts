@@ -18,15 +18,19 @@ export interface GameLoopDriverOptions extends FixedStepOptions {
   readonly scheduler?: FrameScheduler;
 }
 
-export class GameLoopDriver {
-  private readonly clock: FixedStepClock;
-  private readonly frameLoop: FrameLoop;
-  private lastAdvance: FixedStepAdvanceResult = {
+function emptyAdvance(): FixedStepAdvanceResult {
+  return {
     updates: 0,
     interpolationAlpha: 0,
     acceptedDeltaSeconds: 0,
     droppedSeconds: 0,
   };
+}
+
+export class GameLoopDriver {
+  private readonly clock: FixedStepClock;
+  private readonly frameLoop: FrameLoop;
+  private lastAdvance: FixedStepAdvanceResult = emptyAdvance();
 
   public constructor(
     callbacks: GameLoopCallbacks,
@@ -61,6 +65,11 @@ export class GameLoopDriver {
 
   public resumeSimulation(): void {
     this.clock.resume();
+  }
+
+  public resetForNewRun(): void {
+    this.clock.resume();
+    this.lastAdvance = emptyAdvance();
   }
 
   public isRunning(): boolean {
