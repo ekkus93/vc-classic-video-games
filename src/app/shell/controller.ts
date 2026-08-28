@@ -18,7 +18,7 @@ import {
   type ShellInputContext,
   type ShellNavigationCommand,
 } from "../../engine/index.js";
-import type { ShellGameHost } from "./game-host.js";
+import type { GameLaunchPhase, ShellGameHost } from "./game-host.js";
 import {
   buildLauncherHighScores,
   type LauncherHighScores,
@@ -30,6 +30,7 @@ export type ShellScreen =
   | "game"
   | "settings"
   | "scores";
+export type ShellLaunchPhase = "idle" | GameLaunchPhase | "error";
 
 export interface GameSelection {
   readonly gameId: string;
@@ -48,6 +49,7 @@ export interface ShellState {
   readonly settings: GlobalSettings;
   readonly scores: readonly ScoreEntry[];
   readonly launcherHighScores: LauncherHighScores;
+  readonly launchPhase: ShellLaunchPhase;
   readonly busy: boolean;
   readonly status: string | null;
   readonly warning: string | null;
@@ -109,6 +111,17 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, Math.round(value * 20) / 20));
 }
 
+function launchStatus(title: string, phase: GameLaunchPhase): string {
+  switch (phase) {
+    case "loading":
+      return `Loading ${title}…`;
+    case "ready":
+      return `${title} ready`;
+    case "running":
+      return `${title} running`;
+  }
+}
+
 export class ShellController {
   private readonly settingsRepository: GlobalSettingsRepository;
   private readonly scoreRepository: ScoreRepository;
@@ -124,6 +137,7 @@ export class ShellController {
     settings: createDefaultGlobalSettings(),
     scores: Object.freeze([]),
     launcherHighScores: Object.freeze({}),
+    launchPhase: "idle",
     busy: false,
     status: null,
     warning: null,
@@ -235,6 +249,7 @@ export class ShellController {
         difficulty: game.defaultDifficulty,
       }),
       scores: Object.freeze([]),
+      launchPhase: "idle",
       status: null,
       error: null,
     });
@@ -273,7 +288,12 @@ export class ShellController {
       return;
     }
 
-    this.patch({ busy: true, error: null, status: `Loading ${game.title}…` });
+    this.patch({
+      busy: true,
+      launchPhase: "loading",
+      error: null,
+      status: launchStatus(game.title, "loading"),
+    });
     try {
       await this.options.gameHost.launch(
         this.options.registry.getModule(game.id),
@@ -282,18 +302,26 @@ export class ShellController {
           difficulty: selection.difficulty,
           seed: this.nextSeed++,
         },
+        (phase) => {
+          this.patch({
+            launchPhase: phase,
+            status: launchStatus(game.title, phase),
+          });
+        },
       );
       this.patch({
         screen: "game",
         gamePaused: false,
         pauseFocusIndex: 0,
+        launchPhase: "running",
         busy: false,
-        status: `${game.title} started`,
+        status: launchStatus(game.title, "running"),
       });
     } catch (error) {
       this.options.gameHost.exit();
       this.patch({
         busy: false,
+        launchPhase: "error",
         status: null,
         error: `Could not launch ${game.title}: ${describeError(error)}`,
       });
@@ -335,6 +363,7 @@ export class ShellController {
         busy: false,
         gamePaused: false,
         pauseFocusIndex: 0,
+        launchPhase: "running",
         status: "Game restarted",
       });
     } catch (error) {
@@ -352,6 +381,7 @@ export class ShellController {
       gamePaused: false,
       selection: null,
       scores: Object.freeze([]),
+      launchPhase: "idle",
       busy: false,
       status: "Returned to launcher",
       error: null,
