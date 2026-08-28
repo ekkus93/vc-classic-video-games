@@ -1,5 +1,11 @@
+import type { LogicalAction } from "../input/actions.js";
+import type { PointerInputService } from "../input/pointer.js";
+
 export interface InputService {
-  isHeld(player: number, action: string): boolean;
+  readonly pointer: PointerInputService;
+  isHeld(player: number, action: LogicalAction): boolean;
+  wasPressed(player: number, action: LogicalAction): boolean;
+  wasReleased(player: number, action: LogicalAction): boolean;
 }
 
 export interface AudioService {

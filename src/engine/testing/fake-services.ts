@@ -1,3 +1,6 @@
+import type { LogicalAction } from "../input/actions.js";
+import { StaticPointerInputService } from "../input/pointer.js";
+import { XorShift32 } from "../random/xorshift32.js";
 import type {
   AssetService,
   AudioService,
@@ -10,22 +13,44 @@ import type {
   ScoreService,
   ScoreSubmission,
 } from "../game/services.js";
-import { XorShift32 } from "../random/xorshift32.js";
 
 export class FakeInputService implements InputService {
   private readonly held = new Set<string>();
+  private readonly pressed = new Set<string>();
+  private readonly released = new Set<string>();
+  public readonly pointer = new StaticPointerInputService();
 
-  public setHeld(player: number, action: string, held: boolean): void {
+  public setHeld(player: number, action: LogicalAction, held: boolean): void {
     const key = `${player}:${action}`;
+    const wasHeld = this.held.has(key);
     if (held) {
       this.held.add(key);
+      if (!wasHeld) {
+        this.pressed.add(key);
+      }
     } else {
       this.held.delete(key);
+      if (wasHeld) {
+        this.released.add(key);
+      }
     }
   }
 
-  public isHeld(player: number, action: string): boolean {
+  public isHeld(player: number, action: LogicalAction): boolean {
     return this.held.has(`${player}:${action}`);
+  }
+
+  public wasPressed(player: number, action: LogicalAction): boolean {
+    return this.pressed.has(`${player}:${action}`);
+  }
+
+  public wasReleased(player: number, action: LogicalAction): boolean {
+    return this.released.has(`${player}:${action}`);
+  }
+
+  public clearEdges(): void {
+    this.pressed.clear();
+    this.released.clear();
   }
 }
 

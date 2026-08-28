@@ -49,6 +49,71 @@ export type {
   ScoreSubmission,
 } from "./game/services.js";
 export {
+  LOGICAL_ACTIONS,
+  isLogicalAction,
+  isPlayerNumber,
+} from "./input/actions.js";
+export type { LogicalAction, PlayerNumber } from "./input/actions.js";
+export { BrowserInputController } from "./input/browser.js";
+export type { BrowserInputControllerOptions } from "./input/browser.js";
+export {
+  BrowserGamepadSource,
+  GamepadAssignmentManager,
+  StandardGamepadInputProvider,
+  normalizeGamepadAxis,
+  standardGamepadActions,
+} from "./input/gamepad.js";
+export type {
+  GamepadAssignment,
+  GamepadButtonLike,
+  GamepadLike,
+  GamepadSource,
+  NormalizedGamepadAxes,
+} from "./input/gamepad.js";
+export { InputManager } from "./input/input-manager.js";
+export type { InputSettingsProvider } from "./input/input-manager.js";
+export {
+  BrowserKeyboardAdapter,
+  KeyboardInputProvider,
+} from "./input/keyboard.js";
+export type { KeyboardCapturePredicate } from "./input/keyboard.js";
+export {
+  cloneKeyboardMappings,
+  createDefaultKeyboardMappings,
+  findKeyboardMappingConflicts,
+  freezeKeyboardMappings,
+  keyboardCodesForAction,
+} from "./input/mappings.js";
+export type {
+  InputMappingConflict,
+  KeyboardBindingMap,
+  KeyboardMappings,
+} from "./input/mappings.js";
+export {
+  BrowserPointerAdapter,
+  PointerInputProvider,
+  StaticPointerInputService,
+} from "./input/pointer.js";
+export type { PointerInputService, PointerSnapshot } from "./input/pointer.js";
+export {
+  InputMappingConflictError,
+  InputSettingsController,
+  InputSettingsValidationError,
+  MemoryInputSettingsStore,
+  createDefaultInputSettings,
+  parseInputSettings,
+} from "./input/settings.js";
+export type {
+  InputSettings,
+  InputSettingsListener,
+  InputSettingsStore,
+} from "./input/settings.js";
+export { ShellInputRouter, moveMenuSelection } from "./input/shell-navigation.js";
+export type {
+  ShellInputContext,
+  ShellNavigationCommand,
+} from "./input/shell-navigation.js";
+export {
   add,
   dot,
   length,
@@ -66,9 +131,7 @@ export {
 } from "./math/collision.js";
 export type { Aabb, Circle } from "./math/collision.js";
 export { XorShift32 } from "./random/xorshift32.js";
-export {
-  CanvasGameRenderer,
-} from "./render/renderer.js";
+export { CanvasGameRenderer } from "./render/renderer.js";
 export type {
   HorizontalTextAlign,
   SpriteSourceRect,
@@ -80,25 +143,12 @@ export {
   presentFramebuffer,
 } from "./render/logical-framebuffer.js";
 export type { CanvasSurface } from "./render/logical-framebuffer.js";
-export {
-  calculateViewport,
-  physicalToLogical,
-} from "./render/viewport.js";
-export type {
-  LogicalPoint,
-  Size2D,
-  Viewport,
-} from "./render/viewport.js";
+export { calculateViewport, physicalToLogical } from "./render/viewport.js";
+export type { LogicalPoint, Size2D, Viewport } from "./render/viewport.js";
 export { SpriteAnimation } from "./render/sprite-animation.js";
 export type { SpriteAnimationOptions } from "./render/sprite-animation.js";
-export {
-  BrowserFrameScheduler,
-  FrameLoop,
-} from "./runtime/frame-loop.js";
-export type {
-  FrameCallback,
-  FrameScheduler,
-} from "./runtime/frame-loop.js";
+export { BrowserFrameScheduler, FrameLoop } from "./runtime/frame-loop.js";
+export type { FrameCallback, FrameScheduler } from "./runtime/frame-loop.js";
 export { FixedStepClock } from "./runtime/fixed-step.js";
 export type {
   FixedStepAdvanceResult,
