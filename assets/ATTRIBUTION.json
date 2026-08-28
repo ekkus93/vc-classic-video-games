@@ -20,6 +20,26 @@
     {
       "path": "src/games/space-rocks/audio/wave-clear.wav",
       "original": true
+    },
+    {
+      "path": "src/games/missile-defense/audio/launch.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/missile-defense/audio/blast.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/missile-defense/audio/intercept.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/missile-defense/audio/ground-hit.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/missile-defense/audio/wave-clear.wav",
+      "original": true
     }
   ]
 }

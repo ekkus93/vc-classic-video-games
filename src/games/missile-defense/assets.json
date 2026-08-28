@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "missile-defense.audio.launch",
+      "path": "audio/launch.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "missile-defense.audio.blast",
+      "path": "audio/blast.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "missile-defense.audio.intercept",
+      "path": "audio/intercept.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "missile-defense.audio.ground-hit",
+      "path": "audio/ground-hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "missile-defense.audio.wave-clear",
+      "path": "audio/wave-clear.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}

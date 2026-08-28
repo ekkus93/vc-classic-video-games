@@ -23,6 +23,10 @@ export const tests: readonly TestCase[] = [
         "canonical registry must surface the first playable game",
       );
       assert(
+        markup.includes("Missile Defense"),
+        "canonical registry must surface the P8 playable game",
+      );
+      assert(
         markup.includes("Available games"),
         "registered games must render through the launcher collection",
       );
