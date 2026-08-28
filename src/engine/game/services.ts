@@ -42,6 +42,7 @@ export interface GameStorageService {
 export interface RandomService {
   nextUint32(): number;
   nextFloat(): number;
+  reset(seed: number): void;
 }
 
 export interface GameClock {
