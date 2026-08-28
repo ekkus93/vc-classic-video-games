@@ -53,4 +53,22 @@ export const tests: readonly TestCase[] = [
       );
     },
   },
+  {
+    name: "P13-010 canonical registry composes Jungle Quest as a first-class playable peer",
+    run: () => {
+      const registry = createGameRegistry();
+      const metadataIds = registry.listMetadata().map((metadata) => metadata.id);
+      assert(
+        registry.size === GAME_MODULES.length,
+        "canonical composition must register every completed game module",
+      );
+      assert(registry.has("jungle-quest"), "Jungle Quest must be launcher-registered");
+      assert(registry.has("space-rocks"), "Space Rocks reference game must remain registered");
+      assert(
+        metadataIds.length === GAME_MODULES.length &&
+          metadataIds.every((id, index) => id === GAME_MODULES[index]?.metadata.id),
+        "registry metadata order must follow canonical module order deterministically",
+      );
+    },
+  },
 ];

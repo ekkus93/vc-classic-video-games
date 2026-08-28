@@ -2,6 +2,7 @@ import { GameRegistry, type GameModule } from "../engine/index.js";
 import { BARREL_CLIMBER_MODULE } from "./barrel-climber/module.js";
 import { BUG_BARRAGE_MODULE } from "./bug-barrage/module.js";
 import { DEEP_DIGGER_MODULE } from "./deep-digger/module.js";
+import { JUNGLE_QUEST_MODULE } from "./jungle-quest/module.js";
 import { MAZE_CHASE_MODULE } from "./maze-chase/module.js";
 import { MISSILE_DEFENSE_MODULE } from "./missile-defense/module.js";
 import { RIVER_HOPPER_MODULE } from "./river-hopper/module.js";
@@ -21,6 +22,7 @@ export const GAME_MODULES: readonly GameModule[] = Object.freeze([
   MAZE_CHASE_MODULE,
   BUG_BARRAGE_MODULE,
   MISSILE_DEFENSE_MODULE,
+  JUNGLE_QUEST_MODULE,
 ]);
 
 export function createGameRegistry(
