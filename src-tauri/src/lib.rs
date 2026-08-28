@@ -8,8 +8,8 @@ pub const APP_NAME: &str = "VC Classic Video Games";
 pub fn run() -> tauri::Result<()> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            commands::diagnostic_ping,
-            commands::platform_info,
+            commands::diagnostics::diagnostic_ping,
+            commands::platform::platform_info,
         ])
         .run(tauri::generate_context!())
 }

@@ -1,5 +1,2 @@
-mod diagnostics;
-mod platform;
-
-pub use diagnostics::diagnostic_ping;
-pub use platform::platform_info;
+pub(crate) mod diagnostics;
+pub(crate) mod platform;
