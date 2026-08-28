@@ -56,10 +56,30 @@ export class FakeInputService implements InputService {
 
 export class FakeAudioService implements AudioService {
   public readonly playedEffects: string[] = [];
+  public readonly playedLoops: string[] = [];
+  public readonly stopped: string[] = [];
   public stopAllCount = 0;
+  public pauseAllCount = 0;
+  public resumeAllCount = 0;
 
   public playEffect(assetId: string): void {
     this.playedEffects.push(assetId);
+  }
+
+  public playLoop(assetId: string): void {
+    this.playedLoops.push(assetId);
+  }
+
+  public stop(assetId: string): void {
+    this.stopped.push(assetId);
+  }
+
+  public pauseAll(): void {
+    this.pauseAllCount += 1;
+  }
+
+  public resumeAll(): void {
+    this.resumeAllCount += 1;
   }
 
   public stopAll(): void {
@@ -68,14 +88,24 @@ export class FakeAudioService implements AudioService {
 }
 
 export class FakeAssetService implements AssetService {
-  public constructor(private readonly assetIds = new Set<string>()) {}
+  private readonly values = new Map<string, unknown>();
 
-  public add(assetId: string): void {
-    this.assetIds.add(assetId);
+  public constructor(assetIds = new Set<string>()) {
+    for (const id of assetIds) {
+      this.values.set(id, true);
+    }
+  }
+
+  public add(assetId: string, value: unknown = true): void {
+    this.values.set(assetId, value);
   }
 
   public has(assetId: string): boolean {
-    return this.assetIds.has(assetId);
+    return this.values.has(assetId);
+  }
+
+  public get<T = unknown>(assetId: string): T | null {
+    return (this.values.get(assetId) as T | undefined) ?? null;
   }
 }
 
