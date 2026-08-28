@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { shouldInjectFailure } from "./failure-injection.js";
-import { ShellView } from "./shell/ShellView.js";
-import { createDefaultShellController } from "./shell/default-controller.js";
-import { moveFocusToShellSelection } from "./shell/focus-management.js";
-import { useShellInput } from "./shell/use-shell-input.js";
-import type { ShellController, ShellState } from "./shell/controller.js";
+import { CanvasGameRenderer } from "../engine/index.js";
 import {
   diagnosticPing,
   getPlatformInfo,
   type PlatformInfo,
 } from "../native/commands.js";
+import { shouldInjectFailure } from "./failure-injection.js";
+import { ShellView } from "./shell/ShellView.js";
+import { createDefaultShellRuntime } from "./shell/default-controller.js";
+import { moveFocusToShellSelection } from "./shell/focus-management.js";
+import { useShellInput } from "./shell/use-shell-input.js";
+import type { ShellController, ShellState } from "./shell/controller.js";
 
 type NativeStatus =
   | { readonly state: "loading" }
@@ -37,23 +38,69 @@ function renderFailureRequested(): boolean {
 }
 
 export function App({ controller }: AppProps = {}) {
-  const shell = useMemo(
-    () => controller ?? createDefaultShellController(),
+  const runtime = useMemo(
+    () => (controller === undefined ? createDefaultShellRuntime() : null),
     [controller],
   );
+  const shell = controller ?? runtime?.controller;
+  if (shell === undefined) {
+    throw new Error("Shell runtime could not be created");
+  }
+
   const [shellState, setShellState] = useState<ShellState>(shell.snapshot);
   const [nativeStatus, setNativeStatus] = useState<NativeStatus>({
     state: "loading",
   });
   const shellSurface = useRef<HTMLElement | null>(null);
 
-  useShellInput(shell, shellSurface);
+  useShellInput(shell, shellSurface, runtime?.gameInput);
 
   useEffect(() => shell.subscribe(setShellState), [shell]);
 
   useEffect(() => {
     void shell.initialize();
   }, [shell]);
+
+  useEffect(() => {
+    const gameHost = runtime?.gameHost;
+    if (gameHost === undefined) {
+      return undefined;
+    }
+    if (shellState.screen !== "game") {
+      gameHost.setRenderer(null);
+      return undefined;
+    }
+
+    const game = shell.selectedGame;
+    const canvas = shellSurface.current?.querySelector<HTMLCanvasElement>(
+      "canvas.game-viewport",
+    );
+    const context = canvas?.getContext("2d") ?? null;
+    if (game === null || canvas === undefined || context === null) {
+      gameHost.setRenderer(null);
+      return undefined;
+    }
+
+    canvas.width = game.logicalWidth;
+    canvas.height = game.logicalHeight;
+    const renderer = new CanvasGameRenderer(
+      context,
+      game.logicalWidth,
+      game.logicalHeight,
+    );
+    gameHost.setRenderer(renderer);
+
+    return () => {
+      gameHost.setRenderer(null);
+    };
+  }, [runtime, shell, shellState.screen, shellState.selection?.gameId]);
+
+  useEffect(
+    () => () => {
+      runtime?.gameHost.exit();
+    },
+    [runtime],
+  );
 
   useEffect(() => {
     const surface = shellSurface.current;
