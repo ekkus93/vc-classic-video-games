@@ -9,6 +9,10 @@ This repository pins its primary development toolchain so a clean checkout does 
 | Node.js | 24.20.0 LTS | Exact project version; `.nvmrc` is authoritative for Node version managers. |
 | npm | 11.19.0 | Exact package manager version recorded in `package.json`. |
 | TypeScript | 5.9.2 | Exact dev dependency in `package-lock.json`. |
+| Vite | 8.2.2 | Exact frontend build/dev dependency in `package-lock.json`. |
+| Tauri CLI | 2.11.4 | Exact npm dev dependency used for project commands. |
+| Tauri Rust crate | 2.11.5 | Exact Cargo dependency for the application runtime. |
+| tauri-build | 2.6.3 | Exact Cargo build dependency paired with the Tauri runtime. |
 | Rust | 1.98.0 | Exact toolchain selected by `rust-toolchain.toml`. |
 | Cargo | bundled with Rust 1.98.0 | Use the Cargo supplied by the pinned Rust toolchain. |
 | rustfmt | Rust 1.98.0 component | Installed by `rustup` from `rust-toolchain.toml`. |
@@ -44,7 +48,7 @@ cargo --version
 cargo fetch --locked
 ```
 
-The P0 Rust crate deliberately has no external dependencies. P1 adds Tauri 2 dependencies and regenerates the committed application lockfile.
+Tauri 2 development on Linux additionally requires the system packages documented in `docs/DEVELOPMENT.md`.
 
 ## Lockfile policy
 

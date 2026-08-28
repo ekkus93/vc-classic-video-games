@@ -1,7 +1,12 @@
 #![forbid(unsafe_code)]
 
-/// Product name shared by the native scaffold.
 pub const APP_NAME: &str = "VC Classic Video Games";
+
+pub fn run() {
+    tauri::Builder::default()
+        .run(tauri::generate_context!())
+        .expect("failed to run VC Classic Video Games");
+}
 
 #[cfg(test)]
 mod tests {

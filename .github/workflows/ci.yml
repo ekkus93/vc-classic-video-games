@@ -59,6 +59,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install Linux native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
       - name: Install pinned Rust toolchain
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy --component rustfmt
@@ -75,3 +85,51 @@ jobs:
 
       - name: Run Rust tests
         run: cargo test --workspace --locked
+
+  tauri-shell:
+    name: Tauri shell
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Linux native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            xvfb
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.98.0 --profile minimal
+
+      - name: Compile native Tauri application
+        run: npm run tauri:build -- --debug --no-bundle
+
+      - name: Smoke-test tauri dev under Xvfb
+        env:
+          WEBKIT_DISABLE_COMPOSITING_MODE: "1"
+        run: |
+          set +e
+          timeout 30s xvfb-run -a npm run tauri:dev -- --no-watch > tauri-dev.log 2>&1
+          status=$?
+          set -e
+          cat tauri-dev.log
+          test "$status" -eq 124
+          grep -F "Running" tauri-dev.log
+          grep -F "target/debug/vc-classic-video-games" tauri-dev.log

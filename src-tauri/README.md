@@ -1,5 +1,5 @@
 # Native/Tauri boundary
 
-`src-tauri` owns the Rust crate used for native application integration.
+`src-tauri` owns the Rust/native application boundary. Tauri 2 creates the desktop window and serves the bundled Vite frontend through the system webview.
 
-P0 contains only a dependency-free Rust scaffold so formatting, Clippy, tests, and the pinned Rust toolchain are continuously validated. P1 adds Tauri 2 while preserving the rule that per-frame game work stays in the webview.
+Native commands and platform integrations belong here. Real-time game simulation, rendering, input polling, and audio must remain in the webview; game code must never add per-frame Tauri IPC.
