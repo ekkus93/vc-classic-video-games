@@ -3718,6 +3718,7 @@ dependencies = [
 name = "vc-classic-video-games"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "tauri",
  "tauri-build",
 ]
