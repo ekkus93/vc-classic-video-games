@@ -84,6 +84,7 @@ select {
   color: #a1a1aa;
   font-size: 0.8rem;
   letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .launcher__diagnostics {

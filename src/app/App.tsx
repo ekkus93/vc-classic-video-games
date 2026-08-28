@@ -71,7 +71,7 @@ export function App() {
     <main className="app-shell">
       <section className="launcher" aria-labelledby="launcher-title">
         <header className="launcher__header">
-          <p className="launcher__eyebrow">VC CLASSIC VIDEO GAMES</p>
+          <p className="launcher__eyebrow">VC Classic Video Games</p>
           <h1 id="launcher-title">Retro Arcade</h1>
           <p>
             One controller-first arcade shell. Game modules plug into the
