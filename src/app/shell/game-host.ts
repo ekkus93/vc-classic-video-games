@@ -68,6 +68,7 @@ export class LifecycleGameHost implements ShellGameHost {
     reportPhase("loading");
 
     const services = await this.createServices(module, options);
+    services.rng.reset(options.seed);
     const runtime = this.createRuntime(services);
 
     this.runtime = runtime;
@@ -109,10 +110,11 @@ export class LifecycleGameHost implements ShellGameHost {
 
     // A shell restart is deliberately stronger than GameInstance.reset(): the
     // old instance is destroyed, all game-owned audio is stopped by the runtime,
-    // transient device state and fixed-step timing are cleared, and module.create
-    // is invoked again so entities and simulation timers cannot leak across runs.
+    // transient device state, seeded RNG, and fixed-step timing are cleared, and
+    // module.create is invoked again so entities/simulation timers cannot leak.
     runtime.destroy();
     services.input.reset();
+    services.rng.reset(options.seed);
     this.timing.resetForNewRun();
 
     await runtime.load(module);
