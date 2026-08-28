@@ -459,6 +459,7 @@ export class DeepDiggerSimulation {
       if (rock.state === "resting") {
         continue;
       }
+      let remainingSeconds = dtSeconds;
       if (rock.state === "supported") {
         const below = stepCell(rock.cell, "down");
         if (
@@ -479,10 +480,12 @@ export class DeepDiggerSimulation {
         continue;
       }
       if (rock.state === "shaking") {
-        rock.shakeRemainingSeconds -= dtSeconds;
-        if (rock.shakeRemainingSeconds > 0) {
+        if (remainingSeconds < rock.shakeRemainingSeconds) {
+          rock.shakeRemainingSeconds -= remainingSeconds;
           continue;
         }
+        remainingSeconds -= rock.shakeRemainingSeconds;
+        rock.shakeRemainingSeconds = 0;
         rock.state = "falling";
         rock.fallStepRemainingSeconds = 0;
         this.terrainValue.carve(rock.cell);
@@ -498,7 +501,7 @@ export class DeepDiggerSimulation {
         continue;
       }
 
-      rock.fallStepRemainingSeconds -= dtSeconds;
+      rock.fallStepRemainingSeconds -= remainingSeconds;
       let steps = 0;
       while (rock.fallStepRemainingSeconds <= 0 && steps < this.level.rows) {
         steps += 1;
