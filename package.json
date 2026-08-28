@@ -1,0 +1,32 @@
+{
+  "name": "vc-classic-video-games",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Controller-first Tauri 2 collection of original retro arcade-style games.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": "24.20.0",
+    "npm": "11.19.0"
+  },
+  "packageManager": "npm@11.19.0",
+  "scripts": {
+    "clean": "node scripts/clean.mjs dist .test-dist",
+    "format": "node scripts/format.mjs --write && cargo fmt --all",
+    "format:check": "npm run format:check:frontend && npm run format:check:rust",
+    "format:check:frontend": "node scripts/format.mjs --check",
+    "format:check:rust": "cargo fmt --all -- --check",
+    "lint": "npm run lint:frontend && npm run lint:rust",
+    "lint:frontend": "node scripts/lint.mjs",
+    "lint:rust": "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run test:frontend && npm run test:rust",
+    "test:frontend": "node scripts/test.mjs",
+    "test:rust": "cargo test --workspace --locked",
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && node scripts/dev-server.mjs"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
+  }
+}

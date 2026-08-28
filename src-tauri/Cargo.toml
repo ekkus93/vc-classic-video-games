@@ -1,0 +1,10 @@
+[package]
+name = "vc-classic-video-games"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "vc_classic_video_games"
+path = "src/lib.rs"
