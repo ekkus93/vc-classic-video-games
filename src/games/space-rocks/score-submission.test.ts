@@ -1,6 +1,12 @@
+import type { ScoreService } from "../../engine/index.js";
 import { FakeScoreService } from "../../engine/testing/fake-services.js";
 import { assert, type TestCase } from "../../test/harness.js";
 import { SpaceRocksScoreCommitter } from "./score-submission.js";
+
+async function flushPromises(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 export const tests: readonly TestCase[] = [
   {
@@ -39,6 +45,30 @@ export const tests: readonly TestCase[] = [
         Number(scores.submissions.length) === 2,
         "a fresh run may submit its own terminal score",
       );
+    },
+  },
+  {
+    name: "P7-007 rejected terminal score persistence is contained without duplicate retry",
+    run: async () => {
+      let submitCalls = 0;
+      let reported: unknown = null;
+      const failure = new Error("score store unavailable");
+      const scores: ScoreService = {
+        submit: () => {
+          submitCalls += 1;
+          return Promise.reject(failure);
+        },
+      };
+      const committer = new SpaceRocksScoreCommitter(scores, (error) => {
+        reported = error;
+      });
+
+      committer.handle([{ type: "game-over", score: 99 }]);
+      committer.handle([{ type: "game-over", score: 100 }]);
+      await flushPromises();
+
+      assert(submitCalls === 1, "failed persistence must not trigger duplicate submission");
+      assert(reported === failure, "persistence rejection must be contained and reported");
     },
   },
 ];
