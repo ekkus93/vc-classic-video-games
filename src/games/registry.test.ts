@@ -37,4 +37,20 @@ export const tests: readonly TestCase[] = [
       );
     },
   },
+  {
+    name: "P11 canonical game registry composes Bug Barrage as a first-class playable peer",
+    run: () => {
+      const registry = createGameRegistry();
+      assert(
+        registry.size === GAME_MODULES.length,
+        "canonical composition must register every completed game module",
+      );
+      assert(registry.has("bug-barrage"), "Bug Barrage must be launcher-registered");
+      assert(registry.has("space-rocks"), "Space Rocks reference game must remain registered");
+      assert(
+        registry.getModule("bug-barrage").resolveAssetUrl !== undefined,
+        "Bug Barrage asset resolver must survive registry validation",
+      );
+    },
+  },
 ];

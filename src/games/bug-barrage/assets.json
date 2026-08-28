@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "bug-barrage.audio.spark",
+      "path": "audio/spark.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "bug-barrage.audio.segment",
+      "path": "audio/segment.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "bug-barrage.audio.pod",
+      "path": "audio/pod.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "bug-barrage.audio.hit",
+      "path": "audio/hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "bug-barrage.audio.wave",
+      "path": "audio/wave.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}
