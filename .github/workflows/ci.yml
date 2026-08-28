@@ -53,11 +53,23 @@ jobs:
   rust:
     name: Rust quality
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend context for Tauri macros
+        run: npm run build
 
       - name: Install Linux native dependencies
         run: |
