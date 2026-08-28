@@ -25,7 +25,17 @@ export interface PlatformInfo {
   readonly appVersion: string;
 }
 
-function invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+export function hasNativeBridge(): boolean {
+  return typeof window !== "undefined" && window.__TAURI__?.core !== undefined;
+}
+
+export function invokeNative<T>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Tauri native bridge is unavailable"));
+  }
   const core = window.__TAURI__?.core;
   if (core === undefined) {
     return Promise.reject(new Error("Tauri native bridge is unavailable"));
@@ -36,15 +46,19 @@ function invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> 
 export async function diagnosticPing(
   request: DiagnosticPingRequest,
 ): Promise<DiagnosticPingResponse> {
-  const [echo, appName] = await invoke<[string, string]>("diagnostic_ping", {
+  const [echo, appName] = await invokeNative<[string, string]>("diagnostic_ping", {
     message: request.message,
   });
   return { echo, appName };
 }
 
 export async function getPlatformInfo(): Promise<PlatformInfo> {
-  const [os, arch, appVersion] = await invoke<[string, string, string]>(
+  const [os, arch, appVersion] = await invokeNative<[string, string, string]>(
     "platform_info",
   );
   return { os, arch, appVersion };
+}
+
+export function setApplicationFullscreen(fullscreen: boolean): Promise<void> {
+  return invokeNative<void>("set_fullscreen", { fullscreen });
 }
