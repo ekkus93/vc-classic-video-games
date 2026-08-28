@@ -35,38 +35,38 @@ Color is not the sole indicator of state: warning and error messages include the
 
 ## A. Startup and launcher
 
-- [ ] On startup, a clearly visible focus/selection outline is present on the current launcher action. The focused control is not indicated by color alone.
-- [ ] Press `Tab` and `Shift+Tab`. Browser focus remains visibly identifiable and never disappears behind an overlay.
-- [ ] With the current empty release-one registry, focus `Settings & controls` and press `Enter` or `Space`. The settings screen opens without pointer input.
-- [ ] Press `Escape`/Back from settings. The launcher becomes interactive immediately and focus returns to a current launcher control rather than a removed element.
+- [x] On startup, a clearly visible focus/selection outline is present on the current launcher action. The focused control is not indicated by color alone.
+- [x] Press `Tab` and `Shift+Tab`. Browser focus remains visibly identifiable and never disappears behind an overlay.
+- [x] With the current empty release-one registry, focus `Settings & controls` and press `Enter` or `Space`. The settings screen opens without pointer input.
+- [x] Press `Escape`/Back from settings. The launcher becomes interactive immediately and focus returns to a current launcher control rather than a removed element.
 
 ## B. Settings and controls
 
-- [ ] Navigate every settings group using only the keyboard. Every native control shows a visible focus indicator.
-- [ ] Change Master, Music, and Effects volume using keyboard arrows. The numeric percentage changes with the control.
-- [ ] Toggle mute, fullscreen, reduced effects, and pixel smoothing with `Space`. Each option has a textual label; state is not represented by color alone.
-- [ ] Focus a keyboard binding and activate it. `Press a key…` is displayed and the binding exposes a pressed/capture state.
-- [ ] Enter a valid replacement key. The new key name is displayed without pointer input.
-- [ ] Attempt a conflicting binding. The operation is rejected and an `Error:` message is visibly displayed.
-- [ ] Focus `Dismiss message` and activate it. The message disappears without changing the current screen.
-- [ ] Activate `Reset controls to defaults`; confirm the default binding names return.
-- [ ] Activate `Done`; focus returns to the originating shell screen.
+- [x] Navigate every settings group using only the keyboard. Every native control shows a visible focus indicator.
+- [x] Change Master, Music, and Effects volume using keyboard arrows. The numeric percentage changes with the control.
+- [x] Toggle mute, fullscreen, reduced effects, and pixel smoothing with `Space`. Each option has a textual label; state is not represented by color alone.
+- [x] Focus a keyboard binding and activate it. `Press a key…` is displayed and the binding exposes a pressed/capture state.
+- [x] Enter a valid replacement key. The new key name is displayed without pointer input.
+- [x] Attempt a conflicting binding. The operation is rejected and an `Error:` message is visibly displayed.
+- [x] Focus `Dismiss message` and activate it. The message disappears without changing the current screen.
+- [x] Activate `Reset controls to defaults`; confirm the default binding names return.
+- [x] Activate `Done`; focus returns to the originating shell screen.
 
 ## C. Status, warning, and error announcements
 
-- [ ] Routine status feedback is visible as text and is represented by a polite status live region.
-- [ ] Warning feedback contains the literal `Warning:` prefix and does not rely on its yellow border alone.
-- [ ] Error feedback contains the literal `Error:` prefix and does not rely on its red border alone.
-- [ ] A message can be dismissed entirely by keyboard.
-- [ ] New status/error content does not steal focus away from the control the user is operating.
+- [x] Routine status feedback is visible as text and is represented by a polite status live region.
+- [x] Warning feedback contains the literal `Warning:` prefix and does not rely on its yellow border alone.
+- [x] Error feedback contains the literal `Error:` prefix and does not rely on its red border alone.
+- [x] A message can be dismissed entirely by keyboard.
+- [x] New status/error content does not steal focus away from the control the user is operating.
 
 ## D. Keyboard focus integrity
 
-- [ ] Arrow/WASD shell navigation moves both the shell selection and DOM focus to the same interactive control.
-- [ ] When the selected shell item is a label containing a range/select/checkbox, DOM focus lands on the nested native control.
-- [ ] `Tab` navigation remains available; the global game-input adapter does not capture `Tab` or `Shift+Tab`.
-- [ ] Changing screens never leaves focus on an element that was removed from the DOM.
-- [ ] No operation in sections A-D requires a pointer.
+- [x] Arrow/WASD shell navigation moves both the shell selection and DOM focus to the same interactive control.
+- [x] When the selected shell item is a label containing a range/select/checkbox, DOM focus lands on the nested native control.
+- [x] `Tab` navigation remains available; the global game-input adapter does not capture `Tab` or `Shift+Tab`.
+- [x] Changing screens never leaves focus on an element that was removed from the DOM.
+- [x] No operation in sections A-D requires a pointer.
 
 ## E. Game-dependent shell route — repeat when P7 registers Space Rocks
 
@@ -82,9 +82,9 @@ These rows cannot be executed against the production P6 registry because it inte
 
 For a release candidate, record the date, commit SHA, environment, tester, and any failures below. Do not mark P6-010/release accessibility accepted if a required row for the currently available product surface fails.
 
-- Date: _not yet recorded_
-- Commit: _not yet recorded_
-- Environment: _not yet recorded_
-- Tester: _not yet recorded_
-- Result: _not yet recorded_
-- Notes: _none_
+- Date: 2026-08-28
+- Commit: `69b3d4c0bccd166cbfec717925a7be412c447631`
+- Environment: Linux/x86_64 native Tauri development app via `npm run tauri:dev`; Node 24.20.0; npm 11.19.0
+- Tester: user manual validation
+- Result: **PASS** for the currently available P6 product surface (sections A-D)
+- Notes: CI run `33195691565` passed all frontend, Rust, and Tauri jobs. Section E remains intentionally deferred until P7 registers Space Rocks and must be repeated then.
