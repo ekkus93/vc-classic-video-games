@@ -1,11 +1,17 @@
 #![forbid(unsafe_code)]
 
+mod commands;
+
 pub const APP_NAME: &str = "VC Classic Video Games";
 
-pub fn run() {
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() -> tauri::Result<()> {
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![
+            commands::diagnostic_ping,
+            commands::platform_info,
+        ])
         .run(tauri::generate_context!())
-        .expect("failed to run VC Classic Video Games");
 }
 
 #[cfg(test)]

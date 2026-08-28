@@ -78,3 +78,52 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+.launcher__eyebrow {
+  margin: 0 0 0.5rem;
+  color: #a1a1aa;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+}
+
+.launcher__diagnostics {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+}
+
+.launcher__diagnostics div {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.launcher__diagnostics dt {
+  color: #a1a1aa;
+}
+
+.launcher__diagnostics dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fatal-startup {
+  width: min(48rem, 100%);
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.fatal-startup button {
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border: 1px solid #a1a1aa;
+  background: #18181b;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fatal-startup button:focus-visible {
+  outline: 3px solid #f4f4f5;
+  outline-offset: 3px;
+}

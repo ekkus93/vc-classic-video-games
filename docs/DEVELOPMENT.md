@@ -115,3 +115,24 @@ Games must not import another game's internals. Shared behavior belongs in the e
 ## CI
 
 `.github/workflows/ci.yml` runs bounded frontend, Rust, and native Tauri checks on pushes to `master` and pull requests. CI uses lockfile-based installs and the pinned toolchains.
+
+## Native diagnostics and failure recovery
+
+The launcher calls two narrowly scoped Rust commands at startup: `diagnostic_ping` and `platform_info`. When running only the browser frontend, the launcher degrades to a browser-preview status instead of treating the missing Tauri bridge as fatal.
+
+Development builds provide explicit recovery probes:
+
+- `?injectStartupFailure=1` exercises the startup fallback view.
+- `?injectRenderFailure=1` exercises the React error boundary.
+
+The probes are ignored in production builds.
+
+The native security model is documented in `docs/TAURI_SECURITY.md`.
+
+Application identity consistency can be checked without compiling Tauri:
+
+```bash
+npm run metadata:check
+```
+
+CI additionally smoke-launches both the `tauri build --debug --no-bundle` binary (release/bundled CSP path) and `tauri dev` (development CSP path) under Xvfb.

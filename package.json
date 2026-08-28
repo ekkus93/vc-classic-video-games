@@ -18,6 +18,7 @@
     "format:check:rust": "cargo fmt --all -- --check",
     "lint": "npm run lint:frontend && npm run lint:rust",
     "lint:frontend": "node scripts/lint.mjs",
+    "metadata:check": "node scripts/check-project-metadata.mjs",
     "lint:rust": "cargo clippy --workspace --all-targets --locked -- -D warnings",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run test:frontend && npm run test:rust",
