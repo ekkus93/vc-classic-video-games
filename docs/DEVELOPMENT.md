@@ -2,9 +2,22 @@
 
 ## Prerequisites
 
-Use the exact versions documented in `docs/TOOLCHAIN.md`.
+Use the exact Node/npm/Rust versions documented in `docs/TOOLCHAIN.md`.
 
-P0 has no Tauri/WebKitGTK dependency yet. Debian/Ubuntu native system packages will be documented when the Tauri 2 shell is introduced in P1.
+On Debian/Ubuntu, install the native packages required by Tauri 2:
+
+```bash
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev \
+  build-essential \
+  curl \
+  wget \
+  file \
+  libxdo-dev \
+  libssl-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev
+```
 
 ## Install
 
@@ -15,15 +28,21 @@ npm ci
 cargo fetch --locked
 ```
 
-## Run the current frontend scaffold
+## Run the Tauri application
+
+```bash
+npm run tauri:dev
+```
+
+This starts the Vite development server and opens the Tauri desktop window.
+
+To run only the browser frontend during UI work:
 
 ```bash
 npm run dev
 ```
 
 Then open `http://127.0.0.1:1420`.
-
-P0 intentionally uses a dependency-light browser scaffold. P1 replaces the development entry point with the Tauri 2/Vite application.
 
 ## Quality commands
 
@@ -75,6 +94,12 @@ Production frontend build:
 npm run build
 ```
 
+Compile the native Tauri application without creating a package:
+
+```bash
+npm run tauri:build -- --no-bundle
+```
+
 Run all format, lint, or test checks with `npm run format:check`, `npm run lint`, and `npm test` respectively when both Node and Rust toolchains are installed.
 
 ## Source boundaries
@@ -89,4 +114,4 @@ Games must not import another game's internals. Shared behavior belongs in the e
 
 ## CI
 
-`.github/workflows/ci.yml` runs bounded frontend and Rust jobs on pushes to `master` and pull requests. CI uses lockfile-based installs and the pinned toolchains.
+`.github/workflows/ci.yml` runs bounded frontend and Rust jobs on pushes to `master` and pull requests. CI uses lockfile-based installs and the pinned toolchains. Tauri-specific compile and launch checks are added as the application shell matures in P1.

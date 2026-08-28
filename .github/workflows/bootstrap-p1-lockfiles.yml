@@ -1,0 +1,49 @@
+name: Bootstrap P1 lockfiles
+
+on:
+  push:
+    branches:
+      - ralph/p1-001-lockfiles
+
+permissions:
+  contents: write
+
+jobs:
+  lockfiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: ralph/p1-001-lockfiles
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Verify npm version
+        run: test "$(npm --version)" = "11.19.0"
+
+      - name: Generate npm lockfile
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.98.0 --profile minimal
+
+      - name: Generate Cargo lockfile
+        run: cargo generate-lockfile
+
+      - name: Commit generated lockfiles
+        run: |
+          if git diff --quiet -- package-lock.json Cargo.lock; then
+            echo "Lockfiles already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json Cargo.lock
+          git commit -m "build: generate P1 lockfiles"
+          git push origin HEAD:ralph/p1-001-lockfiles

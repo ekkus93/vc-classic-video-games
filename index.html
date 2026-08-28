@@ -6,26 +6,38 @@
     <meta name="color-scheme" content="dark light" />
     <title>VC Classic Video Games</title>
     <style>
-      html {
-        font-family: system-ui, sans-serif;
+      :root {
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        color: #f4f4f5;
+        background: #09090b;
       }
 
       body {
         margin: 0;
+        min-width: 320px;
         min-height: 100vh;
         display: grid;
         place-items: center;
       }
 
       #app {
-        max-width: 42rem;
+        width: min(42rem, calc(100% - 3rem));
+      }
+
+      .shell-status {
+        border: 1px solid #52525b;
         padding: 2rem;
         text-align: center;
+      }
+
+      .shell-status p {
+        color: #a1a1aa;
+        line-height: 1.6;
       }
     </style>
   </head>
   <body>
     <main id="app"></main>
-    <script type="module" src="./app/main.js"></script>
+    <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>

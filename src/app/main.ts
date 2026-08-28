@@ -6,11 +6,17 @@ if (mount === null) {
   throw new Error("Application mount element #app is missing");
 }
 
+const status = document.createElement("section");
+status.className = "shell-status";
+status.setAttribute("aria-labelledby", "shell-title");
+
 const heading = document.createElement("h1");
+heading.id = "shell-title";
 heading.textContent = "VC Classic Video Games";
 
 const statusParagraph = document.createElement("p");
 statusParagraph.textContent =
-  "Engineering foundation is ready. The Tauri 2 launcher shell is the next phase.";
+  "Tauri 2 application shell is running. The launcher UI is the next milestone.";
 
-mount.replaceChildren(heading, statusParagraph);
+status.append(heading, statusParagraph);
+mount.replaceChildren(status);
