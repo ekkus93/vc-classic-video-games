@@ -20,6 +20,26 @@
     {
       "path": "src/games/space-rocks/audio/wave-clear.wav",
       "original": true
+    },
+    {
+      "path": "src/games/bug-barrage/audio/spark.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/bug-barrage/audio/segment.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/bug-barrage/audio/pod.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/bug-barrage/audio/hit.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/bug-barrage/audio/wave.wav",
+      "original": true
     }
   ]
 }

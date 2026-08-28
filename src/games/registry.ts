@@ -1,4 +1,5 @@
 import { GameRegistry, type GameModule } from "../engine/index.js";
+import { BUG_BARRAGE_MODULE } from "./bug-barrage/module.js";
 import { SPACE_ROCKS_MODULE } from "./space-rocks/module.js";
 
 /**
@@ -7,6 +8,7 @@ import { SPACE_ROCKS_MODULE } from "./space-rocks/module.js";
  */
 export const GAME_MODULES: readonly GameModule[] = Object.freeze([
   SPACE_ROCKS_MODULE,
+  BUG_BARRAGE_MODULE,
 ]);
 
 export function createGameRegistry(
