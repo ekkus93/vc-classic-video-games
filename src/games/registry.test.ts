@@ -58,6 +58,9 @@ export const tests: readonly TestCase[] = [
     run: () => {
       const registry = createGameRegistry();
       const metadataIds = registry.listMetadata().map((metadata) => metadata.id);
+      const expectedMetadataIds = [...GAME_MODULES]
+        .sort((left, right) => left.metadata.title.localeCompare(right.metadata.title))
+        .map((module) => module.metadata.id);
       assert(
         registry.size === GAME_MODULES.length,
         "canonical composition must register every completed game module",
@@ -65,9 +68,9 @@ export const tests: readonly TestCase[] = [
       assert(registry.has("jungle-quest"), "Jungle Quest must be launcher-registered");
       assert(registry.has("space-rocks"), "Space Rocks reference game must remain registered");
       assert(
-        metadataIds.length === GAME_MODULES.length &&
-          metadataIds.every((id, index) => id === GAME_MODULES[index]?.metadata.id),
-        "registry metadata order must follow canonical module order deterministically",
+        metadataIds.length === expectedMetadataIds.length &&
+          metadataIds.every((id, index) => id === expectedMetadataIds[index]),
+        "registry metadata order must remain deterministic by game title",
       );
     },
   },
