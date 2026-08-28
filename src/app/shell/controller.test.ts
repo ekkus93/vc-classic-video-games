@@ -81,16 +81,23 @@ function createController(
   host = new FakeGameHost(),
   fullscreen?: { setFullscreen(enabled: boolean): Promise<void> },
 ): { controller: ShellController; host: FakeGameHost; documents: MemoryJsonDocumentStore } {
+  const common = {
+    registry: new GameRegistry([gameModule()]),
+    documents,
+    gameHost: host,
+  };
   return {
-    controller: new ShellController({
-      registry: new GameRegistry([gameModule()]),
-      documents,
-      gameHost: host,
-      fullscreen,
-    }),
+    controller:
+      fullscreen === undefined
+        ? new ShellController(common)
+        : new ShellController({ ...common, fullscreen }),
     host,
     documents,
   };
+}
+
+function assertScreen(controller: ShellController, expected: string, message: string): void {
+  assert(controller.snapshot.screen === expected, message);
 }
 
 export const tests: readonly TestCase[] = [
@@ -101,7 +108,7 @@ export const tests: readonly TestCase[] = [
       assert(controller.games.length === 1, "one registered game must be visible");
       assert(controller.games[0]?.title === "Space Test", "metadata title must be exposed");
       controller.chooseGame("space-test");
-      assert(controller.snapshot.screen === "pre-game", "selection must open pre-game");
+      assertScreen(controller, "pre-game", "selection must open pre-game");
       assert(controller.snapshot.selection?.players === 1, "default player count must come from metadata");
       assert(controller.snapshot.selection?.difficulty === "easy", "default difficulty must come from metadata");
     },
@@ -111,9 +118,9 @@ export const tests: readonly TestCase[] = [
     run: async () => {
       const { controller, host } = createController();
       await controller.handleCommand("activate");
-      assert(controller.snapshot.screen === "pre-game", "launcher activate must open pre-game");
+      assertScreen(controller, "pre-game", "launcher activate must open pre-game");
       await controller.handleCommand("activate");
-      assert(controller.snapshot.screen === "game", "pre-game activate must launch");
+      assertScreen(controller, "game", "pre-game activate must launch");
       assert(host.launches.length === 1, "host must receive one launch");
       await controller.handleCommand("pause");
       assert(controller.snapshot.gamePaused, "pause command must open pause state");
@@ -124,7 +131,7 @@ export const tests: readonly TestCase[] = [
         await controller.handleCommand("down");
       }
       await controller.handleCommand("activate");
-      assert(controller.snapshot.screen === "launcher", "pause menu must return to launcher");
+      assertScreen(controller, "launcher", "pause menu must return to launcher");
       assert(host.exitCount >= 1, "exit must release game host ownership");
     },
   },
@@ -137,7 +144,7 @@ export const tests: readonly TestCase[] = [
       controller.pauseGame();
       await controller.restartGame();
       assert(host.restartCount === 1, "restart must be delegated once");
-      assert(controller.snapshot.screen === "game", "restart must stay in game");
+      assertScreen(controller, "game", "restart must stay in game");
       assert(!controller.snapshot.gamePaused, "restart must resume simulation state");
     },
   },
@@ -149,7 +156,7 @@ export const tests: readonly TestCase[] = [
       const { controller } = createController(new MemoryJsonDocumentStore(), host);
       controller.chooseGame("space-test");
       await controller.launchSelected();
-      assert(controller.snapshot.screen === "pre-game", "failed launch must remain recoverable");
+      assertScreen(controller, "pre-game", "failed launch must remain recoverable");
       assert(controller.snapshot.error?.includes("injected launch failure") === true, "failure must be visible");
     },
   },
