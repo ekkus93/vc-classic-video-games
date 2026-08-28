@@ -19,6 +19,10 @@ import {
   type ShellNavigationCommand,
 } from "../../engine/index.js";
 import type { ShellGameHost } from "./game-host.js";
+import {
+  buildLauncherHighScores,
+  type LauncherHighScores,
+} from "./launcher-scores.js";
 
 export type ShellScreen =
   | "launcher"
@@ -43,6 +47,7 @@ export interface ShellState {
   readonly gamePaused: boolean;
   readonly settings: GlobalSettings;
   readonly scores: readonly ScoreEntry[];
+  readonly launcherHighScores: LauncherHighScores;
   readonly busy: boolean;
   readonly status: string | null;
   readonly warning: string | null;
@@ -118,6 +123,7 @@ export class ShellController {
     gamePaused: false,
     settings: createDefaultGlobalSettings(),
     scores: Object.freeze([]),
+    launcherHighScores: Object.freeze({}),
     busy: false,
     status: null,
     warning: null,
@@ -189,6 +195,22 @@ export class ShellController {
     } catch (error) {
       this.patch({
         error: `Settings could not be initialized: ${describeError(error)}`,
+      });
+    }
+
+    await this.refreshLauncherHighScores();
+  }
+
+  public async refreshLauncherHighScores(): Promise<void> {
+    try {
+      const document = await this.scoreRepository.load();
+      this.patch({
+        launcherHighScores: buildLauncherHighScores(this.games, document.entries),
+      });
+    } catch (error) {
+      this.patch({
+        launcherHighScores: buildLauncherHighScores(this.games, []),
+        warning: `Launcher high scores could not be loaded: ${describeError(error)}`,
       });
     }
   }
@@ -334,6 +356,7 @@ export class ShellController {
       status: "Returned to launcher",
       error: null,
     });
+    void this.refreshLauncherHighScores();
   }
 
   public openSettings(returnScreen: ReturnScreen = this.defaultReturnScreen()): void {
