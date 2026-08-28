@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "maze-chase.audio.pellet",
+      "path": "audio/pellet.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "maze-chase.audio.power",
+      "path": "audio/power.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "maze-chase.audio.capture",
+      "path": "audio/capture.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "maze-chase.audio.hit",
+      "path": "audio/hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "maze-chase.audio.bonus",
+      "path": "audio/bonus.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "maze-chase.audio.level-clear",
+      "path": "audio/level-clear.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}

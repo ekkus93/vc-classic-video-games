@@ -151,6 +151,16 @@ export const tests: readonly TestCase[] = [
         registry.getModule("alpha").metadata === registry.listMetadata()[0],
         "registry modules must expose the validated immutable metadata snapshot",
       );
+      const resolverModule: GameModule = {
+        ...dummyModule("assets", events),
+        resolveAssetUrl: (path) => `bundle://${path}`,
+      };
+      registry.register(resolverModule);
+      assert(
+        registry.getModule("assets").resolveAssetUrl?.("audio/test.wav") ===
+          "bundle://audio/test.wav",
+        "registry validation must preserve bundled asset URL resolution",
+      );
       expectThrows(
         () => registry.register(dummyModule("alpha", events)),
         DuplicateGameIdError,
