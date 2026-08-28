@@ -23,4 +23,5 @@ export interface GameInstance {
 export interface GameModule {
   readonly metadata: GameMetadata;
   create(services: GameServices): GameInstance;
+  resolveAssetUrl?(path: string): string | null;
 }

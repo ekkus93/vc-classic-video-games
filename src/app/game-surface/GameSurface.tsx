@@ -1,66 +1,53 @@
 import { useEffect, useRef } from "react";
 
-import {
-  BrowserFrameScheduler,
-  FrameLoop,
-} from "../../engine/runtime/frame-loop.js";
+import { CanvasGameRenderer, type GameRenderer } from "../../engine/index.js";
 
-const LOGICAL_WIDTH = 320;
-const LOGICAL_HEIGHT = 240;
-
-function renderPreview(
-  context: CanvasRenderingContext2D,
-  timestampMilliseconds: number,
-): void {
-  context.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-  context.fillStyle = "#020617";
-  context.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-
-  const seconds = timestampMilliseconds / 1000;
-  const x = 160 + Math.cos(seconds) * 90;
-  const y = 120 + Math.sin(seconds * 1.5) * 55;
-
-  context.strokeStyle = "#d4d4d8";
-  context.lineWidth = 2;
-  context.beginPath();
-  context.moveTo(x, y - 9);
-  context.lineTo(x + 8, y + 7);
-  context.lineTo(x - 8, y + 7);
-  context.closePath();
-  context.stroke();
+export interface GameSurfaceHost {
+  setRenderer(renderer: GameRenderer | null): void;
 }
 
-export function GameSurface() {
+export interface GameSurfaceProps {
+  readonly host: GameSurfaceHost;
+  readonly logicalWidth: number;
+  readonly logicalHeight: number;
+  readonly title: string;
+}
+
+export function GameSurface({
+  host,
+  logicalWidth,
+  logicalHeight,
+  title,
+}: GameSurfaceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d") ?? null;
-
     if (context === null) {
-      return;
+      host.setRenderer(null);
+      return undefined;
     }
 
-    const loop = new FrameLoop(
-      new BrowserFrameScheduler(),
-      (timestampMilliseconds) => {
-        renderPreview(context, timestampMilliseconds);
-      },
+    const renderer = new CanvasGameRenderer(
+      context,
+      logicalWidth,
+      logicalHeight,
     );
-    loop.start();
+    host.setRenderer(renderer);
 
     return () => {
-      loop.stop();
+      host.setRenderer(null);
     };
-  }, []);
+  }, [host, logicalHeight, logicalWidth]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="game-surface"
-      width={LOGICAL_WIDTH}
-      height={LOGICAL_HEIGHT}
-      aria-label="Independent game runtime preview"
+      className="game-viewport"
+      width={logicalWidth}
+      height={logicalHeight}
+      aria-label={`${title} display`}
     />
   );
 }

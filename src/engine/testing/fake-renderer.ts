@@ -12,6 +12,7 @@ export class FakeGameRenderer implements GameRenderer {
   public drawLine(): void {}
   public fillCircle(): void {}
   public strokeCircle(): void {}
+  public fillPolygon(): void {}
   public drawText(): void {}
   public drawSprite(): void {}
   public save(): void {}

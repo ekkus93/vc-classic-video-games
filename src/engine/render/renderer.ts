@@ -15,6 +15,11 @@ export interface SpriteSourceRect {
   readonly height: number;
 }
 
+export interface PolygonPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface GameRenderer {
   readonly logicalWidth: number;
   readonly logicalHeight: number;
@@ -44,6 +49,7 @@ export interface GameRenderer {
     color: string,
     lineWidth?: number,
   ): void;
+  fillPolygon(points: readonly PolygonPoint[], color: string): void;
   drawText(text: string, x: number, y: number, style: TextStyle): void;
   drawSprite(
     image: CanvasImageSource,
@@ -135,6 +141,24 @@ export class CanvasGameRenderer implements GameRenderer {
     this.context.beginPath();
     this.context.arc(x, y, radius, 0, Math.PI * 2);
     this.context.stroke();
+  }
+
+  public fillPolygon(points: readonly PolygonPoint[], color: string): void {
+    if (points.length < 3) {
+      return;
+    }
+    const first = points[0];
+    if (first === undefined) {
+      return;
+    }
+    this.context.fillStyle = color;
+    this.context.beginPath();
+    this.context.moveTo(first.x, first.y);
+    for (const point of points.slice(1)) {
+      this.context.lineTo(point.x, point.y);
+    }
+    this.context.closePath();
+    this.context.fill();
   }
 
   public drawText(text: string, x: number, y: number, style: TextStyle): void {

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "space-rocks.audio.thrust",
+      "path": "audio/thrust.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "space-rocks.audio.pulse",
+      "path": "audio/pulse.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "space-rocks.audio.fracture",
+      "path": "audio/fracture.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "space-rocks.audio.hull-hit",
+      "path": "audio/hull-hit.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    },
+    {
+      "id": "space-rocks.audio.wave-clear",
+      "path": "audio/wave-clear.wav",
+      "type": "audio",
+      "required": true,
+      "original": true
+    }
+  ]
+}
