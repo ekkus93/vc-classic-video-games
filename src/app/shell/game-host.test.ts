@@ -1,7 +1,6 @@
 import {
   defineGameMetadata,
   type GameModule,
-  type GameStartOptions,
 } from "../../engine/index.js";
 import { createFakeGameServices } from "../../engine/testing/fake-services.js";
 import { assert, type TestCase } from "../../test/harness.js";
@@ -19,7 +18,7 @@ export const tests: readonly TestCase[] = [
         resets: 0,
         destroys: 0,
       };
-      let lastOptions: GameStartOptions | null = null;
+      let lastSeed = -1;
       const module: GameModule = {
         metadata: defineGameMetadata({
           id: "host-test",
@@ -38,7 +37,7 @@ export const tests: readonly TestCase[] = [
         create: () => ({
           start: (options) => {
             counts.starts += 1;
-            lastOptions = options;
+            lastSeed = options.seed;
           },
           update: () => undefined,
           render: () => undefined,
@@ -69,7 +68,7 @@ export const tests: readonly TestCase[] = [
       await host.restart();
       assert(counts.resets === 1, "restart must reset instance");
       assert(counts.starts === 2, "restart must start a new run");
-      assert(lastOptions?.seed === 7, "restart must preserve selected run options");
+      assert(lastSeed === 7, "restart must preserve selected run options");
       assert(services.audio.stopAllCount >= 1, "restart must clear stale audio");
 
       host.exit();
