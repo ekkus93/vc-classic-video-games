@@ -1,0 +1,9 @@
+import { assert, type TestCase } from "../../test/harness.js";
+import { createGameRegistry } from "../registry.js";
+import { SKY_RIDERS_DEFAULT_DIFFICULTY, SKY_RIDERS_DIFFICULTIES, SKY_RIDERS_RUN_RULES } from "./design.js";
+import { SKY_RIDERS_METADATA } from "./metadata.js";
+import { SKY_RIDERS_MODULE } from "./module.js";
+export const tests: readonly TestCase[]=[
+{name:"P12-001 Sky Riders metadata and original design contract are registered",run:()=>{assert(SKY_RIDERS_METADATA.id==="sky-riders"&&SKY_RIDERS_METADATA.title==="Sky Riders","identity must remain stable");assert(SKY_RIDERS_METADATA.players.join(",")==="1,2","one/two player support required");assert(SKY_RIDERS_METADATA.supportedInputs.join(",")==="keyboard,gamepad","keyboard/gamepad required");assert(SKY_RIDERS_METADATA.logicalWidth===SKY_RIDERS_RUN_RULES.logicalWidth&&SKY_RIDERS_METADATA.logicalHeight===SKY_RIDERS_RUN_RULES.logicalHeight,"framebuffer rules must match");assert(SKY_RIDERS_METADATA.defaultDifficulty===SKY_RIDERS_DEFAULT_DIFFICULTY,"default difficulty must match");assert(SKY_RIDERS_METADATA.difficulties.length===Object.keys(SKY_RIDERS_DIFFICULTIES).length,"all difficulties declared");assert(createGameRegistry().getModule("sky-riders").metadata.id==="sky-riders","canonical registry must expose game");}},
+{name:"P12-001 module resolves only its declared bundled asset surface",run:()=>{assert(SKY_RIDERS_MODULE.resolveAssetUrl?.("assets.json")!==null,"manifest must resolve");for(const path of ["audio/flap.wav","audio/clash.wav","audio/defeat.wav","audio/hit.wav","audio/recovery.wav","audio/wave-clear.wav"]){assert(SKY_RIDERS_MODULE.resolveAssetUrl?.(path)!==null,`must resolve ${path}`);}assert(SKY_RIDERS_MODULE.resolveAssetUrl?.("../space-rocks/assets.json")===null,"cross-game asset path must not resolve");}},
+];

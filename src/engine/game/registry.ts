@@ -36,10 +36,18 @@ export class GameRegistry {
       throw new DuplicateGameIdError(metadata.id);
     }
 
-    const validatedModule: GameModule = Object.freeze({
-      metadata,
-      create: (services: GameServices) => module.create(services),
-    });
+    const validatedModule: GameModule = Object.freeze(
+      module.resolveAssetUrl === undefined
+        ? {
+            metadata,
+            create: (services: GameServices) => module.create(services),
+          }
+        : {
+            metadata,
+            create: (services: GameServices) => module.create(services),
+            resolveAssetUrl: (path: string) => module.resolveAssetUrl?.(path) ?? null,
+          },
+    );
 
     this.games.set(metadata.id, { module: validatedModule, metadata });
   }

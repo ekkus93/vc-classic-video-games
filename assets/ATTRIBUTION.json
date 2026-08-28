@@ -20,6 +20,30 @@
     {
       "path": "src/games/space-rocks/audio/wave-clear.wav",
       "original": true
+    },
+    {
+      "path": "src/games/sky-riders/audio/flap.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/sky-riders/audio/clash.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/sky-riders/audio/defeat.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/sky-riders/audio/hit.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/sky-riders/audio/recovery.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/sky-riders/audio/wave-clear.wav",
+      "original": true
     }
   ]
 }

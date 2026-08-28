@@ -1,0 +1,10 @@
+import { InputManager, KeyboardInputProvider, PointerInputProvider, StandardGamepadInputProvider, createDefaultInputSettings, type GamepadLike, type GamepadSource } from "../../engine/index.js";
+import { assert, type TestCase } from "../../test/harness.js";
+class Pads implements GamepadSource { public values: readonly (GamepadLike|null)[]=[]; public getGamepads():readonly (GamepadLike|null)[]{return this.values;} }
+function button(pressed=false){return {pressed,value:pressed?1:0};}
+function pad(index:number,axes:readonly number[],pressed:readonly number[]):GamepadLike { const buttons=Array.from({length:16},(_,i)=>button(pressed.includes(i)));return {index,id:`pad-${index}`,connected:true,mapping:"standard",buttons,axes}; }
+function harness(){const keyboard=new KeyboardInputProvider();const source=new Pads();const gamepad=new StandardGamepadInputProvider(source);const pointer=new PointerInputProvider(()=>({x:0,y:0,width:320,height:240,scale:1,integerScale:true,logicalWidth:320,logicalHeight:240}));const settings=createDefaultInputSettings();const input=new InputManager(keyboard,gamepad,pointer,()=>settings);return{keyboard,source,input};}
+export const tests:readonly TestCase[]=[
+{name:"P12-009 shared keyboard mappings expose steering and flap for both local players",run:()=>{const h=harness();h.keyboard.keyDown("ArrowLeft");h.keyboard.keyDown("Space");h.keyboard.keyDown("KeyD");h.keyboard.keyDown("KeyF");h.input.poll();assert(h.input.isHeld(1,"left")&&h.input.wasPressed(1,"action-1"),"P1 keyboard must steer/flap");assert(h.input.isHeld(2,"right")&&h.input.wasPressed(2,"action-1"),"P2 keyboard must steer/flap");}},
+{name:"P12-009 two standard gamepads expose steering and flap for both local players",run:()=>{const h=harness();h.source.values=[pad(0,[-1,0],[0]),pad(1,[0,0],[0,15])];h.input.poll();assert(h.input.isHeld(1,"left")&&h.input.wasPressed(1,"action-1"),"P1 pad must steer/flap");assert(h.input.isHeld(2,"right")&&h.input.wasPressed(2,"action-1"),"P2 pad must steer/flap");}},
+];
