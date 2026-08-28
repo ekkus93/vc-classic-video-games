@@ -1,4 +1,25 @@
 {
   "schemaVersion": 1,
-  "assets": []
+  "assets": [
+    {
+      "path": "src/games/space-rocks/audio/thrust.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/space-rocks/audio/pulse.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/space-rocks/audio/fracture.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/space-rocks/audio/hull-hit.wav",
+      "original": true
+    },
+    {
+      "path": "src/games/space-rocks/audio/wave-clear.wav",
+      "original": true
+    }
+  ]
 }
