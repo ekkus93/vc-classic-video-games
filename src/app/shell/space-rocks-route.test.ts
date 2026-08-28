@@ -50,13 +50,16 @@ export const tests: readonly TestCase[] = [
       );
       await controller.handleCommand("activate");
       assert(
-        controller.snapshot.screen === "pre-game" &&
+        String(controller.snapshot.screen) === "pre-game" &&
           controller.selectedGame?.id === "space-rocks",
         "controller-only activation must enter the Space Rocks pre-game screen",
       );
 
       await controller.handleCommand("activate");
-      assert(controller.snapshot.screen === "game", "pre-game activation must launch");
+      assert(
+        String(controller.snapshot.screen) === "game",
+        "pre-game activation must launch",
+      );
       assert(host.activeGameId === "space-rocks", "real module must own the active runtime");
       assert(host.loopRunning, "real launch must start the shared fixed-step RAF driver");
       assert(
@@ -66,18 +69,19 @@ export const tests: readonly TestCase[] = [
 
       await controller.handleCommand("pause");
       assert(
-        controller.snapshot.gamePaused && host.simulationPaused,
+        Boolean(controller.snapshot.gamePaused) && host.simulationPaused,
         "controller pause must freeze the real game runtime",
       );
 
       await controller.handleCommand("down");
       assert(
-        controller.snapshot.pauseFocusIndex === 1,
+        Number(controller.snapshot.pauseFocusIndex) === 1,
         "controller navigation must focus Restart without pointer input",
       );
       await controller.handleCommand("activate");
       assert(
-        controller.snapshot.screen === "game" && !controller.snapshot.gamePaused,
+        String(controller.snapshot.screen) === "game" &&
+          !Boolean(controller.snapshot.gamePaused),
         "Restart must create a fresh running Space Rocks run",
       );
       assert(
@@ -90,13 +94,13 @@ export const tests: readonly TestCase[] = [
         await controller.handleCommand("down");
       }
       assert(
-        controller.snapshot.pauseFocusIndex === 4,
+        Number(controller.snapshot.pauseFocusIndex) === 4,
         "controller navigation must reach Return to launcher",
       );
       await controller.handleCommand("activate");
 
       assert(
-        controller.snapshot.screen === "launcher" &&
+        String(controller.snapshot.screen) === "launcher" &&
           controller.snapshot.selection === null,
         "controller-only exit must restore the launcher",
       );
