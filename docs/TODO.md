@@ -90,40 +90,40 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P1 — Tauri 2 application shell
 
-- [ ] **P1-001 — Scaffold Tauri 2 + TypeScript frontend**
+- [x] **P1-001 — Scaffold Tauri 2 + TypeScript frontend**
   - Create the Tauri 2 application.
   - Use a Vite-based TypeScript frontend.
   - Acceptance: `tauri dev` opens a functional application window.
 
-- [ ] **P1-002 — Add launcher UI framework boundary**
+- [x] **P1-002 — Add launcher UI framework boundary**
   - Add React for application UI if retained as the chosen shell framework.
   - Keep game simulation/rendering outside React state/render cycles.
   - Acceptance: launcher component renders and Canvas runtime can update independently.
 
-- [ ] **P1-003 — Define application identity and metadata**
+- [x] **P1-003 — Define application identity and metadata**
   - Set app identifier, product name, version source, icons/placeholders, and Linux metadata.
   - Acceptance: built binary/package reports the intended app identity consistently.
 
-- [ ] **P1-004 — Configure Tauri capabilities with least privilege**
+- [x] **P1-004 — Configure Tauri capabilities with least privilege**
   - Start with minimal capabilities.
   - Do not enable unrestricted shell, arbitrary filesystem, or unrestricted network access.
   - Acceptance: capability files are explicit and reviewed against `docs/SPEC.md`.
 
-- [ ] **P1-005 — Add restrictive content-security policy**
+- [x] **P1-005 — Add restrictive content-security policy**
   - Permit bundled application assets and required local execution only.
   - Avoid remote scripts/content.
   - Acceptance: dev/release app runs under the configured CSP without broad wildcard exceptions.
 
-- [ ] **P1-006 — Implement Rust command module structure**
+- [x] **P1-006 — Implement Rust command module structure**
   - Create coarse-grained command modules for persistence/platform operations.
   - Do not add per-frame commands.
   - Acceptance: example typed command round-trip succeeds and input is validated.
 
-- [ ] **P1-007 — Add platform information command**
+- [x] **P1-007 — Add platform information command**
   - Expose narrowly scoped OS/architecture/app-version information needed by diagnostics.
   - Acceptance: launcher diagnostics can show platform metadata without shell execution.
 
-- [ ] **P1-008 — Add global application error handling**
+- [x] **P1-008 — Add global application error handling**
   - Add top-level frontend error boundary and Rust-side initialization error reporting.
   - Acceptance: an injected startup/UI failure produces a recoverable diagnostic view rather than a blank window.
 
@@ -131,42 +131,42 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P2 — Core runtime and game-module contract
 
-- [ ] **P2-001 — Define `GameMetadata` schema**
+- [x] **P2-001 — Define `GameMetadata` schema**
   - Include ID, title, description, version, player counts, input kinds, logical resolution, difficulties, controls, and asset manifest.
   - Acceptance: invalid or duplicate metadata is rejected during development/test validation.
 
-- [ ] **P2-002 — Define `GameModule` and `GameInstance` interfaces**
+- [x] **P2-002 — Define `GameModule` and `GameInstance` interfaces**
   - Implement the lifecycle contract from the spec.
   - Acceptance: a dummy game can be created, started, updated, rendered, paused, reset, and destroyed through only the public API.
 
-- [ ] **P2-003 — Define `GameServices` dependency surface**
+- [x] **P2-003 — Define `GameServices` dependency surface**
   - Input, audio, assets, scores, storage, RNG, clock, logger.
   - Acceptance: game modules receive services by injection and do not directly construct native/global implementations.
 
-- [ ] **P2-004 — Implement game registry**
+- [x] **P2-004 — Implement game registry**
   - Register modules declaratively.
   - Detect duplicate IDs.
   - Acceptance: launcher can enumerate registered metadata without game-specific branches.
 
-- [ ] **P2-005 — Implement runtime lifecycle state machine**
+- [x] **P2-005 — Implement runtime lifecycle state machine**
   - States: unloaded/loading/ready/running/paused/game-over/error as appropriate.
   - Acceptance: illegal transitions fail predictably and are unit tested.
 
-- [ ] **P2-006 — Implement active-game ownership**
+- [x] **P2-006 — Implement active-game ownership**
   - Only one active game instance in release 1.
   - Destroy prior instance before replacing it.
   - Acceptance: repeated switching never leaves two update/render loops active.
 
-- [ ] **P2-007 — Add game error isolation**
+- [x] **P2-007 — Add game error isolation**
   - Catch startup/update/render failures where feasible.
   - Stop/destroy the failing game and return to a recoverable shell view.
   - Acceptance: injected dummy-game exception does not permanently break the launcher.
 
-- [ ] **P2-008 — Add game test harness**
+- [x] **P2-008 — Add game test harness**
   - Provide fake services, deterministic clock, and seeded RNG.
   - Acceptance: game logic can advance in unit tests without real Tauri, Canvas display, or audio hardware.
 
-- [ ] **P2-009 — Enforce game isolation boundaries**
+- [x] **P2-009 — Enforce game isolation boundaries**
   - Add lint/import rules or equivalent checks preventing one game from importing another game's internals.
   - Acceptance: intentional cross-game import fails the relevant quality gate.
 
