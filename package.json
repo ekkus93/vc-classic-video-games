@@ -19,6 +19,7 @@
     "lint": "npm run lint:frontend && npm run lint:rust",
     "lint:frontend": "node scripts/lint.mjs && node scripts/lint-game-boundaries.test.mjs",
     "metadata:check": "node scripts/check-project-metadata.mjs",
+    "assets:check": "node scripts/validate-assets.test.mjs && node scripts/validate-assets.mjs",
     "lint:rust": "cargo clippy --workspace --all-targets --locked -- -D warnings",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run test:frontend && npm run test:rust",

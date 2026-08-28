@@ -10,16 +10,23 @@ export interface InputService {
 
 export interface AudioService {
   playEffect(assetId: string): void;
+  playLoop(assetId: string, bus?: "music" | "sfx"): void;
+  stop(assetId: string): void;
+  pauseAll(): void;
+  resumeAll(): void;
   stopAll(): void;
 }
 
 export interface AssetService {
   has(assetId: string): boolean;
+  get<T = unknown>(assetId: string): T | null;
 }
 
 export interface ScoreSubmission {
   readonly score: number;
   readonly mode: string;
+  readonly initials?: string | null;
+  readonly timestamp?: string;
 }
 
 export interface ScoreService {

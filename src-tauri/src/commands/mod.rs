@@ -1,2 +1,3 @@
-pub(crate) mod diagnostics;
-pub(crate) mod platform;
+pub mod diagnostics;
+pub mod persistence;
+pub mod platform;
