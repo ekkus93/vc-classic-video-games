@@ -358,183 +358,184 @@ A task should be marked complete only after its acceptance criteria pass. When i
 
 # P7 — Space Rocks (Asteroids-inspired reference game)
 
-- [ ] **P7-001 — Define original visual/gameplay design and metadata**
+- [x] **P7-001 — Define original visual/gameplay design and metadata**
   - Original title treatment, objects, scoring, difficulty, controls.
   - Acceptance: no copied original assets or level data.
 
-- [ ] **P7-002 — Implement ship rotation/thrust/inertia**
+- [x] **P7-002 — Implement ship rotation/thrust/inertia**
   - Acceptance: facing and velocity remain independent; deterministic motion test passes.
 
-- [ ] **P7-003 — Implement screen wrapping**
+- [x] **P7-003 — Implement screen wrapping**
   - Ship/projectiles/rocks as appropriate.
   - Acceptance: objects cross all boundaries seamlessly.
 
-- [ ] **P7-004 — Implement projectile system**
+- [x] **P7-004 — Implement projectile system**
   - Fire cadence, lifetime, bounded count.
   - Acceptance: holding fire cannot create unbounded projectiles.
 
-- [ ] **P7-005 — Implement asteroid/rock generation and splitting**
+- [x] **P7-005 — Implement asteroid/rock generation and splitting**
   - Large -> smaller hazards using seeded RNG.
   - Acceptance: fixed seed produces fixed split result.
 
-- [ ] **P7-006 — Implement collisions, lives, invulnerability window**
+- [x] **P7-006 — Implement collisions, lives, invulnerability window**
   - Acceptance: spawn protection prevents immediate unavoidable repeat death.
 
-- [ ] **P7-007 — Implement score/wave progression**
+- [x] **P7-007 — Implement score/wave progression**
   - Acceptance: clearing wave advances difficulty and score submission occurs only at valid game end.
 
-- [ ] **P7-008 — Add original audio/visual effects**
+- [x] **P7-008 — Add original audio/visual effects**
   - Acceptance: effects use shared services and clean up on exit.
 
-- [ ] **P7-009 — Add comprehensive core-rule tests**
+- [x] **P7-009 — Add comprehensive core-rule tests**
   - Motion, wrapping, splits, collisions, scoring.
   - Acceptance: tests run headlessly.
 
-- [ ] **P7-010 — Reference-game lifecycle soak test**
+- [x] **P7-010 — Reference-game lifecycle soak test**
   - Repeated start/pause/restart/exit cycles.
   - Acceptance: no duplicate RAF/input/audio listeners or material memory growth.
+  - Release-playability/manual acceptance remains tracked by P18-001.
 
 ---
 
 # P8 — Missile Defense (Missile Command-inspired)
 
-- [ ] **P8-001 — Define original battlefield layout/assets/rules**
-- [ ] **P8-002 — Implement logical-space targeting cursor**
-- [ ] **P8-003 — Implement defensive launch sites and finite ammunition**
-- [ ] **P8-004 — Implement interceptor travel to target point**
-- [ ] **P8-005 — Implement bounded expanding/contracting explosions**
-- [ ] **P8-006 — Implement enemy missile trajectories and target selection**
-- [ ] **P8-007 — Implement blast interception and chain reactions**
-- [ ] **P8-008 — Implement city/base destruction and wave resolution**
-- [ ] **P8-009 — Implement gamepad-only aiming controls**
-- [ ] **P8-010 — Add scoring/difficulty/audio/tests and playable acceptance pass**
+- [x] **P8-001 — Define original battlefield layout/assets/rules**
+- [x] **P8-002 — Implement logical-space targeting cursor**
+- [x] **P8-003 — Implement defensive launch sites and finite ammunition**
+- [x] **P8-004 — Implement interceptor travel to target point**
+- [x] **P8-005 — Implement bounded expanding/contracting explosions**
+- [x] **P8-006 — Implement enemy missile trajectories and target selection**
+- [x] **P8-007 — Implement blast interception and chain reactions**
+- [x] **P8-008 — Implement city/base destruction and wave resolution**
+- [x] **P8-009 — Implement gamepad-only aiming controls**
+- [~] **P8-010 — Add scoring/difficulty/audio/tests and playable acceptance pass**
   - Acceptance for P8 phase: pointer scaling, finite ammo, target destruction, bounded explosions, gamepad-only play, complete game-over loop all pass.
 
 ---
 
 # P9 — River Hopper (Frogger-inspired)
 
-- [ ] **P9-001 — Define original lane/stage design**
-- [ ] **P9-002 — Implement discrete player hop movement and buffered input**
-- [ ] **P9-003 — Implement generic moving-lane model**
-- [ ] **P9-004 — Implement road hazards/collision**
-- [ ] **P9-005 — Implement river hazards and moving support platforms**
-- [ ] **P9-006 — Implement carried-player platform displacement**
-- [ ] **P9-007 — Implement goal/home slots and round completion**
-- [ ] **P9-008 — Implement timer/pressure, lives, scoring, difficulty**
-- [ ] **P9-009 — Add multiple original lane patterns/stages**
-- [ ] **P9-010 — Add deterministic lane/collision tests and playable acceptance pass**
+- [x] **P9-001 — Define original lane/stage design**
+- [x] **P9-002 — Implement discrete player hop movement and buffered input**
+- [x] **P9-003 — Implement generic moving-lane model**
+- [x] **P9-004 — Implement road hazards/collision**
+- [x] **P9-005 — Implement river hazards and moving support platforms**
+- [x] **P9-006 — Implement carried-player platform displacement**
+- [x] **P9-007 — Implement goal/home slots and round completion**
+- [x] **P9-008 — Implement timer/pressure, lives, scoring, difficulty**
+- [x] **P9-009 — Add multiple original lane patterns/stages**
+- [~] **P9-010 — Add deterministic lane/collision tests and playable acceptance pass**
   - Acceptance for P9 phase: boundary collisions, platform carrying, goal persistence, original layouts, complete rounds all pass.
 
 ---
 
 # P10 — Maze Chase (Pac-Man-inspired)
 
-- [ ] **P10-001 — Create original maze format and first original maze**
-- [ ] **P10-002 — Implement grid movement with smooth interpolation**
-- [ ] **P10-003 — Implement buffered intersection turns**
-- [ ] **P10-004 — Implement pellets/special power items/bonus item**
-- [ ] **P10-005 — Implement enemy navigation graph**
-- [ ] **P10-006 — Implement four distinct deterministic targeting personalities**
-- [ ] **P10-007 — Implement behavioral phase scheduler**
-- [ ] **P10-008 — Implement vulnerable/frightened enemy state and collision reversal**
-- [ ] **P10-009 — Implement lives, score, level completion, difficulty progression**
-- [ ] **P10-010 — Add original art/audio plus AI/navigation/rule tests**
-- [ ] **P10-011 — Complete playable acceptance pass**
+- [x] **P10-001 — Create original maze format and first original maze**
+- [x] **P10-002 — Implement grid movement with smooth interpolation**
+- [x] **P10-003 — Implement buffered intersection turns**
+- [x] **P10-004 — Implement pellets/special power items/bonus item**
+- [x] **P10-005 — Implement enemy navigation graph**
+- [x] **P10-006 — Implement four distinct deterministic targeting personalities**
+- [x] **P10-007 — Implement behavioral phase scheduler**
+- [x] **P10-008 — Implement vulnerable/frightened enemy state and collision reversal**
+- [x] **P10-009 — Implement lives, score, level completion, difficulty progression**
+- [x] **P10-010 — Add original art/audio plus AI/navigation/rule tests**
+- [~] **P10-011 — Complete playable acceptance pass**
   - Acceptance: original maze, buffered turns, distinct enemy strategies, bounded power state, collectible clear/advance, game-over/restart all work.
 
 ---
 
 # P11 — Bug Barrage (Centipede-inspired)
 
-- [ ] **P11-001 — Define original field, enemies, scoring, and art direction**
-- [ ] **P11-002 — Implement player lower-region movement/shooting**
-- [ ] **P11-003 — Implement obstacle/mushroom-like field objects**
-- [ ] **P11-004 — Implement segmented chain traversal**
-- [ ] **P11-005 — Implement direction/row changes from field topology**
-- [ ] **P11-006 — Implement chain splitting after segment destruction**
-- [ ] **P11-007 — Implement secondary roaming enemies**
-- [ ] **P11-008 — Implement wave speed/density progression with hard entity bounds**
-- [ ] **P11-009 — Add chain/topology/high-speed collision tests**
-- [ ] **P11-010 — Complete playable acceptance pass**
+- [x] **P11-001 — Define original field, enemies, scoring, and art direction**
+- [x] **P11-002 — Implement player lower-region movement/shooting**
+- [x] **P11-003 — Implement obstacle/mushroom-like field objects**
+- [x] **P11-004 — Implement segmented chain traversal**
+- [x] **P11-005 — Implement direction/row changes from field topology**
+- [x] **P11-006 — Implement chain splitting after segment destruction**
+- [x] **P11-007 — Implement secondary roaming enemies**
+- [x] **P11-008 — Implement wave speed/density progression with hard entity bounds**
+- [x] **P11-009 — Add chain/topology/high-speed collision tests**
+- [~] **P11-010 — Complete playable acceptance pass**
 
 ---
 
 # P12 — Sky Riders (Joust-inspired)
 
-- [ ] **P12-001 — Define original arenas/riders/enemies/art**
-- [ ] **P12-002 — Implement gravity/horizontal momentum**
-- [ ] **P12-003 — Implement discrete flap impulse/cadence**
-- [ ] **P12-004 — Implement stable platform collision/landing**
-- [ ] **P12-005 — Implement enemy rider AI**
-- [ ] **P12-006 — Implement deterministic altitude-based combat resolution**
-- [ ] **P12-007 — Implement defeated-enemy object/recovery mechanic**
-- [ ] **P12-008 — Implement waves/scoring/difficulty**
-- [ ] **P12-009 — Implement local two-player mode or document explicit deferral decision**
-- [ ] **P12-010 — Add physics/combat tests and playable acceptance pass**
+- [x] **P12-001 — Define original arenas/riders/enemies/art**
+- [x] **P12-002 — Implement gravity/horizontal momentum**
+- [x] **P12-003 — Implement discrete flap impulse/cadence**
+- [x] **P12-004 — Implement stable platform collision/landing**
+- [x] **P12-005 — Implement enemy rider AI**
+- [x] **P12-006 — Implement deterministic altitude-based combat resolution**
+- [x] **P12-007 — Implement defeated-enemy object/recovery mechanic**
+- [x] **P12-008 — Implement waves/scoring/difficulty**
+- [x] **P12-009 — Implement local two-player mode or document explicit deferral decision**
+- [~] **P12-010 — Add physics/combat tests and playable acceptance pass**
 
 ---
 
 # P13 — Jungle Quest (Pitfall!-inspired)
 
-- [ ] **P13-001 — Define original connected-room world**
-- [ ] **P13-002 — Implement platformer kinematic controller**
-- [ ] **P13-003 — Implement jump/gravity/landing rules**
-- [ ] **P13-004 — Implement ladders/elevation transitions**
-- [ ] **P13-005 — Implement vine/swing or equivalent traversal mechanic**
-- [ ] **P13-006 — Implement hazards/pits and respawn/checkpoint behavior**
-- [ ] **P13-007 — Implement room transitions preserving canonical player state**
-- [ ] **P13-008 — Implement collectibles, scoring, optional timer/pressure**
-- [ ] **P13-009 — Implement alternate/secondary traversal route layer**
-- [ ] **P13-010 — Add movement/transition/world tests and playable acceptance pass**
+- [x] **P13-001 — Define original connected-room world**
+- [x] **P13-002 — Implement platformer kinematic controller**
+- [x] **P13-003 — Implement jump/gravity/landing rules**
+- [x] **P13-004 — Implement ladders/elevation transitions**
+- [x] **P13-005 — Implement vine/swing or equivalent traversal mechanic**
+- [x] **P13-006 — Implement hazards/pits and respawn/checkpoint behavior**
+- [x] **P13-007 — Implement room transitions preserving canonical player state**
+- [x] **P13-008 — Implement collectibles, scoring, optional timer/pressure**
+- [x] **P13-009 — Implement alternate/secondary traversal route layer**
+- [~] **P13-010 — Add movement/transition/world tests and playable acceptance pass**
 
 ---
 
 # P14 — Deep Digger (Dig Dug-inspired)
 
-- [ ] **P14-001 — Define original earth grid/level format/art**
-- [ ] **P14-002 — Implement diggable terrain and tunnel carving**
-- [ ] **P14-003 — Update collision/navigation topology immediately after digging**
-- [ ] **P14-004 — Implement enemy tunnel pathfinding**
-- [ ] **P14-005 — Implement enemy solid-material traversal/equivalent special state**
-- [ ] **P14-006 — Implement multi-stage pump/pressure-style attack mechanic**
-- [ ] **P14-007 — Implement falling rock/object physics and triggers**
-- [ ] **P14-008 — Implement score/waves/difficulty**
-- [ ] **P14-009 — Add disconnected-graph, topology, falling-object, attack-state tests**
-- [ ] **P14-010 — Complete playable acceptance pass**
+- [x] **P14-001 — Define original earth grid/level format/art**
+- [x] **P14-002 — Implement diggable terrain and tunnel carving**
+- [x] **P14-003 — Update collision/navigation topology immediately after digging**
+- [x] **P14-004 — Implement enemy tunnel pathfinding**
+- [x] **P14-005 — Implement enemy solid-material traversal/equivalent special state**
+- [x] **P14-006 — Implement multi-stage pump/pressure-style attack mechanic**
+- [x] **P14-007 — Implement falling rock/object physics and triggers**
+- [x] **P14-008 — Implement score/waves/difficulty**
+- [x] **P14-009 — Add disconnected-graph, topology, falling-object, attack-state tests**
+- [~] **P14-010 — Complete playable acceptance pass**
 
 ---
 
 # P15 — Star Defender (Defender-inspired)
 
-- [ ] **P15-001 — Define original wrapping world, terrain, enemy roster, objectives**
-- [ ] **P15-002 — Implement canonical world-coordinate model**
-- [ ] **P15-003 — Implement scrolling camera and seamless horizontal world wrap**
-- [ ] **P15-004 — Implement player inertial flight and forward weapon**
-- [ ] **P15-005 — Implement limited emergency/smart-bomb-like action**
-- [ ] **P15-006 — Implement radar/minimap from canonical world state**
-- [ ] **P15-007 — Implement ground inhabitants/objectives and enemy abduction**
-- [ ] **P15-008 — Implement falling/catching/return rescue sequence**
-- [ ] **P15-009 — Implement multiple bounded off-screen enemy behaviors**
-- [ ] **P15-010 — Implement waves/scoring/difficulty and density limits**
-- [ ] **P15-011 — Add camera/radar/wrap/rescue/off-screen simulation tests**
-- [ ] **P15-012 — Complete target-hardware performance and playable acceptance pass**
+- [x] **P15-001 — Define original wrapping world, terrain, enemy roster, objectives**
+- [x] **P15-002 — Implement canonical world-coordinate model**
+- [x] **P15-003 — Implement scrolling camera and seamless horizontal world wrap**
+- [x] **P15-004 — Implement player inertial flight and forward weapon**
+- [x] **P15-005 — Implement limited emergency/smart-bomb-like action**
+- [x] **P15-006 — Implement radar/minimap from canonical world state**
+- [x] **P15-007 — Implement ground inhabitants/objectives and enemy abduction**
+- [x] **P15-008 — Implement falling/catching/return rescue sequence**
+- [x] **P15-009 — Implement multiple bounded off-screen enemy behaviors**
+- [x] **P15-010 — Implement waves/scoring/difficulty and density limits**
+- [x] **P15-011 — Add camera/radar/wrap/rescue/off-screen simulation tests**
+- [~] **P15-012 — Complete target-hardware performance and playable acceptance pass**
 
 ---
 
 # P16 — Barrel Climber (Donkey Kong-inspired)
 
-- [ ] **P16-001 — Define original stage themes/layouts/hazards/art**
-- [ ] **P16-002 — Reuse/refine platformer controller from Jungle Quest**
-- [ ] **P16-003 — Implement ladder mounting, climbing, dismounting**
-- [ ] **P16-004 — Implement rolling/falling hazard movement along platform geometry**
-- [ ] **P16-005 — Implement hazard interaction with ladders/edges**
-- [ ] **P16-006 — Implement responsive jump-over-hazard scoring/feedback**
-- [ ] **P16-007 — Implement rescue/reach-goal objective and lives**
-- [ ] **P16-008 — Build at least three original stage layouts/mechanical variations**
-- [ ] **P16-009 — Implement level progression/scoring/difficulty**
-- [ ] **P16-010 — Add ladder/platform/hazard tests**
-- [ ] **P16-011 — Complete playable acceptance pass**
+- [x] **P16-001 — Define original stage themes/layouts/hazards/art**
+- [x] **P16-002 — Reuse/refine platformer controller from Jungle Quest**
+- [x] **P16-003 — Implement ladder mounting, climbing, dismounting**
+- [x] **P16-004 — Implement rolling/falling hazard movement along platform geometry**
+- [x] **P16-005 — Implement hazard interaction with ladders/edges**
+- [x] **P16-006 — Implement responsive jump-over-hazard scoring/feedback**
+- [x] **P16-007 — Implement rescue/reach-goal objective and lives**
+- [x] **P16-008 — Build at least three original stage layouts/mechanical variations**
+- [x] **P16-009 — Implement level progression/scoring/difficulty**
+- [x] **P16-010 — Add ladder/platform/hazard tests**
+- [~] **P16-011 — Complete playable acceptance pass**
 
 ---
 
