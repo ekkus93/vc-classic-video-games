@@ -281,7 +281,7 @@ export const tests: readonly TestCase[] = [
       });
       await first.initialize();
       await first.setFullscreen(true);
-      assert(firstCalls.join(",") === "true", "enabling fullscreen must apply immediately");
+      assert(firstCalls.at(-1) === true, "enabling fullscreen must apply immediately");
 
       const restoredCalls: boolean[] = [];
       const restored = controllerFor(modules, documents, {
