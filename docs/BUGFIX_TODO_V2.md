@@ -24,7 +24,7 @@ default, flip the marker to `[ ]`, and proceed.
 
 ## 1. Player-facing bugs
 
-- [ ] **CR2-001 — Make Deep Digger high scores visible in the launcher**
+- [x] **CR2-001 — Make Deep Digger high scores visible in the launcher** (a13f53b)
   - Submit `mode: "default"` from `src/games/deep-digger/module.ts`, matching the other nine
     games; difficulty scoping already happens in `PersistentScoreService`. See spec §1.1.
   - Rewrite `score-submission.test.ts:25`, which currently enshrines the bug (`mode === "bore"`).
@@ -34,7 +34,7 @@ default, flip the marker to `[ ]`, and proceed.
     asserts the launcher's high-score query for that game and difficulty returns it. The commit
     message records that previously persisted Deep Digger scores are not migrated, and why.
 
-- [ ] **CR2-002 — Re-check support for landed Deep Digger rocks**
+- [x] **CR2-002 — Re-check support for landed Deep Digger rocks** (066dd77)
   - Run the support check for `"resting"` rocks exactly as for `"supported"` ones; reset
     `cellsFallen` in `landRock` after the `rock-landed` event. See spec §1.2.
   - Acceptance: three tests in `rock-timing.test.ts` — (a) rock A resting on rock B re-loosens and
