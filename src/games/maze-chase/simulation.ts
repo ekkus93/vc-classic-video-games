@@ -246,6 +246,13 @@ export class MazeChaseSimulation {
       ),
     );
 
+    // CR2-007: deliberately hit-then-clear, not the other way around. A tick that both empties
+    // the last collectible above and lands the runner on a non-vulnerable sentinel is a genuine
+    // contact -- the design (MAZE_CHASE_DESIGN.md) makes no exception for it "because the level
+    // happened to end on the same frame", so it costs a life first (resetting actors and the
+    // level-progress state resolveCollisions owns), and only then does the now-empty field trigger
+    // its own level-clear reset on top. See docs/BUGFIX_SPEC_V2.md §2.3 for the clear-then-hit
+    // alternative this rejected, and CR-014's tests for the compound-tick coverage.
     this.resolveCollisions(events);
     this.resolveLevelClear(events);
     return Object.freeze(events);
