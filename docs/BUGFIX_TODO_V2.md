@@ -98,7 +98,7 @@ default, flip the marker to `[ ]`, and proceed.
     with the same test count; `git diff --stat` for the commit shows no file outside that
     directory.
 
-- [ ] **CR2-010 — Share the burst-style type**
+- [x] **CR2-010 — Share the burst-style type** (dca074f)
   - Export `ParticleBurstStyle = Omit<ParticleBurst, "x" | "y">` from the engine; delete the four
     local `BurstStyle`/`Burst` interfaces. See spec §3.2.
   - Acceptance: type-only change; all effects tests pass untouched; `grep -r "interface Burst"
