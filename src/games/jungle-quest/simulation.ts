@@ -72,7 +72,18 @@ export class JungleQuestSimulation {
     if (x > JUNGLE_QUEST_RUN_RULES.logicalWidth + HALF_WIDTH) { target = room.next; x = HALF_WIDTH + 1; }
     else if (x < -HALF_WIDTH) { target = room.previous; x = JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH - 1; }
     if (target === null) {
-      this.playerValue = Object.freeze({ ...this.playerValue, position: Object.freeze({ x: Math.max(HALF_WIDTH, Math.min(JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH, this.playerValue.position.x)), y: this.playerValue.position.y }) });
+      // CR-001: only clamp against an edge with no adjoining room to travel into. Clamping the
+      // near-edge position back to the on-screen bound every frame (as this used to do
+      // unconditionally) fights the transition trigger above: it never lets position accumulate
+      // past the visible edge toward the trigger threshold, so a room with a real neighbor could
+      // never actually be crossed by real input. A room boundary that leads nowhere (no
+      // `previous`/`next`) still needs the clamp so the player can't run off-screen forever.
+      const minX = room.previous === null ? HALF_WIDTH : -Infinity;
+      const maxX = room.next === null ? JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH : Infinity;
+      const clampedX = Math.max(minX, Math.min(maxX, this.playerValue.position.x));
+      if (clampedX !== this.playerValue.position.x) {
+        this.playerValue = Object.freeze({ ...this.playerValue, position: Object.freeze({ x: clampedX, y: this.playerValue.position.y }) });
+      }
       return;
     }
     const from = this.roomIdValue; this.roomIdValue = target;

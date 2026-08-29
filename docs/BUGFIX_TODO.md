@@ -24,7 +24,7 @@ any order, can be interleaved).
 
 ## 1. Critical gameplay bugs
 
-- [ ] **CR-001 — Fix Jungle Quest room-transition deadlock**
+- [x] **CR-001 — Fix Jungle Quest room-transition deadlock**
   - Reorder the transition-check/clamp logic in `src/games/jungle-quest/simulation.ts` so the
     room-edge trigger can actually fire instead of being clamped back every frame. See
     `docs/BUGFIX_SPEC.md` §1.1 for the exact mechanism and design decision.
