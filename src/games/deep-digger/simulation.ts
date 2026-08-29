@@ -669,11 +669,23 @@ export class DeepDiggerSimulation {
   }
 
   private isRockAt(cell: GridCell, ignoredRockId?: number): boolean {
-    return this.rockState.some(
-      (rock) =>
-        rock.id !== ignoredRockId &&
-        rock.state !== "falling" &&
-        sameCell(rock.cell, cell),
-    );
+    return this.rockState.some((rock) => {
+      if (rock.id === ignoredRockId) {
+        return false;
+      }
+      // CR-009: a rock's own landing/support check (ignoredRockId is that rock's own id) must
+      // still treat OTHER falling rocks as real obstacles -- the previous blanket
+      // `rock.state !== "falling"` exclusion meant no falling rock ever blocked any OTHER
+      // falling rock, so two rocks mid-fall in the same column (the shipped ROCK_SPAWNS table
+      // has such a pair) could land in, or pass through, the same cell at the same time. Queries
+      // from anything other than a rock itself (player movement, enemy pathing, the pump ray --
+      // all call this with ignoredRockId left undefined) keep the existing behavior of not being
+      // blocked by a mid-air rock; getting crushed by one is handled separately, by
+      // resolveRockContacts, not by blocking movement here.
+      if (ignoredRockId === undefined && rock.state === "falling") {
+        return false;
+      }
+      return sameCell(rock.cell, cell);
+    });
   }
 }
