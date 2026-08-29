@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  LogicalFramebuffer,
-  devicePhysicalSize,
-  presentFramebuffer,
-} from "../engine/index.js";
+import { LogicalFramebuffer, presentFramebuffer } from "../engine/index.js";
 import {
   diagnosticPing,
   getPlatformInfo,
@@ -12,6 +8,7 @@ import {
 } from "../native/commands.js";
 import { shouldInjectFailure } from "./failure-injection.js";
 import { ShellView } from "./shell/ShellView.js";
+import { resizeCanvasToDevicePixels } from "./shell/canvas-resize.js";
 import { createDefaultShellRuntime } from "./shell/default-controller.js";
 import { moveFocusToShellSelection } from "./shell/focus-management.js";
 import { useShellInput } from "./shell/use-shell-input.js";
@@ -116,12 +113,9 @@ export function App({ controller }: AppProps = {}) {
       // resize, since window.devicePixelRatio itself changes under browser zoom without firing a
       // resize event; the CSS box (canvas.clientWidth/clientHeight, driven by layout) is
       // untouched, so the browser still composites the backing store onto exactly that box.
-      const targetWidth = devicePhysicalSize(canvas.clientWidth, window.devicePixelRatio);
-      const targetHeight = devicePhysicalSize(canvas.clientHeight, window.devicePixelRatio);
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-      }
+      // CR3-002: the resize decision itself lives in resizeCanvasToDevicePixels, testable without
+      // a DOM -- this loop keeps no arithmetic of its own.
+      resizeCanvasToDevicePixels(canvas, window.devicePixelRatio);
       presentFramebuffer(displayContext, framebuffer, canvas.width, canvas.height);
       frame = window.requestAnimationFrame(present);
     };

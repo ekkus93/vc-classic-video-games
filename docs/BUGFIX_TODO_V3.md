@@ -35,7 +35,7 @@ the marker to `[ ]`, and proceed.
 
 ## 2. Test-coverage gaps
 
-- [ ] **CR3-002 — Test the present loop's backing-store resize (unmet CR2-003 criterion)**
+- [x] **CR3-002 — Test the present loop's backing-store resize (unmet CR2-003 criterion)**
   - Extract `resizeCanvasToDevicePixels(canvas, devicePixelRatio)` into `src/app/shell/`, taking a
     minimal structural canvas type and returning whether it resized; make `App.tsx`'s present loop
     a thin caller. Mirrors `createPointerBoundsResolver` (CR2-012). Do **not** add jsdom — see
