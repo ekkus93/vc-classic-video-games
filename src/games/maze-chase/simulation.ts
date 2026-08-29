@@ -225,7 +225,11 @@ export class MazeChaseSimulation {
       this.mazeValue,
       this.playerMoverValue,
       this.bufferedDirection,
-      profile.playerSpeed * Math.min(levelScale, 1.18) * dtSeconds,
+      // CR-020: the runner's share of the level ramp plateaus below the sentinels' (see
+      // MAZE_CHASE_RUN_RULES) -- the widening gap is what makes later levels harder.
+      profile.playerSpeed *
+        Math.min(levelScale, MAZE_CHASE_RUN_RULES.maxPlayerLevelSpeedScale) *
+        dtSeconds,
     );
 
     const poweredThisFrame = this.collectAtPlayer(events);

@@ -25,7 +25,7 @@ Patrol phases assign each sentinel a different corner region. The phase schedule
 
 A power pickup activates a bounded vulnerability timer and requests sentinel reversal. Contact while vulnerable captures a sentinel and applies a bounded score multiplier; the sentinel is removed briefly before returning to its authored start. Outside that state, contact costs a life after respawn protection expires.
 
-After enough normal collectibles have been cleared, a timed diamond bonus appears at the center marker. Clearing all standard and power collectibles awards a level bonus, rebuilds the collectible field, resets the phase schedule and actors, and increases speed up to a fixed cap. A run ends when all three lives are lost; only that terminal event submits the score.
+After enough normal collectibles have been cleared, a timed diamond bonus appears at the center marker. Clearing all standard and power collectibles awards a level bonus, rebuilds the collectible field, resets the phase schedule and actors, and increases speed. The runner and the sentinels share one level-speed ramp but stop at different caps: the sentinels keep gaining to the full cap while the runner plateaus lower, so the pursuit closes as levels go by. That widening gap is the difficulty curve, and the two caps are deliberately unequal. A run ends when all three lives are lost; only that terminal event submits the score.
 
 ## Presentation and provenance
 

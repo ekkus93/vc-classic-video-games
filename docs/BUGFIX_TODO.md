@@ -172,7 +172,7 @@ any order, can be interleaved).
     `App.tsx`'s inline canvas-mount logic is replaced with a use of this component and the
     existing app-level tests continue to pass either way.
 
-- [ ] **CR-020 — Document or fix Maze Chase's player/enemy speed-cap asymmetry**
+- [x] **CR-020 — Document or fix Maze Chase's player/enemy speed-cap asymmetry**
   - Acceptance: either a comment in `simulation.ts` explains why the player caps at `1.18` while
     enemies don't, or both caps are lifted into named constants in `design.ts` with matching
     values if the asymmetry was unintentional.

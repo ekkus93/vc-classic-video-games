@@ -37,7 +37,13 @@ export const MAZE_CHASE_RUN_RULES = Object.freeze({
   enemyRespawnSeconds: 1.4,
   collisionRadiusTiles: 0.43,
   levelSpeedIncrease: 0.055,
+  // Both actors speed up level over level from the same ramp, but they stop at different points:
+  // sentinels keep gaining all the way to maxLevelSpeedScale while the runner plateaus earlier at
+  // maxPlayerLevelSpeedScale. That gap is the difficulty curve -- later levels get harder because
+  // the pursuit closes, not because the maze changes -- so the two caps are deliberately unequal
+  // and must not be reconciled to one value.
   maxLevelSpeedScale: 1.42,
+  maxPlayerLevelSpeedScale: 1.18,
 });
 
 export const MAZE_CHASE_SCORING = Object.freeze({
