@@ -210,7 +210,7 @@ injectable, then the branch coverage becomes ordinary unit testing.
     (consistent with the original finding — this class had zero coverage). This is a pure
     refactor: full `npm run test` (467 cases) passes unchanged before and after, confirming no
     behavior change for real callers.
-- [ ] **TC-003b — Add `browser-game-services.test.ts`**
+- [x] **TC-003b — Add `browser-game-services.test.ts`**
   - [ ] `resolveAssetUrl === undefined` on the module throws, and the error message names the
     module's title.
   - [ ] `resolveAssetUrl(module.metadata.assetManifest)` returning `null` throws, naming the
@@ -233,13 +233,19 @@ injectable, then the branch coverage becomes ordinary unit testing.
   - [ ] A successful `create()` call assembles a `GameServices` whose `assets`/`audio` reflect the
     manifest that was just loaded (a light end-to-end check on top of the branch-level cases
     above).
-  - Acceptance: every branch above is verified to fail against the pre-injection code shape by
-    reverting TC-003a locally and confirming the new tests cannot even be constructed without a
-    real browser (documented as the "before" state, not literally re-tested against broken code);
-    each branch's own test is confirmed to actually catch a defect by commenting out or inverting
-    that branch's condition in `preload()` and watching the corresponding test fail, then
-    reverting. `npm run lint`, `npm run test`, and `npm run build` pass after both TC-003a and
-    TC-003b.
+  - Acceptance: `src/app/shell/browser-game-services.test.ts` exists and passes (10 cases). All
+    eight `preload()` branches were confirmed to catch a defect by mutation and reverted
+    afterward: two of the eight (the `resolveAssetUrl === undefined` and `manifestUrl === null`
+    guards) initially failed to even *compile* when removed outright, since removing them also
+    removes the type narrowing later code in the same function depends on -- TypeScript itself
+    rejects the mutation, which is a stronger guarantee than the test catching it at runtime. To
+    still verify the runtime behavior specifically (not just lean on the type checker), those two
+    were re-mutated using a non-null assertion (`resolveAssetUrl!`, `manifestUrl!`) to bypass the
+    type error while keeping the logical gap, and both were then caught by the corresponding test.
+    The other six branches (required-non-audio-type, required-audio-fetch-failure, the two
+    optional-asset-skip paths already covered above, the URL-keyed decode cache, and the final
+    `assets.set` population) were caught directly. `npm run lint`, `npm run test` (477 cases, up
+    from 467), and `npm run build` pass after both TC-003a and TC-003b.
 
 ## TC-004 — Unit-test `ShellGameInputBridge`
 
