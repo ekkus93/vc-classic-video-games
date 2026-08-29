@@ -135,9 +135,14 @@ default, flip the marker to `[ ]`, and proceed.
 
 - `npm run lint`, `npm run test`, and `npm run build` pass after every individual task and after
   the full set.
-- Every task in §1 and §2 adds a regression test that fails against the pre-fix code and passes
-  against the post-fix code — verify this locally before committing, by reverting the fix and
-  watching the test fail, not by inspection.
+- Every task in §1 and §2 that changes behavior adds a regression test that fails against the
+  pre-fix code and passes against the post-fix code — verify this locally before committing, by
+  reverting the fix and watching the test fail, not by inspection. A task that changes no behavior
+  (a rename, a comment, a documentation edit) instead states in its acceptance why no regression
+  test applies, and confirms the existing tests covering the touched code pass untouched.
+  (CR3-006: CR2-006 and CR2-007 shipped this way, correctly, while this rule still read as an
+  unconditional "every task" — amended here so the rule matches what both tasks' own acceptance
+  already said.)
 - Commit messages use `CR2-<NNN>: <description>`.
 - The two `[!]` tasks are not started until their decision is confirmed; the default in the spec
   is the recommendation, not the decision.

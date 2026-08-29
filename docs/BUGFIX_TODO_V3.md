@@ -78,7 +78,7 @@ the marker to `[ ]`, and proceed.
   - Acceptance: CR2-004's acceptance text in the round-2 TODO describes the tunnel-width invariant
     and notes in one line why the general sweep was rejected; no test or source file changes.
 
-- [ ] **CR3-006 — Fix the cross-cutting test rule's contradiction with no-behavior-change tasks**
+- [x] **CR3-006 — Fix the cross-cutting test rule's contradiction with no-behavior-change tasks**
   - The round-2 rule requires every §1/§2 task to add a regression test; CR2-006 (a rename) and
     CR2-007 (a doc sentence plus a comment) have no behavior to regress and their own acceptance
     said so. Amend the rule in `docs/BUGFIX_TODO_V2.md` and carry the corrected wording into this
