@@ -1,31 +1,26 @@
-import type { ScoreService } from "../../engine/index.js";
+import {
+  ScoreCommitter,
+  terminalScoreOfType,
+  type ScoreService,
+  type ScoreSubmitErrorHandler,
+} from "../../engine/index.js";
 import type { StarDefenderSimulationEvent } from "./simulation.js";
 
-export type StarDefenderScoreSubmitErrorHandler = (error: unknown) => void;
+export type StarDefenderScoreSubmitErrorHandler = ScoreSubmitErrorHandler;
 
-export class StarDefenderScoreCommitter {
-  private submitted = false;
-
+/**
+ * The submit-once guard and rejection containment live in the shared engine `ScoreCommitter`; all
+ * this game contributes is which of its own events ends a run.
+ */
+export class StarDefenderScoreCommitter extends ScoreCommitter<StarDefenderSimulationEvent> {
   public constructor(
-    private readonly scores: ScoreService,
-    private readonly reportError: StarDefenderScoreSubmitErrorHandler = () => undefined,
-  ) {}
-
-  public handle(events: readonly StarDefenderSimulationEvent[]): void {
-    if (this.submitted) {
-      return;
-    }
-    const terminal = events.find((event) => event.type === "game-over");
-    if (terminal === undefined || terminal.type !== "game-over") {
-      return;
-    }
-    this.submitted = true;
-    void this.scores
-      .submit({ score: terminal.score, mode: "default" })
-      .catch((error: unknown) => this.reportError(error));
-  }
-
-  public reset(): void {
-    this.submitted = false;
+    scores: ScoreService,
+    reportError: StarDefenderScoreSubmitErrorHandler = () => undefined,
+  ) {
+    super(
+      scores,
+      terminalScoreOfType<StarDefenderSimulationEvent, "game-over">("game-over"),
+      reportError,
+    );
   }
 }

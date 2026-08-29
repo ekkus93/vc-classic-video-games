@@ -1,0 +1,125 @@
+import { assert, type TestCase } from "../../test/harness.js";
+import type { ScoreService, ScoreSubmission } from "../game/services.js";
+import { ScoreCommitter, terminalScoreOfType } from "./score-committer.js";
+
+type SampleEvent =
+  | { readonly type: "tick"; readonly frame: number }
+  | { readonly type: "wave-cleared"; readonly bonus: number }
+  | { readonly type: "game-over"; readonly score: number };
+
+class RecordingScores implements ScoreService {
+  public readonly submissions: ScoreSubmission[] = [];
+
+  public submit(submission: ScoreSubmission): Promise<void> {
+    this.submissions.push(submission);
+    return Promise.resolve();
+  }
+}
+
+class RejectingScores implements ScoreService {
+  public attempts = 0;
+
+  public constructor(private readonly failure: Error) {}
+
+  public submit(): Promise<void> {
+    this.attempts += 1;
+    return Promise.reject(this.failure);
+  }
+}
+
+function committer(
+  scores: ScoreService,
+  reportError?: (error: unknown) => void,
+): ScoreCommitter<SampleEvent> {
+  const reader = terminalScoreOfType<SampleEvent, "game-over">("game-over");
+  return reportError === undefined
+    ? new ScoreCommitter<SampleEvent>(scores, reader)
+    : new ScoreCommitter<SampleEvent>(scores, reader, reportError);
+}
+
+async function flush(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+export const tests: readonly TestCase[] = [
+  {
+    name: "CR-016 shared score committer submits one terminal score per run",
+    run: () => {
+      const scores = new RecordingScores();
+      const commit = committer(scores);
+
+      commit.handle([{ type: "tick", frame: 1 }]);
+      commit.handle([{ type: "wave-cleared", bonus: 400 }]);
+      const nonterminalSubmissions: number = scores.submissions.length;
+      assert(nonterminalSubmissions === 0, "no nonterminal frame may submit a score");
+
+      commit.handle([{ type: "tick", frame: 2 }, { type: "game-over", score: 1234 }]);
+      commit.handle([{ type: "game-over", score: 9999 }]);
+      const afterTerminal: number = scores.submissions.length;
+      assert(
+        afterTerminal === 1 &&
+          scores.submissions[0]?.score === 1234 &&
+          scores.submissions[0]?.mode === "default",
+        "the first terminal frame must submit exactly once, in the default mode",
+      );
+
+      commit.reset();
+      commit.handle([{ type: "game-over", score: 77 }], "marathon");
+      const afterReset: number = scores.submissions.length;
+      assert(
+        afterReset === 2 &&
+          scores.submissions[1]?.score === 77 &&
+          scores.submissions[1]?.mode === "marathon",
+        "reset must open a fresh run, and an explicit mode must reach the score service",
+      );
+    },
+  },
+  {
+    name: "CR-016 shared score committer contains a rejected submission without retrying",
+    run: async () => {
+      const failure = new Error("score store unavailable");
+      const scores = new RejectingScores(failure);
+      const reported: unknown[] = [];
+      const commit = committer(scores, (error) => reported.push(error));
+
+      commit.handle([{ type: "game-over", score: 42 }]);
+      commit.handle([{ type: "game-over", score: 43 }]);
+      await flush();
+
+      assert(scores.attempts === 1, "a contained failure must not be retried");
+      assert(
+        reported.length === 1 && reported[0] === failure,
+        "the rejection must reach the game's reporter instead of escaping as an unhandled rejection",
+      );
+    },
+  },
+  {
+    name: "CR-016 shared score committer defaults a missing reporter to a silent no-op",
+    run: async () => {
+      const scores = new RejectingScores(new Error("score store unavailable"));
+      const commit = committer(scores);
+
+      commit.handle([{ type: "game-over", score: 5 }]);
+      await flush();
+
+      assert(scores.attempts === 1, "a run without a reporter must still submit exactly once");
+    },
+  },
+  {
+    name: "CR-016 terminalScoreOfType reads only its own event type",
+    run: () => {
+      const read = terminalScoreOfType<SampleEvent, "game-over">("game-over");
+      assert(read([]) === null, "an empty frame has no terminal score");
+      assert(read([{ type: "wave-cleared", bonus: 400 }]) === null, "another event type is not terminal");
+      assert(read([{ type: "game-over", score: 0 }]) === 0, "a zero terminal score must read as 0, not as absent");
+      assert(
+        read([
+          { type: "game-over", score: 11 },
+          { type: "game-over", score: 22 },
+        ]) === 11,
+        "the first terminal event in a frame wins",
+      );
+    },
+  },
+];

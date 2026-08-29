@@ -224,3 +224,8 @@ export type {
   ScoreDocument,
   ScoreEntry,
 } from "./scores/scores.js";
+export { ScoreCommitter, terminalScoreOfType } from "./scores/score-committer.js";
+export type {
+  ScoreSubmitErrorHandler,
+  TerminalScoreReader,
+} from "./scores/score-committer.js";

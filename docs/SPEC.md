@@ -530,6 +530,23 @@ The shared score service shall support:
 
 Games may submit scores but shall not directly rewrite the global score database.
 
+#### 16.4.1 Shared `ScoreCommitter`
+
+Every game submits its run score through the same shared committer in
+`src/engine/scores/score-committer.ts`, rather than reimplementing the submission guard per game:
+
+- `ScoreCommitter<TEvent>` holds the submit-once flag. The first frame whose events carry the
+  game's terminal event submits; every later frame is ignored until `reset()` starts a new run.
+- The submit promise is deliberately not awaited, and a rejection never reaches gameplay: it is
+  routed to the game-supplied `reportError` handler, keeping a failing score store inside the
+  game's own boundary.
+- `terminalScoreOfType(type)` builds the terminal-score reader. A game supplies only the name of
+  its own terminal event (most use `"game-over"`; Jungle Quest uses `"run-ended"`), and the type
+  parameter is constrained to event-union members that actually carry a numeric `score`.
+
+Each game's `src/games/<name>/score-submission.ts` is a thin subclass that names its terminal
+event and keeps the game-specific class and error-handler type names its module and tests use.
+
 ## 17. Launcher and shell UX
 
 ### 17.1 Startup

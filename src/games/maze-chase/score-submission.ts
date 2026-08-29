@@ -1,31 +1,26 @@
-import type { ScoreService } from "../../engine/index.js";
+import {
+  ScoreCommitter,
+  terminalScoreOfType,
+  type ScoreService,
+  type ScoreSubmitErrorHandler,
+} from "../../engine/index.js";
 import type { MazeChaseSimulationEvent } from "./simulation.js";
 
-export type MazeChaseScoreSubmitErrorHandler = (error: unknown) => void;
+export type MazeChaseScoreSubmitErrorHandler = ScoreSubmitErrorHandler;
 
-export class MazeChaseScoreCommitter {
-  private submitted = false;
-
+/**
+ * The submit-once guard and rejection containment live in the shared engine `ScoreCommitter`; all
+ * this game contributes is which of its own events ends a run.
+ */
+export class MazeChaseScoreCommitter extends ScoreCommitter<MazeChaseSimulationEvent> {
   public constructor(
-    private readonly scores: ScoreService,
-    private readonly reportError: MazeChaseScoreSubmitErrorHandler = () => undefined,
-  ) {}
-
-  public handle(events: readonly MazeChaseSimulationEvent[]): void {
-    if (this.submitted) {
-      return;
-    }
-    const gameOver = events.find((event) => event.type === "game-over");
-    if (gameOver === undefined || gameOver.type !== "game-over") {
-      return;
-    }
-    this.submitted = true;
-    void this.scores
-      .submit({ score: gameOver.score, mode: "default" })
-      .catch((error: unknown) => this.reportError(error));
-  }
-
-  public reset(): void {
-    this.submitted = false;
+    scores: ScoreService,
+    reportError: MazeChaseScoreSubmitErrorHandler = () => undefined,
+  ) {
+    super(
+      scores,
+      terminalScoreOfType<MazeChaseSimulationEvent, "game-over">("game-over"),
+      reportError,
+    );
   }
 }

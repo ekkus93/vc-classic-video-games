@@ -144,7 +144,7 @@ any order, can be interleaved).
 
 ## 3. Architecture / duplication debt
 
-- [ ] **CR-016 — Extract shared `ScoreCommitter` into `src/engine/`**
+- [x] **CR-016 — Extract shared `ScoreCommitter` into `src/engine/`**
   - Migrate all 10 games' `score-submission.ts` to use it. See `docs/BUGFIX_SPEC.md` §3.1.
   - Acceptance: one shared implementation exists in `src/engine/`; all 10 games import it; no
     per-game `score-submission.ts` redefines the submit-once/rejection-containment logic; every
