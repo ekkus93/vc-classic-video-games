@@ -161,7 +161,7 @@ any order, can be interleaved).
 
 ## 4. Minor issues
 
-- [ ] **CR-018 — Make asset attribution validation fail-closed**
+- [x] **CR-018 — Make asset attribution validation fail-closed**
   - Require every asset manifest entry to declare `original` explicitly; fail validation if the
     field is missing, not just when it's `false`. See `docs/BUGFIX_SPEC.md` §4.
   - Acceptance: `npm run assets:check` fails on a manifest fixture that omits the `original`

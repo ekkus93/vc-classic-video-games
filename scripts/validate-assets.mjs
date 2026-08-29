@@ -19,6 +19,14 @@ export function validateAttributionDocument(value) {
       throw new Error(`duplicate attribution path: ${asset.path}`);
     }
     seen.add(asset.path);
+    // CR-018: fail closed. An entry that never says whether it is original is not a third-party
+    // asset that happens to be missing its paperwork -- it is an asset nobody has classified, and
+    // treating silence as "original" is exactly how an unlicensed file ships.
+    if (typeof asset.original !== "boolean") {
+      throw new Error(
+        `attribution assets[${index}] (${asset.path}) must declare original as a boolean`,
+      );
+    }
     if (asset.original === true) {
       continue;
     }
@@ -51,8 +59,13 @@ export async function validateManifestFile(path, attributionPaths) {
     } catch {
       throw new Error(`${path}: asset ${asset.id} references missing file ${asset.path}`);
     }
+    // CR-018: same fail-closed rule as the attribution document -- a manifest entry must say
+    // which it is, and anything not explicitly original needs a matching attribution record.
+    if (typeof asset.original !== "boolean") {
+      throw new Error(`${path}: asset ${asset.id} must declare original as a boolean`);
+    }
     const repoRelative = relative(process.cwd(), file).replaceAll("\\", "/");
-    if (asset.original === false && !attributionPaths.has(repoRelative)) {
+    if (asset.original !== true && !attributionPaths.has(repoRelative)) {
       throw new Error(`${path}: non-original asset ${repoRelative} lacks attribution`);
     }
   }
