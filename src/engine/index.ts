@@ -175,6 +175,9 @@ export type {
   AudioBufferResolver,
   AudioBus,
   AudioContextFactory,
+  AudioLifecycleErrorReporter,
+  AudioLifecycleFailure,
+  AudioLifecycleOperation,
   SharedAudioSettings,
 } from "./audio/audio-service.js";
 export {
@@ -234,6 +237,7 @@ export {
 export type {
   ScoreDocument,
   ScoreEntry,
+  ScorePersistenceFailureReporter,
 } from "./scores/scores.js";
 export { ScoreCommitter, terminalScoreOfType } from "./scores/score-committer.js";
 export type {

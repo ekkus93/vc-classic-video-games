@@ -223,7 +223,7 @@ export const tests: readonly TestCase[] = [
     name: "P6-009 high-score view filters by exact game mode and difficulty",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
-      const scores = new ScoreRepository(documents);
+      const scores = new ScoreRepository(documents, () => undefined);
       await scores.submitScore("score-game", "easy", {
         mode: "default",
         score: 700,

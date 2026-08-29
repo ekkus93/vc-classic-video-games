@@ -95,7 +95,7 @@ export const tests: readonly TestCase[] = [
     name: "shell initialization hydrates launcher high scores from persistent score storage",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
-      const scores = new ScoreRepository(documents);
+      const scores = new ScoreRepository(documents, () => undefined);
       await scores.submitScore("alpha", "normal", {
         mode: "default",
         score: 125,
@@ -141,7 +141,7 @@ export const tests: readonly TestCase[] = [
       // through the actual ShellController difficulty-selection flow is what would have caught
       // that: a mode mismatch fails this test, a difficulty mismatch fails it too.
       const documents = new MemoryJsonDocumentStore();
-      const scores = new ScoreRepository(documents);
+      const scores = new ScoreRepository(documents, () => undefined);
       await scores.submitScore("deep-digger", "bore", {
         mode: "default",
         score: 4200,

@@ -73,12 +73,7 @@ export async function validateManifestFile(path, attributionPaths) {
 
 async function collectManifests(directory) {
   const result = [];
-  let entries;
-  try {
-    entries = await readdir(directory, { withFileTypes: true });
-  } catch {
-    return result;
-  }
+  const entries = await readdir(directory, { withFileTypes: true });
   for (const entry of entries) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {

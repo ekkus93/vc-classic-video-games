@@ -1,8 +1,10 @@
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 const MAX_JSON_BYTES: usize = 2 * 1024 * 1024;
+static NEXT_TEMP_ID: AtomicU64 = AtomicU64::new(0);
 
 fn valid_game_id(value: &str) -> bool {
     !value.is_empty()
@@ -46,12 +48,34 @@ pub fn load_json_document(
     }
 }
 
-pub fn save_json_document(
+fn create_unique_temp(parent: &Path, file_name: &str) -> Result<(PathBuf, File), String> {
+    loop {
+        let attempt = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
+        let temp = parent.join(format!(
+            ".{file_name}.{}.{}.tmp",
+            std::process::id(),
+            attempt
+        ));
+        match OpenOptions::new().write(true).create_new(true).open(&temp) {
+            Ok(file) => return Ok((temp, file)),
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(error) => {
+                return Err(format!("failed to create {}: {error}", temp.display()));
+            }
+        }
+    }
+}
+
+fn save_json_document_with_hook<F>(
     root: &Path,
     document: &str,
     game_id: Option<&str>,
     json: &str,
-) -> Result<(), String> {
+    after_temp_created: F,
+) -> Result<(), String>
+where
+    F: FnOnce(),
+{
     if json.len() > MAX_JSON_BYTES {
         return Err(format!("JSON document exceeds {MAX_JSON_BYTES} bytes"));
     }
@@ -66,10 +90,9 @@ pub fn save_json_document(
         .file_name()
         .and_then(|value| value.to_str())
         .ok_or_else(|| "invalid persistence filename".to_owned())?;
-    let temp = parent.join(format!(".{file_name}.tmp"));
+    let (temp, mut file) = create_unique_temp(parent, file_name)?;
+    after_temp_created();
     let result = (|| -> Result<(), String> {
-        let mut file = File::create(&temp)
-            .map_err(|error| format!("failed to create {}: {error}", temp.display()))?;
         file.write_all(json.as_bytes())
             .map_err(|error| format!("failed to write {}: {error}", temp.display()))?;
         file.sync_all()
@@ -79,16 +102,31 @@ pub fn save_json_document(
         Ok(())
     })();
     if result.is_err() {
+        // Preserve the primary save error. Cleanup is best-effort and is scoped to this attempt's
+        // unique temp path, so a cleanup failure cannot delete or obscure another writer's work.
         let _ = fs::remove_file(&temp);
     }
     result
 }
 
+pub fn save_json_document(
+    root: &Path,
+    document: &str,
+    game_id: Option<&str>,
+    json: &str,
+) -> Result<(), String> {
+    save_json_document_with_hook(root, document, game_id, json, || {})
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{document_path, load_json_document, save_json_document};
+    use super::{
+        document_path, load_json_document, save_json_document, save_json_document_with_hook,
+    };
     use std::fs;
     use std::path::PathBuf;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_root() -> PathBuf {
@@ -109,8 +147,69 @@ mod tests {
                 .as_deref(),
             Some(r#"{"version":1}"#)
         );
-        assert!(!root.join(".settings.json.tmp").exists());
+        let temp_files = fs::read_dir(&root)
+            .expect("read root")
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                name.starts_with(".settings.json.") && name.ends_with(".tmp")
+            })
+            .count();
+        assert_eq!(temp_files, 0);
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn concurrent_same_document_saves_use_independent_temp_files() {
+        let root = Arc::new(temp_root());
+        let barrier = Arc::new(Barrier::new(2));
+        let payload_a = r#"{"writer":"a","value":111111}"#.to_owned();
+        let payload_b = r#"{"writer":"b","value":222222}"#.to_owned();
+
+        let root_a = Arc::clone(&root);
+        let barrier_a = Arc::clone(&barrier);
+        let payload_a_for_thread = payload_a.clone();
+        let writer_a = thread::spawn(move || {
+            save_json_document_with_hook(&root_a, "settings", None, &payload_a_for_thread, || {
+                barrier_a.wait();
+            })
+        });
+
+        let root_b = Arc::clone(&root);
+        let barrier_b = Arc::clone(&barrier);
+        let payload_b_for_thread = payload_b.clone();
+        let writer_b = thread::spawn(move || {
+            save_json_document_with_hook(&root_b, "settings", None, &payload_b_for_thread, || {
+                barrier_b.wait();
+            })
+        });
+
+        writer_a
+            .join()
+            .expect("writer a thread")
+            .expect("writer a save");
+        writer_b
+            .join()
+            .expect("writer b thread")
+            .expect("writer b save");
+
+        let final_json = load_json_document(&root, "settings", None)
+            .expect("load")
+            .expect("settings document");
+        assert!(final_json == payload_a || final_json == payload_b);
+
+        let temp_files = fs::read_dir(root.as_ref())
+            .expect("read root")
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                name.starts_with(".settings.json.") && name.ends_with(".tmp")
+            })
+            .count();
+        assert_eq!(temp_files, 0);
+        let _ = fs::remove_dir_all(root.as_ref());
     }
 
     #[test]

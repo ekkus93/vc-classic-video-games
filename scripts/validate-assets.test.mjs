@@ -1,9 +1,12 @@
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   validateAttributionDocument,
   validateManifestFile,
+  validateRepository,
 } from "./validate-assets.mjs";
 
 function assert(condition, message) {
@@ -88,4 +91,39 @@ try {
   await validateManifestFile(declared, new Set());
 } finally {
   await rm(root, { recursive: true, force: true });
+}
+
+const repositoryRoot = await mkdtemp(join(tmpdir(), "vc-assets-repository-"));
+try {
+  await mkdir(join(repositoryRoot, "assets"), { recursive: true });
+  await writeFile(
+    join(repositoryRoot, "assets", "ATTRIBUTION.json"),
+    JSON.stringify({ schemaVersion: 1, assets: [] }),
+  );
+
+  let missingGamesFailed = false;
+  try {
+    await validateRepository(repositoryRoot);
+  } catch {
+    missingGamesFailed = true;
+  }
+  assert(
+    missingGamesFailed,
+    "repository validation must fail when the required src/games tree is missing",
+  );
+
+  const scriptPath = fileURLToPath(new URL("./validate-assets.mjs", import.meta.url));
+  const cli = spawnSync(process.execPath, [scriptPath], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  assert(
+    cli.status !== 0,
+    "validate-assets CLI must exit nonzero when the required src/games tree is missing",
+  );
+
+  await mkdir(join(repositoryRoot, "src", "games"), { recursive: true });
+  await validateRepository(repositoryRoot);
+} finally {
+  await rm(repositoryRoot, { recursive: true, force: true });
 }

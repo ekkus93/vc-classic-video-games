@@ -7,11 +7,13 @@ import {
   type AssetService,
   type AudioBufferResolver,
   type AudioContextFactory,
+  type AudioLifecycleFailure,
   type GameLogger,
   type GameModule,
   type GameServices,
   type GameStartOptions,
   type JsonDocumentStore,
+  type RecoveryWarning,
 } from "../../engine/index.js";
 import { SeededRandomService } from "../../engine/random/seeded-service.js";
 import type { ShellGameInputBridge } from "./input-bridge.js";
@@ -59,25 +61,28 @@ class BrowserGameAssetStore implements AssetService, AudioBufferResolver {
   }
 }
 
-const NOOP_LOGGER: GameLogger = Object.freeze({
-  debug: () => undefined,
-  info: () => undefined,
-  warn: () => undefined,
-  error: () => undefined,
-});
+export type GamePersistenceScope = "scores" | "game-state";
+
+export interface GamePersistenceNotice {
+  readonly scope: GamePersistenceScope;
+  readonly gameId: string;
+  readonly userMessage: string;
+}
+
+export type GamePersistenceReporter = (notice: GamePersistenceNotice) => void;
+
 
 export class BrowserGameServices {
   private context: AudioContext | null = null;
   private readonly assets = new BrowserGameAssetStore();
   private readonly decodedAudio = new Map<string, AudioBuffer>();
-  public readonly audio = new SharedWebAudioService(
-    this.assets,
-    () => this.requireAudioContext(),
-  );
+  public readonly audio: SharedWebAudioService;
 
   public constructor(
     private readonly documents: JsonDocumentStore,
     private readonly input: ShellGameInputBridge,
+    private readonly logger: GameLogger,
+    private readonly reportPersistence: GamePersistenceReporter,
     private readonly fetchImpl: BrowserFetch = fetch,
     // The `typeof AudioContext === "undefined"` guard lives in this default rather than in
     // requireAudioContext() itself, so an injected test factory (which supplies its own fake and
@@ -89,7 +94,13 @@ export class BrowserGameServices {
       }
       return new AudioContext();
     },
-  ) {}
+  ) {
+    this.audio = new SharedWebAudioService(
+      this.assets,
+      () => this.requireAudioContext(),
+      (failure) => this.reportAudioLifecycleFailure(failure),
+    );
+  }
 
   public async create(
     module: GameModule,
@@ -100,19 +111,40 @@ export class BrowserGameServices {
     await this.audio.unlock();
     await this.preload(module);
 
-    const scoreRepository = new ScoreRepository(this.documents);
+    const gameId = module.metadata.id;
+    const reportRecovery = (warning: RecoveryWarning): void => {
+      this.reportPersistenceEvent(
+        warning.scope === "scores" ? "scores" : "game-state",
+        gameId,
+        warning.scope === "scores"
+          ? "Some saved scores were invalid and were ignored."
+          : `Saved state for ${module.metadata.title} was invalid and was ignored.`,
+        warning.message,
+      );
+    };
+    const scoreRepository = new ScoreRepository(this.documents, reportRecovery);
     return Object.freeze({
       input: this.input,
       audio: this.audio,
       assets: this.assets,
       scores: new PersistentScoreService(
         scoreRepository,
-        module.metadata.id,
+        gameId,
         () => options.difficulty,
+        (error) => {
+          this.reportPersistenceEvent(
+            "scores",
+            gameId,
+            "Your score could not be saved.",
+            `${module.metadata.title} score persistence failed`,
+            error,
+          );
+        },
       ),
       storage: new NamespacedGameStorageService(
         this.documents,
-        module.metadata.id,
+        gameId,
+        reportRecovery,
       ),
       rng: new SeededRandomService(options.seed),
       clock: Object.freeze({
@@ -120,8 +152,48 @@ export class BrowserGameServices {
           (typeof performance === "undefined" ? Date.now() : performance.now()) /
           1000,
       }),
-      logger: NOOP_LOGGER,
+      logger: this.logger,
     });
+  }
+
+  private reportAudioLifecycleFailure(failure: AudioLifecycleFailure): void {
+    try {
+      this.logger.error(`Web Audio ${failure.operation} failed`, failure.error);
+    } catch {
+      // Logging is the terminal diagnostic boundary for nonfatal audio lifecycle failure.
+      // SharedWebAudioService already contains reporter failure, so this catch prevents a custom
+      // logger from reintroducing an exception through the production reporter itself.
+    }
+  }
+
+  private reportPersistenceEvent(
+    scope: GamePersistenceScope,
+    gameId: string,
+    userMessage: string,
+    diagnosticMessage: string,
+    error?: unknown,
+  ): void {
+    try {
+      if (error === undefined) {
+        this.logger.warn(diagnosticMessage);
+      } else {
+        this.logger.error(diagnosticMessage, error);
+      }
+    } catch {
+      // Diagnostic logging is already the final logging boundary. A broken logger must not turn a
+      // recoverable persistence failure into a game failure or suppress the separate shell notice.
+    }
+
+    try {
+      this.reportPersistence(Object.freeze({ scope, gameId, userMessage }));
+    } catch (reportError) {
+      try {
+        this.logger.error("Game persistence warning reporter failed", reportError);
+      } catch {
+        // Both observability sinks are now broken. Swallowing here is intentional terminal
+        // containment; recursing or escaping would crash gameplay while handling a save failure.
+      }
+    }
   }
 
   private requireAudioContext(): AudioContext {

@@ -41,6 +41,11 @@ export function terminalScoreOfType<
  *
  * CR4-005: this containment covers `scores.submit` (both a thrown exception, CR2-005, and a
  * rejection) and `reportError` itself (CR3-001), on both the synchronous and the async path.
+ * In the default V5 runtime, persistent score submission has already reported a storage failure
+ * through the shell persistence channel before its rejection reaches this class; this optional
+ * per-game reporter is therefore a secondary/custom-runtime hook rather than the sole production
+ * observability sink. Its no-op default is retained for isolated games/tests and custom
+ * `ScoreService` implementations.
  * It deliberately does **not** extend to `readTerminalScore`: that function is supplied by the
  * calling game, not an external system, and a throw from it is a bug in that game's own code
  * rather than an environmental failure (a full disk, a corrupt store, a broken logger) a

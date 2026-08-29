@@ -99,7 +99,7 @@ export function compareScores(a: ScoreEntry, b: ScoreEntry): number {
 export class ScoreRepository {
   public constructor(
     private readonly documents: JsonDocumentStore,
-    private readonly reportRecovery: RecoveryReporter = () => undefined,
+    private readonly reportRecovery: RecoveryReporter,
   ) {}
 
   public async load(): Promise<ScoreDocument> {
@@ -152,14 +152,28 @@ export class ScoreRepository {
   }
 }
 
+export type ScorePersistenceFailureReporter = (error: unknown) => void;
+
 export class PersistentScoreService implements ScoreService {
   public constructor(
     private readonly repository: ScoreRepository,
     private readonly gameId: string,
     private readonly difficulty: () => string,
+    private readonly reportFailure: ScorePersistenceFailureReporter,
   ) {}
 
   public async submit(submission: ScoreSubmission): Promise<void> {
-    await this.repository.submitScore(this.gameId, this.difficulty(), submission);
+    try {
+      await this.repository.submitScore(this.gameId, this.difficulty(), submission);
+    } catch (error) {
+      try {
+        this.reportFailure(error);
+      } catch {
+        // The persistence reporter is the observability boundary for this failed save. If that
+        // boundary is itself broken, preserve the original persistence rejection for the game's
+        // ScoreCommitter rather than replacing it with a secondary reporter failure.
+      }
+      throw error;
+    }
   }
 }

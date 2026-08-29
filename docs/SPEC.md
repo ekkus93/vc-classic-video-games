@@ -491,6 +491,12 @@ Games shall address audio through asset IDs rather than constructing paths ad ho
 
 The default application must remain usable with audio disabled.
 
+`pauseAll()` and `resumeAll()` remain synchronous lifecycle calls, but any underlying WebAudio
+`suspend()`/`resume()` promise must terminate in an explicit rejection handler. Rejection is
+nonfatal and goes to a real diagnostic reporter with operation context (`suspend` or `resume`); a
+reporter that itself throws is a final-boundary failure and is contained rather than becoming a
+second unhandled rejection.
+
 ## 14. Assets
 
 ### 14.1 Asset manifests
@@ -514,7 +520,9 @@ Development/CI tooling shall validate:
 - referenced files exist;
 - IDs are unique;
 - dimensions/metadata required by the manifest are valid;
-- third-party attribution data is present where required.
+- third-party attribution data is present where required;
+- the required `src/games` discovery tree is readable. Discovery errors fail validation closed;
+  only an existing, successfully-read empty game directory means “zero manifests.”
 
 ## 15. Collision, tile maps, and shared gameplay primitives
 
@@ -558,7 +566,15 @@ Persist at least:
 
 Initial persistence may use versioned JSON files. Every persisted root object must contain a schema version. Writes shall be atomic where practical: write/flush a temporary file and replace the prior file.
 
-Corrupt data shall not prevent the application from launching. Invalid files shall be quarantined or ignored with a visible recoverable warning and safe defaults.
+Frontend Tauri document saves are ordered per logical persistence key `(document, gameId-or-empty)`.
+Save B for one key must not invoke native persistence until earlier save A for that same key has
+settled; A rejecting must not poison B, and unrelated keys may proceed concurrently. Native atomic
+saves must also be collision-safe under direct concurrent callers: each save attempt owns its own
+exclusively-created temporary file, cleans up only that file on failure, and atomically renames a
+complete payload into place. Unique temp files provide collision safety; frontend serialization is
+what preserves application invocation order.
+
+Corrupt data shall not prevent the application from launching. Invalid files shall be quarantined or ignored with a visible recoverable warning and safe defaults. Every production settings, scores, or game-state repository is constructed with a real recovery reporter; recovery must not silently discard corrupt data.
 
 ### 16.4 High scores
 
@@ -584,6 +600,12 @@ Every game submits its run score through the same shared committer in
 - The submit promise is deliberately not awaited, and a rejection never reaches gameplay: it is
   routed to the game-supplied `reportError` handler, keeping a failing score store inside the
   game's own boundary.
+- In the default runtime, the shared persistent score service reports the failed save exactly once
+  through the shell persistence channel before rethrowing the same failure to `ScoreCommitter`.
+  The shell shows a generic nontechnical warning (`Your score could not be saved.`) while the real
+  game logger retains game identity and the underlying error. This service-level reporting is
+  mandatory and therefore covers games whose optional game-level `ScoreCommitter` reporter is
+  absent.
 - `terminalScoreOfType(type)` builds the terminal-score reader. A game supplies only the name of
   its own terminal event (most use `"game-over"`; Jungle Quest uses `"run-ended"`), and the type
   parameter is constrained to event-union members that actually carry a numeric `score`.
@@ -615,6 +637,13 @@ camera.
 ### 17.1 Startup
 
 Normal startup enters the game launcher. The launcher displays all registered games and must be usable without a mouse.
+
+Runtime mode is explicit. A present Tauri bridge selects native mode and durable
+`TauriJsonDocumentStore` persistence. Browser preview may select `MemoryJsonDocumentStore` only
+when the build explicitly allows development preview. A native-required/production build with no
+bridge fails startup; it must never silently downgrade durable storage to volatile memory. Native
+diagnostic-command failure is reported as a native integration error and is never relabeled as
+“browser preview.”
 
 ### 17.2 Game card
 
@@ -660,6 +689,13 @@ Global settings shall include:
 - gamepad assignment;
 - optional visual effects;
 - reset-to-defaults.
+
+A settings mutation is successful only after validation and durable repository save succeed. A
+contained save failure keeps the previously accepted settings snapshot, leaves a visible
+`Settings were not saved: …` error, and must not post a success status, clear that error, configure
+dependent audio with rejected values, or perform a dependent native fullscreen change. Callers
+that need to continue conditionally receive an explicit success/failure result rather than a
+fulfilled `void` promise after failure.
 
 ## 18. Tauri/Rust boundary
 
@@ -736,6 +772,29 @@ Avoid frame-by-frame logging in production.
 - Runtime shall catch game-module startup/update/render failures where technically possible, stop the affected game, and return to a recoverable error view.
 - Persistence errors shall show a nontechnical user message while retaining diagnostic detail in logs.
 - Missing required game assets shall prevent only that game from starting when possible, not crash the entire launcher.
+
+Canonical failure-handling rules:
+
+- Containment must never become false success. If an operation fails but remains nonfatal, callers
+  and UI state must still know it failed.
+- Production error boundaries must have a real reporter/log sink. A no-op may appear in a test
+  fixture or as an optional secondary game callback, but it may not be the default runtime's sole
+  destination for a recoverable production failure.
+- Durable-to-volatile and native-to-preview fallbacks are allowed only when an explicit runtime
+  mode permits them; absence/failure of an expected native integration is an error, not preview.
+- Every deliberately fire-and-forget promise whose underlying operation can reject must have an
+  explicit terminal rejection policy.
+- Development/CI validators fail closed on unexpected filesystem/discovery errors.
+- Persistence APIs are correct under concurrent callers: same-key application saves preserve
+  invocation order and native temp-file handling cannot collide.
+- Recoverable environmental failures (disk/store/logger/audio lifecycle) may be contained to keep
+  gameplay usable; programmer defects in game-owned logic should surface loudly rather than be
+  silently converted into missing behavior.
+- A bare terminal swallow is permitted only when all useful reporting boundaries have already
+  failed or when it intentionally preserves the primary failure; every such swallow must carry a
+  local rationale. `ScoreCommitter` swallowing a throw from its own error reporter is the
+  canonical example: escaping or recursively reporting would recreate the failure it is designed
+  to contain.
 
 ## 21. Performance targets
 

@@ -104,7 +104,7 @@ export function parseGlobalSettings(value: unknown): GlobalSettings {
 export class GlobalSettingsRepository {
   public constructor(
     private readonly documents: JsonDocumentStore,
-    private readonly reportRecovery: RecoveryReporter = () => undefined,
+    private readonly reportRecovery: RecoveryReporter,
   ) {}
 
   public async load(): Promise<GlobalSettings> {

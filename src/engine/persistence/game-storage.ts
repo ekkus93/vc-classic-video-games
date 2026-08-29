@@ -19,7 +19,7 @@ export class NamespacedGameStorageService implements GameStorageService {
   public constructor(
     private readonly documents: JsonDocumentStore,
     private readonly gameId: string,
-    private readonly reportRecovery: RecoveryReporter = () => undefined,
+    private readonly reportRecovery: RecoveryReporter,
   ) {
     if (!validGameId(gameId)) {
       throw new Error("invalid game id for storage namespace");

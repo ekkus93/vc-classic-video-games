@@ -2,6 +2,8 @@ import { assert, type TestCase } from "../../test/harness.js";
 import {
   SharedWebAudioService,
   type AudioBufferResolver,
+  type AudioLifecycleErrorReporter,
+  type AudioLifecycleFailure,
 } from "./audio-service.js";
 
 /**
@@ -61,6 +63,8 @@ class FakeAudioContext {
   public readonly createdSources: FakeAudioBufferSourceNode[] = [];
   public resumeCalls = 0;
   public suspendCalls = 0;
+  public resumeFailure: unknown = null;
+  public suspendFailure: unknown = null;
 
   public createGain(): FakeGainNode {
     const gain = new FakeGainNode();
@@ -76,11 +80,17 @@ class FakeAudioContext {
 
   public async resume(): Promise<void> {
     this.resumeCalls += 1;
+    if (this.resumeFailure !== null) {
+      throw this.resumeFailure;
+    }
     this.state = "running";
   }
 
   public async suspend(): Promise<void> {
     this.suspendCalls += 1;
+    if (this.suspendFailure !== null) {
+      throw this.suspendFailure;
+    }
     this.state = "suspended";
   }
 
@@ -114,22 +124,29 @@ interface Harness {
   readonly service: SharedWebAudioService;
   readonly resolver: FakeAudioBufferResolver;
   readonly contexts: readonly FakeAudioContext[];
+  readonly failures: readonly AudioLifecycleFailure[];
   readonly context: () => FakeAudioContext;
 }
 
-function harness(): Harness {
+function harness(reportOverride?: AudioLifecycleErrorReporter): Harness {
   const contexts: FakeAudioContext[] = [];
   const resolver = new FakeAudioBufferResolver();
+  const failures: AudioLifecycleFailure[] = [];
   const factory = () => {
     const context = new FakeAudioContext();
     contexts.push(context);
     return context as unknown as AudioContext;
   };
-  const service = new SharedWebAudioService(resolver, factory);
+  const service = new SharedWebAudioService(
+    resolver,
+    factory,
+    reportOverride ?? ((failure) => failures.push(failure)),
+  );
   return {
     service,
     resolver,
     contexts,
+    failures,
     context: () => {
       const current = contexts[contexts.length - 1];
       if (current === undefined) {
@@ -138,6 +155,11 @@ function harness(): Harness {
       return current;
     },
   };
+}
+
+async function flushPromises(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 const NEUTRAL_SETTINGS = Object.freeze({
@@ -403,6 +425,57 @@ export const tests: readonly TestCase[] = [
       assert(
         context().resumeCalls === resumeCallsAfterUnlock + 1,
         "resumeAll must not resume an already-running context a second time",
+      );
+    },
+  },
+  {
+    name: "CR5-006 pauseAll reports a rejected suspend exactly once",
+    run: async () => {
+      const h = harness();
+      await h.service.unlock();
+      const failure = new Error("suspend denied");
+      h.context().suspendFailure = failure;
+
+      h.service.pauseAll();
+      await flushPromises();
+
+      assert(h.failures.length === 1, "rejected suspend must be reported exactly once");
+      assert(h.failures[0]?.operation === "suspend", "suspend failure must name its operation");
+      assert(h.failures[0]?.error === failure, "suspend failure must retain the underlying error");
+    },
+  },
+  {
+    name: "CR5-006 resumeAll reports a rejected resume exactly once",
+    run: async () => {
+      const h = harness();
+      await h.service.unlock();
+      h.context().state = "suspended";
+      const failure = new Error("resume denied");
+      h.context().resumeFailure = failure;
+
+      h.service.resumeAll();
+      await flushPromises();
+
+      assert(h.failures.length === 1, "rejected resume must be reported exactly once");
+      assert(h.failures[0]?.operation === "resume", "resume failure must name its operation");
+      assert(h.failures[0]?.error === failure, "resume failure must retain the underlying error");
+    },
+  },
+  {
+    name: "CR5-006 a throwing lifecycle reporter remains a terminally contained failure",
+    run: async () => {
+      const h = harness(() => {
+        throw new Error("reporter broken");
+      });
+      await h.service.unlock();
+      h.context().suspendFailure = new Error("suspend denied");
+
+      h.service.pauseAll();
+      await flushPromises();
+
+      assert(
+        h.context().suspendCalls === 1,
+        "throwing reporter must not synchronously escape or cause a duplicate lifecycle call",
       );
     },
   },

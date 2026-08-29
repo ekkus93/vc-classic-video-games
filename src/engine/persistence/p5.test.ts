@@ -108,12 +108,12 @@ export const tests: readonly TestCase[] = [
     name: "P4 input mappings persist through the P5 global settings boundary",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
-      const repository = new GlobalSettingsRepository(documents);
+      const repository = new GlobalSettingsRepository(documents, () => undefined);
       const store = new PersistentInputSettingsStore(repository);
       const defaults = createDefaultGlobalSettings().input;
       await store.save(defaults);
       const restartedStore = new PersistentInputSettingsStore(
-        new GlobalSettingsRepository(documents),
+        new GlobalSettingsRepository(documents, () => undefined),
       );
       const loaded = await restartedStore.load();
       assert(
@@ -126,7 +126,7 @@ export const tests: readonly TestCase[] = [
     name: "scores sort deterministically by score, timestamp, then insertion sequence",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
-      const scores = new ScoreRepository(documents);
+      const scores = new ScoreRepository(documents, () => undefined);
       await scores.submitScore("space-rocks", "normal", {
         score: 100,
         mode: "solo",
@@ -210,8 +210,8 @@ export const tests: readonly TestCase[] = [
     name: "per-game storage namespaces prevent one game from overwriting another",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
-      const a = new NamespacedGameStorageService(documents, "game-a");
-      const b = new NamespacedGameStorageService(documents, "game-b");
+      const a = new NamespacedGameStorageService(documents, "game-a", () => undefined);
+      const b = new NamespacedGameStorageService(documents, "game-b", () => undefined);
       await a.set("checkpoint", { wave: 4 });
       await b.set("checkpoint", { wave: 9 });
       assert(

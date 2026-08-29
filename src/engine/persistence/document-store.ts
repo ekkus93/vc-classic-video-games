@@ -11,6 +11,8 @@ export type TauriInvoke = <T>(
 ) => Promise<T>;
 
 export class TauriJsonDocumentStore implements JsonDocumentStore {
+  private readonly saveTails = new Map<string, Promise<void>>();
+
   public constructor(private readonly invoke: TauriInvoke) {}
 
   public load(document: PersistenceDocument, gameId?: string): Promise<string | null> {
@@ -25,11 +27,40 @@ export class TauriJsonDocumentStore implements JsonDocumentStore {
     json: string,
     gameId?: string,
   ): Promise<void> {
-    return this.invoke<void>("save_json_document", {
-      document,
-      gameId: gameId ?? null,
-      json,
+    const key = this.key(document, gameId);
+    const previous = this.saveTails.get(key) ?? Promise.resolve();
+    // `previous` is queue bookkeeping, not the prior caller's returned promise. Converting a
+    // rejected tail to fulfillment here only lets the next invocation proceed; the failed save
+    // still rejects its own `operation` to its original caller.
+    const operation = previous
+      .catch(() => undefined)
+      .then(() =>
+        this.invoke<void>("save_json_document", {
+          document,
+          gameId: gameId ?? null,
+          json,
+        }),
+      );
+
+    // The queue tail is deliberately fulfillment-only: a failed save must reject its own caller
+    // without poisoning later saves for the same document. Cleanup is identity-checked so an older
+    // completion cannot delete bookkeeping installed by a newer queued save.
+    const tail = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.saveTails.set(key, tail);
+    tail.then(() => {
+      if (this.saveTails.get(key) === tail) {
+        this.saveTails.delete(key);
+      }
     });
+
+    return operation;
+  }
+
+  private key(document: PersistenceDocument, gameId?: string): string {
+    return `${document}:${gameId ?? ""}`;
   }
 }
 

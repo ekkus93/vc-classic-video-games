@@ -4,8 +4,10 @@ import {
   ScoreRepository,
   createDefaultGlobalSettings,
   defineGameMetadata,
+  type AudioSettings,
   type GameModule,
   type GameStartOptions,
+  type PersistenceDocument,
 } from "../../engine/index.js";
 import { assert, type TestCase } from "../../test/harness.js";
 import { ShellController } from "./controller.js";
@@ -43,6 +45,28 @@ function gameModule(id = "space-test", title = "Space Test"): GameModule {
       destroy: () => undefined,
     }),
   };
+}
+
+
+class RejectingSettingsDocumentStore extends MemoryJsonDocumentStore {
+  public override save(
+    document: PersistenceDocument,
+    json: string,
+    gameId?: string,
+  ): Promise<void> {
+    if (document === "settings") {
+      return Promise.reject(new Error("disk full"));
+    }
+    return super.save(document, json, gameId);
+  }
+}
+
+class RecordingAudioSettingsPort {
+  public readonly calls: AudioSettings[] = [];
+
+  public configure(settings: AudioSettings): void {
+    this.calls.push(settings);
+  }
 }
 
 class FakeGameHost implements ShellGameHost {
@@ -90,6 +114,7 @@ function createController(
   documents = new MemoryJsonDocumentStore(),
   host = new FakeGameHost(),
   fullscreen?: { setFullscreen(enabled: boolean): Promise<void> },
+  audio?: RecordingAudioSettingsPort,
 ): { controller: ShellController; host: FakeGameHost; documents: MemoryJsonDocumentStore } {
   const common = {
     registry: new GameRegistry([gameModule()]),
@@ -97,10 +122,11 @@ function createController(
     gameHost: host,
   };
   return {
-    controller:
-      fullscreen === undefined
-        ? new ShellController(common)
-        : new ShellController({ ...common, fullscreen }),
+    controller: new ShellController({
+      ...common,
+      ...(fullscreen === undefined ? {} : { fullscreen }),
+      ...(audio === undefined ? {} : { audio }),
+    }),
     host,
     documents,
   };
@@ -233,6 +259,93 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
+    name: "failed settings saves do not report remap or reset success",
+    run: async () => {
+      const documents = new RejectingSettingsDocumentStore();
+      const { controller } = createController(documents);
+      const originalBinding = controller.snapshot.settings.input.keyboard[1]["action-1"][0];
+
+      const changed = await controller.remapKeyboard(1, "action-1", "KeyQ");
+      assert(!changed, "remap must return false when settings persistence fails");
+      assert(
+        controller.snapshot.settings.input.keyboard[1]["action-1"][0] === originalBinding,
+        "failed remap must keep the accepted binding unchanged",
+      );
+      assert(controller.snapshot.status === null, "failed remap must not post a success status");
+      assert(
+        controller.snapshot.error?.includes("disk full") === true,
+        "failed remap must retain the persistence error",
+      );
+
+      await controller.resetControls();
+      assert(
+        controller.snapshot.status !== "Controls reset to defaults",
+        "failed reset must not post a success status",
+      );
+      assert(
+        controller.snapshot.settings.input.keyboard[1]["action-1"][0] === originalBinding,
+        "failed reset must keep the accepted input settings unchanged",
+      );
+    },
+  },
+  {
+    name: "failed fullscreen save does not call the native fullscreen adapter",
+    run: async () => {
+      const documents = new RejectingSettingsDocumentStore();
+      let calls = 0;
+      const { controller } = createController(documents, new FakeGameHost(), {
+        setFullscreen: () => {
+          calls += 1;
+          return Promise.resolve();
+        },
+      });
+
+      const before = controller.snapshot.settings.fullscreen;
+      await controller.setFullscreen(!before);
+
+      assert(calls === 0, "native fullscreen must not run after a rejected preference save");
+      assert(
+        controller.snapshot.settings.fullscreen === before,
+        "failed fullscreen save must keep the accepted preference unchanged",
+      );
+      assert(
+        controller.snapshot.error?.includes("disk full") === true,
+        "failed fullscreen save must remain visible",
+      );
+    },
+  },
+  {
+    name: "failed audio and visual saves keep accepted settings and do not reconfigure audio",
+    run: async () => {
+      const documents = new RejectingSettingsDocumentStore();
+      const audio = new RecordingAudioSettingsPort();
+      const { controller } = createController(documents, new FakeGameHost(), undefined, audio);
+      const before = controller.snapshot.settings;
+
+      await controller.setVolume("masterVolume", 0.25);
+      await controller.setMuted(true);
+      await controller.setVisual("reducedEffects", true);
+
+      assert(
+        controller.snapshot.settings.audio.masterVolume === before.audio.masterVolume,
+        "failed volume save must not update accepted settings",
+      );
+      assert(
+        controller.snapshot.settings.audio.muted === before.audio.muted,
+        "failed mute save must not update accepted settings",
+      );
+      assert(
+        controller.snapshot.settings.visual.reducedEffects === before.visual.reducedEffects,
+        "failed visual save must not update accepted settings",
+      );
+      assert(audio.calls.length === 0, "rejected audio settings must not configure the audio port");
+      assert(
+        controller.snapshot.error?.includes("disk full") === true,
+        "the most recent rejected settings save must remain visible",
+      );
+    },
+  },
+  {
     name: "stored fullscreen preference is applied and failure becomes a warning",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
@@ -256,7 +369,7 @@ export const tests: readonly TestCase[] = [
     name: "high-score view uses selected game mode and difficulty ordering",
     run: async () => {
       const documents = new MemoryJsonDocumentStore();
-      const scores = new ScoreRepository(documents);
+      const scores = new ScoreRepository(documents, () => undefined);
       await scores.submitScore("space-test", "easy", {
         mode: "default",
         score: 100,

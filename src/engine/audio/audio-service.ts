@@ -15,6 +15,15 @@ export interface SharedAudioSettings {
 
 export type AudioContextFactory = () => AudioContext;
 
+export type AudioLifecycleOperation = "suspend" | "resume";
+
+export interface AudioLifecycleFailure {
+  readonly operation: AudioLifecycleOperation;
+  readonly error: unknown;
+}
+
+export type AudioLifecycleErrorReporter = (failure: AudioLifecycleFailure) => void;
+
 interface ActiveSource {
   readonly source: AudioBufferSourceNode;
   readonly assetId: string;
@@ -42,7 +51,8 @@ export class SharedWebAudioService implements AudioService {
 
   public constructor(
     private readonly assets: AudioBufferResolver,
-    private readonly createContext: AudioContextFactory = () => new AudioContext(),
+    private readonly createContext: AudioContextFactory,
+    private readonly reportLifecycleError: AudioLifecycleErrorReporter,
   ) {}
 
   public get isUnlocked(): boolean {
@@ -86,13 +96,13 @@ export class SharedWebAudioService implements AudioService {
 
   public pauseAll(): void {
     if (this.context?.state === "running") {
-      void this.context.suspend();
+      this.observeLifecyclePromise("suspend", () => this.context!.suspend());
     }
   }
 
   public resumeAll(): void {
     if (this.context?.state === "suspended") {
-      void this.context.resume();
+      this.observeLifecyclePromise("resume", () => this.context!.resume());
     }
   }
 
@@ -111,6 +121,37 @@ export class SharedWebAudioService implements AudioService {
       muted: settings.muted,
     });
     this.applySettings();
+  }
+
+  private observeLifecyclePromise(
+    operation: AudioLifecycleOperation,
+    action: () => Promise<void>,
+  ): void {
+    let pending: Promise<void>;
+    try {
+      pending = action();
+    } catch (error) {
+      this.reportLifecycleFailure(operation, error);
+      return;
+    }
+    // The promise returned by catch cannot reject because reportLifecycleFailure contains a
+    // throwing reporter. This is the terminal policy for the deliberately fire-and-forget browser
+    // lifecycle call.
+    void pending.catch((error: unknown) => {
+      this.reportLifecycleFailure(operation, error);
+    });
+  }
+
+  private reportLifecycleFailure(
+    operation: AudioLifecycleOperation,
+    error: unknown,
+  ): void {
+    try {
+      this.reportLifecycleError(Object.freeze({ operation, error }));
+    } catch {
+      // The reporter is the final observability boundary for a nonfatal audio lifecycle failure.
+      // Escaping here would convert contained suspend/resume failure into an unhandled exception.
+    }
   }
 
   private play(assetId: string, bus: AudioBus, loop: boolean): void {

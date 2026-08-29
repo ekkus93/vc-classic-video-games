@@ -4,24 +4,16 @@ import { LogicalFramebuffer, presentFramebuffer } from "../engine/index.js";
 import {
   diagnosticPing,
   getPlatformInfo,
-  type PlatformInfo,
+  hasNativeBridge,
 } from "../native/commands.js";
 import { shouldInjectFailure } from "./failure-injection.js";
+import { probeNativeStatus, type NativeStatus } from "./native-status.js";
 import { ShellView } from "./shell/ShellView.js";
 import { resizeCanvasToDevicePixels } from "./shell/canvas-resize.js";
 import { createDefaultShellRuntime } from "./shell/default-controller.js";
 import { moveFocusToShellSelection } from "./shell/focus-management.js";
 import { useShellInput } from "./shell/use-shell-input.js";
 import type { ShellController, ShellState } from "./shell/controller.js";
-
-type NativeStatus =
-  | { readonly state: "loading" }
-  | {
-      readonly state: "connected";
-      readonly platform: PlatformInfo;
-      readonly echo: string;
-    }
-  | { readonly state: "preview" };
 
 export interface AppProps {
   readonly controller?: ShellController;
@@ -40,7 +32,10 @@ function renderFailureRequested(): boolean {
 
 export function App({ controller }: AppProps = {}) {
   const runtime = useMemo(
-    () => (controller === undefined ? createDefaultShellRuntime() : null),
+    () =>
+      controller === undefined
+        ? createDefaultShellRuntime({ allowBrowserPreview: import.meta.env.DEV })
+        : null,
     [controller],
   );
   const shell = controller ?? runtime?.controller;
@@ -48,10 +43,11 @@ export function App({ controller }: AppProps = {}) {
     throw new Error("Shell runtime could not be created");
   }
 
+  const runtimeMode = runtime?.mode ?? (hasNativeBridge() ? "native" : "browser-preview");
   const [shellState, setShellState] = useState<ShellState>(shell.snapshot);
-  const [nativeStatus, setNativeStatus] = useState<NativeStatus>({
-    state: "loading",
-  });
+  const [nativeStatus, setNativeStatus] = useState<NativeStatus>(
+    runtimeMode === "browser-preview" ? { state: "preview" } : { state: "loading" },
+  );
   const shellSurface = useRef<HTMLElement | null>(null);
 
   useShellInput(
@@ -151,32 +147,27 @@ export function App({ controller }: AppProps = {}) {
   useEffect(() => {
     let cancelled = false;
 
-    void Promise.resolve()
-      .then(() =>
-        Promise.all([
-          getPlatformInfo(),
-          diagnosticPing({ message: "launcher-ready" }),
-        ]),
-      )
-      .then(([platform, ping]) => {
+    void probeNativeStatus(runtimeMode, getPlatformInfo, diagnosticPing)
+      .then((status) => {
         if (!cancelled) {
-          setNativeStatus({
-            state: "connected",
-            platform,
-            echo: ping.echo,
-          });
+          setNativeStatus(status);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
-          setNativeStatus({ state: "preview" });
+          setNativeStatus({
+            state: "error",
+            message: `Native bridge diagnostics failed unexpectedly: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          });
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [runtimeMode]);
 
   if (renderFailureRequested()) {
     throw new Error("Injected render failure");
@@ -197,12 +188,16 @@ export function App({ controller }: AppProps = {}) {
             ? "Native bridge: checking…"
             : nativeStatus.state === "connected"
               ? `Native bridge: connected (${nativeStatus.echo})`
-              : "Native bridge: browser preview"}
+              : nativeStatus.state === "preview"
+                ? "Native bridge: browser preview"
+                : `Native bridge: error (${nativeStatus.message})`}
         </span>
         <span>
           {nativeStatus.state === "connected"
             ? `${nativeStatus.platform.os}/${nativeStatus.platform.arch} · v${nativeStatus.platform.appVersion}`
-            : "Tauri 2 · offline-first"}
+            : nativeStatus.state === "error"
+              ? "Native integration unavailable"
+              : "Tauri 2 · offline-first"}
         </span>
       </footer>
     </main>

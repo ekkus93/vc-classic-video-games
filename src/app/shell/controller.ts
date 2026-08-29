@@ -479,8 +479,8 @@ export class ShellController {
   }
 
   public async setFullscreen(enabled: boolean): Promise<void> {
-    await this.saveSettings({ ...this.state.settings, fullscreen: enabled });
-    if (this.options.fullscreen === undefined) {
+    const saved = await this.saveSettings({ ...this.state.settings, fullscreen: enabled });
+    if (!saved || this.options.fullscreen === undefined) {
       return;
     }
     try {
@@ -501,7 +501,10 @@ export class ShellController {
       const keyboard = cloneKeyboardMappings(this.state.settings.input.keyboard);
       keyboard[player][action] = [code];
       const input = parseInputSettings({ version: 1, keyboard });
-      await this.saveSettings({ ...this.state.settings, input });
+      const saved = await this.saveSettings({ ...this.state.settings, input });
+      if (!saved) {
+        return false;
+      }
       this.patch({ status: `${action} mapped to ${code}`, error: null });
       return true;
     } catch (error) {
@@ -511,11 +514,17 @@ export class ShellController {
   }
 
   public async resetControls(): Promise<void> {
-    await this.saveSettings({
+    const saved = await this.saveSettings({
       ...this.state.settings,
       input: createDefaultInputSettings(),
     });
-    this.patch({ status: "Controls reset to defaults" });
+    if (saved) {
+      this.patch({ status: "Controls reset to defaults" });
+    }
+  }
+
+  public reportGamePersistenceWarning(message: string): void {
+    this.patch({ warning: message });
   }
 
   public dismissMessages(): void {
@@ -748,14 +757,16 @@ export class ShellController {
     }
   }
 
-  private async saveSettings(value: GlobalSettings): Promise<void> {
+  private async saveSettings(value: GlobalSettings): Promise<boolean> {
     try {
       const settings = parseGlobalSettings(value);
       await this.settingsRepository.save(settings);
       this.options.audio?.configure(settings.audio);
       this.patch({ settings, error: null });
+      return true;
     } catch (error) {
       this.patch({ error: `Settings were not saved: ${describeError(error)}` });
+      return false;
     }
   }
 
