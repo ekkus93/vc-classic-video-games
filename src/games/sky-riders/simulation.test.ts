@@ -79,7 +79,13 @@ export const tests: readonly TestCase[] = [
       }
 
       assert(separated, "a tie bounce must actually carry the riders past the overlap threshold");
-      assert(clashes <= 2, `one collision must not emit a clash per frame (got ${clashes} over ${frames} separation frames)`);
+      // CR2-013: pinned exactly, not as an upper bound. At this fixed seed (0x1503) the pair
+      // separates in 21 frames with exactly one re-approach clash along the way, at frame 14 --
+      // the enemy's own pursuit closing the gap again before the bounce has fully carried them
+      // apart, which is a real second collision and clashes on its own merits (see the "no clash
+      // while already moving apart" note above). A tolerance here would hide a regression that
+      // added a third.
+      assert(clashes === 2, `this fixed seed must produce exactly one collision clash plus one pursuit re-approach clash (got ${clashes} over ${frames} separation frames)`);
       assert(s.players[0]?.lives === 3 && s.enemies.length === 1 && s.score === 0, "a tie sequence must remain non-scoring and non-damaging");
     },
   },
