@@ -2,13 +2,18 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { App } from "./App.js";
+import { createDefaultShellController } from "./shell/default-controller.js";
 import { assert, type TestCase } from "../test/harness.js";
 
 export const tests: readonly TestCase[] = [
   {
     name: "launcher shell renders controller-first registered-game state",
     run: () => {
-      const markup = renderToStaticMarkup(createElement(App));
+      const controller = createDefaultShellController({
+        allowBrowserPreview: true,
+        nativeBridgeAvailable: () => false,
+      });
+      const markup = renderToStaticMarkup(createElement(App, { controller }));
       assert(
         markup.includes("VC Classic Video Games"),
         "launcher identity must render",
