@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { CanvasGameRenderer } from "../engine/index.js";
+import { LogicalFramebuffer, presentFramebuffer } from "../engine/index.js";
 import {
   diagnosticPing,
   getPlatformInfo,
@@ -80,22 +80,41 @@ export function App({ controller }: AppProps = {}) {
     const canvas = shellSurface.current?.querySelector<HTMLCanvasElement>(
       "canvas.game-viewport",
     );
-    const context = canvas?.getContext("2d") ?? null;
-    if (game === null || canvas == null || context === null) {
+    const displayContext = canvas?.getContext("2d") ?? null;
+    if (game === null || canvas == null || displayContext === null) {
       gameHost.setRenderer(null);
       return undefined;
     }
 
-    canvas.width = game.logicalWidth;
-    canvas.height = game.logicalHeight;
-    const renderer = new CanvasGameRenderer(
-      context,
+    // CR-005: the game draws into an offscreen logical-resolution framebuffer, and a small
+    // shell-owned present loop blits it onto the visible canvas through the tested
+    // integer-nearest-neighbor viewport scaling (calculateViewport/presentFramebuffer) --
+    // matching what P3-005's own tests validate, instead of relying on CSS to stretch a
+    // logical-resolution canvas (which doesn't guarantee true integer-only scaling and left that
+    // tested code path unused). This present loop is a separate, independently owned RAF chain
+    // from the game's own fixed-step/render driver, the same way use-shell-input.ts already owns
+    // its own RAF chain for input polling -- both are shell-level concerns, not per-game ones,
+    // and each is started/stopped in step with the effect that owns it.
+    const framebuffer = new LogicalFramebuffer(
+      document.createElement("canvas"),
       game.logicalWidth,
       game.logicalHeight,
     );
-    gameHost.setRenderer(renderer);
+    gameHost.setRenderer(framebuffer.renderer);
+
+    let frame = 0;
+    const present = (): void => {
+      if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = Math.max(1, canvas.clientWidth);
+        canvas.height = Math.max(1, canvas.clientHeight);
+      }
+      presentFramebuffer(displayContext, framebuffer, canvas.width, canvas.height);
+      frame = window.requestAnimationFrame(present);
+    };
+    frame = window.requestAnimationFrame(present);
 
     return () => {
+      window.cancelAnimationFrame(frame);
       gameHost.setRenderer(null);
     };
   }, [runtime, shell, shellState.screen, shellState.selection?.gameId]);

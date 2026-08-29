@@ -346,6 +346,15 @@ The default game logical resolution is 320x240. The runtime shall support a game
 - Keep HUD text readable on common 1366x768 Chromebook panels.
 - CSS and canvas configuration shall disable smoothing for pixel-art assets unless a particular asset explicitly requires smoothing.
 
+Mechanism (CR-005): each game renders into an offscreen, logical-resolution `LogicalFramebuffer`.
+A shell-owned present loop blits that framebuffer onto the visible canvas every frame via
+`presentFramebuffer`, which computes scale/letterbox placement through `calculateViewport` (the
+integer-preferred/fractional-fallback algorithm this section describes) rather than relying on
+CSS to stretch a logical-resolution canvas. The present loop is its own RAF chain, owned and
+torn down by the shell alongside the renderer it feeds -- a distinct concern from a game's own
+fixed-step/render driver loop (§10) and from the shell's input-polling RAF chain, the same way
+each of those is independently started and cancelled by the effect that owns it.
+
 ### 11.3 Frame ownership
 
 Each game draws only into the game surface supplied by the runtime. Launcher UI overlays such as pause, confirm-exit, and global notifications are owned by the application shell.

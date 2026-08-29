@@ -59,7 +59,7 @@ any order, can be interleaved).
     to the expected logical-space corners/center when the shell has non-zero padding. Missile
     Defense's cursor aims where the pointer visually is.
 
-- [ ] **CR-005 — Resolve the viewport-scaling divergence (decision required)**
+- [x] **CR-005 — Resolve the viewport-scaling divergence (decision required)** — resolved: wired production through the tested integer-scaling path (user-confirmed direction).
   - Either wire production canvas rendering through the tested
     `calculateViewport`/`presentFramebuffer` integer-scaling path, or formally retire that code as
     dead and document CSS-based scaling as the intended approach. See `docs/BUGFIX_SPEC.md` §1.5
