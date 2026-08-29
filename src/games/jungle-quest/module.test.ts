@@ -3,7 +3,8 @@ import { createFakeGameServices } from "../../engine/testing/fake-services.js";
 import { FakeGameRenderer } from "../../engine/testing/fake-renderer.js";
 import { assert, type TestCase } from "../../test/harness.js";
 import { JUNGLE_QUEST_AUDIO_IDS } from "./effects.js";
-import { JUNGLE_QUEST_MODULE, drawSealedPassages } from "./module.js";
+import { JUNGLE_QUEST_MODULE } from "./module.js";
+import { drawSealedPassages } from "./sealed-passages.js";
 import { JUNGLE_QUEST_ROOMS, JUNGLE_QUEST_SEALED_PASSAGE_DEPTH, jungleQuestRoom } from "./world.js";
 const OPTIONS=Object.freeze({players:1,difficulty:"expedition",seed:0x130013});
 class RectCapturingRenderer implements GameRenderer{public readonly rects:string[]=[];public readonly logicalWidth=320;public readonly logicalHeight=240;public clear():void{}public fillRect(x:number,y:number,width:number,height:number,color:string):void{this.rects.push(`${x},${y},${width},${height},${color}`);}public strokeRect():void{}public drawLine():void{}public fillCircle():void{}public strokeCircle():void{}public fillPolygon():void{}public drawText():void{}public drawSprite():void{}public save():void{}public restore():void{}public translate():void{}public rotate():void{}}

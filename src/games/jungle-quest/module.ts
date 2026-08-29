@@ -1,10 +1,11 @@
 import type { GameInstance, GameModule, GameRenderer, GameServices, GameStartOptions, Vector2 } from "../../engine/index.js";
-import { JUNGLE_QUEST_DIFFICULTIES, JUNGLE_QUEST_RUN_RULES, type JungleQuestDifficultyId } from "./design.js";
+import { JUNGLE_QUEST_DIFFICULTIES, type JungleQuestDifficultyId } from "./design.js";
 import { JungleQuestEffects } from "./effects.js";
 import { JUNGLE_QUEST_METADATA } from "./metadata.js";
+import { drawSealedPassages, platformEdgeColor, TUNNEL_BAND_TOP } from "./sealed-passages.js";
 import { JungleQuestScoreCommitter } from "./score-submission.js";
 import { JungleQuestSimulation } from "./simulation.js";
-import { JUNGLE_QUEST_SEALED_PASSAGE_DEPTH, jungleQuestSealedPassages, type JungleQuestPlatformKind, type JungleQuestRoom } from "./world.js";
+import type { JungleQuestPlatformKind } from "./world.js";
 function resolveDifficulty(value: string): JungleQuestDifficultyId { if (!Object.hasOwn(JUNGLE_QUEST_DIFFICULTIES, value)) throw new Error(`Unsupported Jungle Quest difficulty: ${value}`); return value as JungleQuestDifficultyId; }
 function assetUrl(path: string): string | null { switch (path) {
   case "assets.json": return new URL("./assets.json", import.meta.url).href;
@@ -18,23 +19,6 @@ function assetUrl(path: string): string | null { switch (path) {
 } }
 function platformColor(kind: JungleQuestPlatformKind): string { switch (kind) { case "surface": return "#8a6b42"; case "ledge": return "#6d824d"; case "tunnel": return "#4b3b4f"; } }
 function drawPlatform(renderer: GameRenderer, x1: number, x2: number, y: number, kind: JungleQuestPlatformKind): void { const height = kind === "tunnel" ? 14 : 8; renderer.fillRect(x1, y, x2 - x1, height, platformColor(kind)); renderer.drawLine(x1, y, x2, y, platformEdgeColor(kind), 1); }
-const TUNNEL_BAND_TOP = 198;
-function platformEdgeColor(kind: JungleQuestPlatformKind): string { return kind === "tunnel" ? "#8a6f8f" : "#a8b56d"; }
-/**
- * Draws a rock face across every passage in `room` that reaches a room edge but is sealed at that
- * height (see jungleQuestSealedPassages), so a dead end reads as a dead end before the player
- * walks into it. The face is exactly as deep as the simulation's clamp, so the wall the player
- * hits is the wall they see.
- */
-export function drawSealedPassages(renderer: GameRenderer, room: JungleQuestRoom): void {
-  for (const { side, platform } of jungleQuestSealedPassages(room)) {
-    const x = side === "previous" ? 0 : JUNGLE_QUEST_RUN_RULES.logicalWidth - JUNGLE_QUEST_SEALED_PASSAGE_DEPTH;
-    const top = platform.kind === "tunnel" ? TUNNEL_BAND_TOP : platform.y - JUNGLE_QUEST_RUN_RULES.playerHeight;
-    renderer.fillRect(x, top, JUNGLE_QUEST_SEALED_PASSAGE_DEPTH, platform.y - top, room.palette.earth);
-    const faceX = side === "previous" ? x + JUNGLE_QUEST_SEALED_PASSAGE_DEPTH : x;
-    renderer.drawLine(faceX, top, faceX, platform.y, platformEdgeColor(platform.kind), 1);
-  }
-}
 function drawHazard(renderer: GameRenderer, x: number, y: number, width: number): void { const count = Math.max(2, Math.floor(width / 6)); const step = width / count; for (let index = 0; index < count; index += 1) { const left = x + index * step; renderer.fillPolygon([{ x: left, y: y + 8 }, { x: left + step / 2, y }, { x: left + step, y: y + 8 }], "#d6664d"); } }
 function drawRelic(renderer: GameRenderer, position: Vector2): void { renderer.fillPolygon([{ x: position.x, y: position.y - 5 }, { x: position.x + 5, y: position.y }, { x: position.x, y: position.y + 5 }, { x: position.x - 5, y: position.y }], "#f4d96b"); renderer.fillCircle(position.x, position.y, 1.5, "#fff4b0"); }
 function drawPlayer(renderer: GameRenderer, position: Vector2, facing: -1 | 1, mode: string): void {
