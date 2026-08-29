@@ -1,4 +1,9 @@
-import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import type {
+  AudioService,
+  GameRenderer,
+  ParticleBurstStyle,
+  Vector2,
+} from "../../engine/index.js";
 import { ParticleBurstField } from "../../engine/index.js";
 import { STAR_DEFENDER_RUN_RULES } from "./design.js";
 import type { StarDefenderSimulationEvent } from "./simulation.js";
@@ -16,14 +21,6 @@ export const STAR_DEFENDER_AUDIO_IDS = Object.freeze({
 export const STAR_DEFENDER_EFFECT_RULES = Object.freeze({
   maxParticles: 72,
 });
-
-interface BurstStyle {
-  readonly count: number;
-  readonly speed: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
 
 export class StarDefenderEffects {
   private readonly particles = new ParticleBurstField({
@@ -139,7 +136,7 @@ export class StarDefenderEffects {
     this.particles.clear();
   }
 
-  private spawnBurst(position: Vector2, style: BurstStyle): void {
+  private spawnBurst(position: Vector2, style: ParticleBurstStyle): void {
     this.particles.burst({ x: position.x, y: position.y, ...style });
   }
 }

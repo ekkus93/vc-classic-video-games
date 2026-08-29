@@ -1,4 +1,9 @@
-import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import type {
+  AudioService,
+  GameRenderer,
+  ParticleBurstStyle,
+  Vector2,
+} from "../../engine/index.js";
 import { ParticleBurstField } from "../../engine/index.js";
 import { RIVER_HOPPER_RUN_RULES, riverHopperGoalCenter, riverHopperRowCenter } from "./design.js";
 import type { RiverHopperSimulationEvent } from "./simulation.js";
@@ -19,14 +24,6 @@ export const RIVER_HOPPER_EFFECT_RULES = Object.freeze({
   goalParticles: 12,
   roundParticles: 18,
 });
-
-interface Burst {
-  readonly count: number;
-  readonly speed: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
 
 export class RiverHopperEffects {
   private readonly particles = new ParticleBurstField({
@@ -131,7 +128,7 @@ export class RiverHopperEffects {
     this.particles.clear();
   }
 
-  private spawn(position: Vector2, burst: Burst): void {
+  private spawn(position: Vector2, burst: ParticleBurstStyle): void {
     this.particles.burst({ x: position.x, y: position.y, ...burst });
   }
 }

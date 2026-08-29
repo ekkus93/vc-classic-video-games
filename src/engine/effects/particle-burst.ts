@@ -26,6 +26,16 @@ export interface ParticleBurst {
 }
 
 /**
+ * CR2-010: `ParticleBurst` minus its origin. Several games define a per-event "what does this
+ * burst look like" style object ahead of time (a lookup table of named bursts, say) and only
+ * supply `x`/`y` at the call site where the burst actually happens; this is that shape, shared so
+ * each game doesn't redeclare an identical local `BurstStyle`/`Burst` interface. Purely a type --
+ * a game using it still owns constructing its own `ParticleBurst` (`{ x, y, ...style }`) and
+ * calling `ParticleBurstField.burst` itself.
+ */
+export type ParticleBurstStyle = Omit<ParticleBurst, "x" | "y">;
+
+/**
  * The knobs games actually differ on. Every default matches the shape most games already used, so
  * a game only names what it does differently. None of these change what a burst *is* -- a ring of
  * `count` particles fanned around a rotating phase, each at a quantized fraction of `speed` -- they

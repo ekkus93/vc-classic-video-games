@@ -1,4 +1,9 @@
-import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import type {
+  AudioService,
+  GameRenderer,
+  ParticleBurstStyle,
+  Vector2,
+} from "../../engine/index.js";
 import { ParticleBurstField } from "../../engine/index.js";
 import { SPACE_ROCKS_RUN_RULES } from "./design.js";
 import type { SpaceRocksSimulationEvent } from "./simulation.js";
@@ -18,14 +23,6 @@ export const SPACE_ROCKS_EFFECT_RULES = Object.freeze({
   hullHitParticles: 14,
   waveClearParticles: 18,
 });
-
-interface BurstStyle {
-  readonly count: number;
-  readonly speed: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
 
 const CENTER = Object.freeze({
   x: SPACE_ROCKS_RUN_RULES.logicalWidth / 2,
@@ -126,7 +123,7 @@ export class SpaceRocksEffects {
     this.particles.clear();
   }
 
-  private spawnBurst(position: Vector2, style: BurstStyle): void {
+  private spawnBurst(position: Vector2, style: ParticleBurstStyle): void {
     this.particles.burst({ x: position.x, y: position.y, ...style });
   }
 }

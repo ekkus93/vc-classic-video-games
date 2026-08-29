@@ -1,4 +1,9 @@
-import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import type {
+  AudioService,
+  GameRenderer,
+  ParticleBurstStyle,
+  Vector2,
+} from "../../engine/index.js";
 import { ParticleBurstField } from "../../engine/index.js";
 import type { BarrelClimberSimulationEvent } from "./simulation.js";
 
@@ -17,14 +22,6 @@ export const BARREL_CLIMBER_EFFECT_RULES = Object.freeze({
   hitParticles: 12,
   goalParticles: 16,
 });
-
-interface BurstStyle {
-  readonly count: number;
-  readonly speed: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
 
 export class BarrelClimberEffects {
   private readonly particles = new ParticleBurstField({
@@ -116,7 +113,7 @@ export class BarrelClimberEffects {
     this.particles.clear();
   }
 
-  private spawnBurst(position: Vector2, style: BurstStyle): void {
+  private spawnBurst(position: Vector2, style: ParticleBurstStyle): void {
     this.particles.burst({ x: position.x, y: position.y, ...style });
   }
 }

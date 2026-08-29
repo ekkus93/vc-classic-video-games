@@ -137,6 +137,7 @@ export type {
   BurstParticle,
   ParticleBurst,
   ParticleBurstFieldOptions,
+  ParticleBurstStyle,
 } from "./effects/particle-burst.js";
 export type {
   HorizontalTextAlign,

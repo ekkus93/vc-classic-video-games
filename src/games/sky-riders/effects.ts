@@ -1,4 +1,9 @@
-import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import type {
+  AudioService,
+  GameRenderer,
+  ParticleBurstStyle,
+  Vector2,
+} from "../../engine/index.js";
 import type { SkyRidersSimulationEvent } from "./simulation.js";
 
 export const SKY_RIDERS_AUDIO_IDS = Object.freeze({
@@ -28,13 +33,12 @@ interface SkyRidersParticle {
   readonly radius: number;
   readonly color: string;
 }
-interface BurstStyle {
-  readonly count: number;
-  readonly speed: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
+// CR2-010: same shape as the shared engine ParticleBurst(Style), reused as a type alias only.
+// Sky Riders deliberately does not use ParticleBurstField itself (see the class doc below): it
+// caps by dropping the oldest particles rather than refusing new ones, and phases its ring in
+// radians rather than turns -- a different burst mechanism, not a copy of the shared one. Only
+// the "what does this burst look like" shape happens to coincide.
+type BurstStyle = ParticleBurstStyle;
 function requireDelta(dtSeconds: number): void {
   if (!Number.isFinite(dtSeconds) || dtSeconds < 0) {
     throw new RangeError("dtSeconds must be a non-negative finite number");
