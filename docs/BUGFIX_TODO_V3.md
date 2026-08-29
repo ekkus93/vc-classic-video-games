@@ -71,7 +71,7 @@ the marker to `[ ]`, and proceed.
     silently loses and the second is the CR2-004 regression this test now guards;
     `docs/games/JUNGLE_QUEST_DESIGN.md` and the test agree, where today they contradict.
 
-- [ ] **CR3-005 — Correct CR2-004's acceptance record to the sweep that shipped**
+- [x] **CR3-005 — Correct CR2-004's acceptance record to the sweep that shipped**
   - `docs/BUGFIX_TODO_V2.md` still advertises an "interior-end sweep ... for every room"; what
     shipped is the narrower tunnel-width invariant, for reasons recorded in `178c646`. Amend the
     record, keep the code. See spec §3.3.

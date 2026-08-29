@@ -59,9 +59,14 @@ default, flip the marker to `[ ]`, and proceed.
   - Apply the chosen option and add the interior-platform-end sweep to `world.test.ts` in the same
     change so the next unmarked drop announces itself.
   - Acceptance: holding right from Sun Shrine's tunnel entry for 4 s loses no life (A) or reaches a
-    drop the renderer paints as open (B); the interior-end sweep passes for every room; the
-    round-1 boundary sweep and world tests pass untouched; `JUNGLE_QUEST_DESIGN.md` describes the
-    tunnel's east end.
+    drop the renderer paints as open (B); every tunnel-kind platform spans its room's full width,
+    matching the tunnel backdrop drawn unconditionally behind it, checked for every room (CR3-005:
+    this is the invariant that shipped, narrower than the "interior-end sweep" originally planned
+    above -- a fully general "every platform end is safe to walk off" sweep would have had to
+    special-case Fern Gate's ledge, a legitimate drop, and its chasm, an already-tested hazard, and
+    a check riddled with exceptions for real design is one that risks rubber-stamping the next real
+    hole); the round-1 boundary sweep and world tests pass untouched; `JUNGLE_QUEST_DESIGN.md`
+    describes the tunnel's east end.
 
 ## 2. Latent correctness
 
