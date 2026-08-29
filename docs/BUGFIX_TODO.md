@@ -167,7 +167,7 @@ any order, can be interleaved).
   - Acceptance: `npm run assets:check` fails on a manifest fixture that omits the `original`
     field entirely; a corresponding test is added to `scripts/validate-assets.test.mjs`.
 
-- [ ] **CR-019 — Remove or adopt `GameSurface.tsx` dead code**
+- [x] **CR-019 — Remove or adopt `GameSurface.tsx` dead code**
   - Acceptance: either the file is deleted (default direction) and nothing references it, or
     `App.tsx`'s inline canvas-mount logic is replaced with a use of this component and the
     existing app-level tests continue to pass either way.
