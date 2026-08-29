@@ -274,7 +274,7 @@ input-subsystem tests into one file rather than one file per input source
 (`actions.ts`/`gamepad.ts`/`keyboard.ts`/`mappings.ts` all route through
 `src/engine/input/input-system.test.ts`), so new cases belong there, not in a new dedicated file.
 
-- [ ] **TC-005a — Manual reassignment**
+- [x] **TC-005a — Manual reassignment**
   - [ ] `GamepadAssignmentManager.assign(indexB, player1)` when `player1` is already assigned to
     `indexA`: afterward `playerForGamepad(indexA)` is `null`, `playerForGamepad(indexB)` is
     `player1`, and `gamepadForPlayer(player1)` returns `indexB` — the manual assignment evicts the
@@ -282,14 +282,14 @@ input-subsystem tests into one file rather than one file per input source
   - [ ] A manual `assign()` survives the next `sync()` call as long as the assigned gamepad is
     still connected (auto-sync must not silently reassign a manually-placed gamepad to a different
     player).
-- [ ] **TC-005b — Three and four simultaneous controllers**
+- [x] **TC-005b — Three and four simultaneous controllers**
   - [ ] `sync()` with 3 connected gamepads assigns three distinct players in ascending
     gamepad-index order; with 4 connected gamepads, all four `MAX_PLAYERS` slots are filled, each
     to a distinct player.
   - [ ] A 5th gamepad connecting while all 4 player slots are already taken receives no
     assignment (`playerForGamepad` for its index is `null`) and does not evict any existing
     assignment (`assignments()` is unchanged in length and content).
-- [ ] **TC-005c — Disconnect and reconnect**
+- [x] **TC-005c — Disconnect and reconnect**
   - [ ] Disconnecting a previously-assigned gamepad (absent from the next `sync()`'s input array,
     or present with `connected: false`) frees its player slot — `assignments()` no longer includes
     it, and a different, newly-connecting gamepad can claim that now-free player.
@@ -297,15 +297,24 @@ input-subsystem tests into one file rather than one file per input source
     `sync()` (assigned via `firstAvailablePlayer()`, not restored to its prior player) — assert
     whatever the actual current behavior is, since this documents an implicit design decision that
     isn't currently written down anywhere.
-- [ ] **TC-005d — `reset()`**
-  - [ ] `StandardGamepadInputProvider.reset()` clears `isHeld`/`wasPressed`/`wasReleased` for every
+- [x] **TC-005d — `reset()`**
+  - [x] `StandardGamepadInputProvider.reset()` clears `isHeld`/`wasPressed`/`wasReleased` for every
     previously-held action **and** clears all gamepad-to-player assignments (`assignments()`
     becomes empty), in one call.
-  - Acceptance: new cases are added inside `src/engine/input/input-system.test.ts`'s existing
-    `tests` array (not a new file), following its existing naming style; the reassignment-eviction
-    case and the 5th-gamepad-rejection case are each confirmed to catch a defect via a targeted
-    mutation of `assign()`/`sync()`/`firstAvailablePlayer()` and reverted afterward. The existing
-    input-system cases pass untouched.
+  - **Investigated and noted:** `assign()` only guards against a *duplicate* mapping for the
+    player being moved onto a new gamepad — it does not protect whichever player previously held
+    that target gamepad, so a manual reassignment onto an already-assigned gamepad silently
+    orphans the player who was using it. This isn't a bug (auto-`sync()` picks the orphaned player
+    back up on the very next call), but it wasn't documented anywhere before this task, so the new
+    test asserts it explicitly (`TC-005a`) rather than assuming it away.
+  - Acceptance: five new cases added inside `src/engine/input/input-system.test.ts`'s existing
+    `tests` array (not a new file), following its existing (unprefixed) naming style. Each of the
+    four new behaviors — reassignment eviction, the `MAX_PLAYERS` cap, disconnect cleanup, and
+    `reset()` clearing assignments — was confirmed to catch a defect via a targeted mutation
+    (removing `assign()`'s eviction loop, raising `MAX_PLAYERS`, removing `sync()`'s
+    disconnect-cleanup loop, and removing `reset()`'s `assignments.reset()` call) and reverted
+    afterward. `npm run test` now at 448 (443 + 5); the existing input-system cases pass
+    untouched.
 
 ## TC-006 — Add a dedicated module-level test for Space Rocks
 

@@ -195,6 +195,183 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
+    // TC-005: GamepadAssignmentManager.assign() (a remapping UI's manual-reassignment entry
+    // point) was never invoked by any test before this case.
+    name: "manual gamepad reassignment evicts the player from its previous gamepad and survives the next sync",
+    run: () => {
+      const source = new MutableGamepadSource();
+      const first = pad(1);
+      const second = pad(2);
+      source.gamepads = [first, second];
+      const assignments = new GamepadAssignmentManager();
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.gamepadForPlayer(1) === 1 && assignments.gamepadForPlayer(2) === 2,
+        "fixture premise: ascending sync must assign player 1 to gamepad 1 and player 2 to gamepad 2",
+      );
+
+      // Manually move player 1 onto gamepad 2 -- the gamepad player 2 was already using.
+      assignments.assign(2, 1);
+      assert(assignments.playerForGamepad(1) === null, "the previous gamepad must be vacated");
+      assert(
+        assignments.playerForGamepad(2) === 1,
+        "the target gamepad must now carry the reassigned player",
+      );
+      assert(assignments.gamepadForPlayer(1) === 2, "gamepadForPlayer must reflect the reassignment");
+      // assign() only guards against a *duplicate* mapping for the player being moved -- it does
+      // not protect whichever player previously held the target gamepad, so player 2 is left
+      // with no gamepad at all here. Documented, not silently assumed away.
+      assert(
+        assignments.gamepadForPlayer(2) === null,
+        "assign() does not preserve the target gamepad's previous player -- that player is orphaned",
+      );
+
+      // The manual assignment must survive the next sync as long as gamepad 2 stays connected;
+      // the freed gamepad 1 must be picked up by auto-sync instead of staying orphaned.
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.gamepadForPlayer(1) === 2,
+        "auto-sync must not silently reassign a manually-placed gamepad to a different player",
+      );
+      assert(
+        assignments.playerForGamepad(1) === 2,
+        "auto-sync must claim the freed gamepad for the player it orphaned",
+      );
+    },
+  },
+  {
+    name: "gamepad assignment scales to all four player slots and rejects a fifth simultaneous controller",
+    run: () => {
+      const source = new MutableGamepadSource();
+      const four = [pad(10), pad(11), pad(12), pad(13)];
+      source.gamepads = four;
+      const assignments = new GamepadAssignmentManager();
+      assignments.sync(source.getGamepads());
+      assertDeepEqual(
+        assignments.assignments().map((entry) => entry.player),
+        [1, 2, 3, 4],
+        "four connected gamepads must fill all four player slots",
+      );
+      assertDeepEqual(
+        assignments.assignments().map((entry) => entry.gamepadIndex),
+        [10, 11, 12, 13],
+        "players must be assigned in ascending gamepad-index order",
+      );
+
+      const fifth = pad(14);
+      source.gamepads = [...four, fifth];
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.playerForGamepad(14) === null,
+        "a fifth simultaneous gamepad must receive no player assignment once MAX_PLAYERS is full",
+      );
+      assertDeepEqual(
+        assignments
+          .assignments()
+          .map((entry) => entry.gamepadIndex)
+          .sort((a, b) => a - b),
+        [10, 11, 12, 13],
+        "existing assignments must be completely unchanged when a fifth gamepad connects",
+      );
+    },
+  },
+  {
+    name: "disconnecting a gamepad frees its player slot for a different newly-connecting gamepad",
+    run: () => {
+      const source = new MutableGamepadSource();
+      const first = pad(20);
+      const second = pad(21);
+      source.gamepads = [first, second];
+      const assignments = new GamepadAssignmentManager();
+      assignments.sync(source.getGamepads());
+      assert(assignments.gamepadForPlayer(1) === 20, "fixture premise");
+
+      first.connected = false;
+      const third = pad(22);
+      source.gamepads = [first, second, third];
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.playerForGamepad(20) === null,
+        "a disconnected gamepad must be dropped from assignments entirely",
+      );
+      assert(
+        assignments.gamepadForPlayer(1) === 22,
+        "the freed player slot must be claimed by the newly-connecting gamepad",
+      );
+      assert(
+        assignments.gamepadForPlayer(2) === 21,
+        "the untouched gamepad's own assignment must be unaffected",
+      );
+    },
+  },
+  {
+    // Documents an implicit design decision that wasn't written down anywhere before this test:
+    // reconnecting a previously-used gamepad index is indistinguishable from a brand-new
+    // connection, so it can land on a different player than it had before.
+    name: "reconnecting a previously disconnected gamepad index is a fresh connection, not restored to its prior player",
+    run: () => {
+      const source = new MutableGamepadSource();
+      const first = pad(30);
+      const second = pad(31);
+      source.gamepads = [first, second];
+      const assignments = new GamepadAssignmentManager();
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.gamepadForPlayer(1) === 30 && assignments.gamepadForPlayer(2) === 31,
+        "fixture premise",
+      );
+
+      first.connected = false;
+      assignments.sync(source.getGamepads());
+      assert(assignments.playerForGamepad(30) === null, "disconnecting must clear the assignment");
+
+      // A different gamepad claims player 1's now-free slot before gamepad 30 comes back.
+      const third = pad(32);
+      source.gamepads = [first, second, third];
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.gamepadForPlayer(1) === 32,
+        "fixture premise: the freed player slot is claimed by the new gamepad first",
+      );
+
+      first.connected = true;
+      assignments.sync(source.getGamepads());
+      assert(
+        assignments.playerForGamepad(30) === 3 && assignments.playerForGamepad(30) !== 1,
+        "reconnecting must assign the next available player, not restore the gamepad's original one",
+      );
+      assert(
+        assignments.gamepadForPlayer(1) === 32 && assignments.gamepadForPlayer(2) === 31,
+        "the assignments made while gamepad 30 was away must be undisturbed by its return",
+      );
+    },
+  },
+  {
+    name: "StandardGamepadInputProvider.reset() clears held actions and gamepad assignments together",
+    run: () => {
+      const source = new MutableGamepadSource();
+      const gamepad = pad(40);
+      source.gamepads = [gamepad];
+      const provider = new StandardGamepadInputProvider(source);
+      button(gamepad, 0, true);
+      provider.poll();
+      assert(provider.isHeld(1, "action-1"), "fixture premise: action must be held before reset");
+      assert(
+        provider.assignments.gamepadForPlayer(1) === 40,
+        "fixture premise: gamepad must be assigned before reset",
+      );
+
+      provider.reset();
+
+      assert(!provider.isHeld(1, "action-1"), "reset must clear held actions");
+      assertDeepEqual(
+        [...provider.assignments.assignments()],
+        [],
+        "reset must clear every gamepad-to-player assignment",
+      );
+    },
+  },
+  {
     name: "pointer maps letterboxed coordinates into logical game space",
     run: () => {
       const viewport = calculateViewport(
