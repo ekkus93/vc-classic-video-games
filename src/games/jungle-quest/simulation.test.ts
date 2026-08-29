@@ -16,4 +16,36 @@ export const tests: readonly TestCase[]=[
  {name:"P13-008 complete relic set at shrine produces terminal score",run:()=>{const s=new JungleQuestSimulation({difficulty:"expedition",initialRoomId:"sun-shrine",initialPlayer:player(301,182),collectedIds:jungleQuestCollectibleIds(),initialScore:1000});const events=s.update(N,0);assert(s.ended&&s.endReason==="completed"&&s.score>1000,"finish with all relics must complete and award bonus");assert(events.filter((e)=>e.type==="run-ended").length===1,"completion must emit one terminal event");assert(s.update(N,1).length===0,"ended run must stop gameplay events");}},
  {name:"P13-008 timer expiration terminates run without bonus",run:()=>{const s=new JungleQuestSimulation({difficulty:"expedition",initialElapsedSeconds:164.99,initialScore:450});const events=s.update(N,.02);assert(s.ended&&s.endReason==="time-expired"&&s.score===450,"expired timer must preserve score and end run");assert(events.some((e)=>e.type==="run-ended"&&e.reason==="time-expired"),"timer must emit terminal event");}},
  {name:"P13-006 final life loss is terminal",run:()=>{const s=new JungleQuestSimulation({difficulty:"expedition",initialPlayer:player(220,182),initialLives:1});const events=s.update(N,0);assert(s.ended&&s.endReason==="out-of-lives"&&s.lives===0,"last hazard hit must end run");assert(events.some((e)=>e.type==="run-ended"&&e.reason==="out-of-lives"),"last life must emit terminal event");}},
+ {name:"CR-024 walking back to an earlier checkpoint room re-awards nothing and does not move the respawn back",run:()=>{
+  // fern-gate and root-vault are the two rooms carrying a checkpoint, with echo-hollow (no
+  // checkpoint) between them, and every link is bidirectional -- so backward re-entry is reachable
+  // by real input, not ruled out by level geometry. Drive forward to root-vault's checkpoint, then
+  // walk all the way back to fern-gate.
+  const HOLD_RIGHT=Object.freeze({horizontal:1 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
+  const HOLD_LEFT=Object.freeze({horizontal:-1 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
+  const s=new JungleQuestSimulation({difficulty:"expedition",initialPlayer:player(310,182)});
+  const roomOf=(run:JungleQuestSimulation):string=>run.roomId;
+  for(let i=0;i<600&&roomOf(s)!=="root-vault";i+=1)s.update(HOLD_RIGHT,1/60);
+  assert(roomOf(s)==="root-vault","fixture premise: the player must reach the second checkpoint room by real input");
+  const scoreAtSecondCheckpoint=s.score;
+  assert(scoreAtSecondCheckpoint>=JUNGLE_QUEST_SCORING.checkpoint,"reaching root-vault must have awarded its checkpoint");
+
+  let backwardCheckpoints=0;
+  for(let i=0;i<900&&roomOf(s)!=="fern-gate";i+=1){
+    const events=s.update(HOLD_LEFT,1/60);
+    backwardCheckpoints+=events.filter((e)=>e.type==="checkpoint").length;
+  }
+  assert(roomOf(s)==="fern-gate","fixture premise: the player must be able to walk back to the first checkpoint room");
+  assert(backwardCheckpoints===0,"re-entering an already-banked checkpoint room must not award its bonus again");
+  assert(Number(s.score)===scoreAtSecondCheckpoint,"backward travel must not add score for a checkpoint already banked");
+
+  // The respawn point is only observable through where a death puts the player, so kill the run
+  // back to it: the pit below the room floor costs a life and returns the player to the checkpoint.
+  const dying=new JungleQuestSimulation({difficulty:"expedition",initialPlayer:player(275,260)});
+  assert(dying.update(N,0).some((e)=>e.type==="player-hit"),"fixture premise: falling below the floor must cost a life");
+  const fernRespawn=dying.player.position.x;
+  for(let i=0;i<600&&s.player.position.y<260;i+=1)s.update({...HOLD_LEFT,horizontal:0 as const},1/60);
+  assert(roomOf(s)==="root-vault","a banked checkpoint must still respawn the player in root-vault, not back in fern-gate");
+  assert(s.player.position.x!==fernRespawn,"the respawn point must not regress to the earlier room's checkpoint");
+ }},
 ];

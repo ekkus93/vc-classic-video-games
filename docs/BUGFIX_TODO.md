@@ -189,7 +189,7 @@ any order, can be interleaved).
   - Acceptance: `src/games/jungle-quest/player.test.ts` (and any other mislabeled files found
     during the fix) have task-ID comments that match what each test actually covers.
 
-- [ ] **CR-024 — Add regression test for Jungle Quest checkpoint re-entry scoring (post CR-001)**
+- [x] **CR-024 — Add regression test for Jungle Quest checkpoint re-entry scoring (post CR-001)**
   - Only actionable once CR-001 lands (the affected rooms were previously unreachable). See
     `docs/BUGFIX_SPEC.md` §1.1, "related lower-confidence issue."
   - Acceptance: a test walks the player backward between two differently-checkpointed rooms and

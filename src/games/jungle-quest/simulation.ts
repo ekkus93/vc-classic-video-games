@@ -28,6 +28,10 @@ export class JungleQuestSimulation {
   private roomIdValue: JungleQuestRoomId; private playerValue: JungleQuestPlayerState; private livesValue: number; private scoreValue: number;
   private elapsedSecondsValue: number; private invulnerabilitySecondsValue: number; private readonly collected = new Set<string>();
   private checkpointValue: RespawnPoint; private endedValue = false; private endReasonValue: JungleQuestRunEndReason | null = null;
+  // CR-024: rooms link both ways, so a player who has banked a later checkpoint can walk back
+  // into an earlier one. Keyed by room rather than by "is this the current checkpoint", so a
+  // return visit neither pays out again nor drags the respawn point backward.
+  private readonly bankedCheckpointRooms = new Set<JungleQuestRoomId>();
   public constructor(private readonly options: JungleQuestSimulationOptions) {
     const profile = JUNGLE_QUEST_DIFFICULTIES[options.difficulty];
     this.roomIdValue = options.initialRoomId ?? JUNGLE_QUEST_START_ROOM;
@@ -35,6 +39,7 @@ export class JungleQuestSimulation {
     const initialCheckpoint = room.checkpoint ?? jungleQuestRoom(JUNGLE_QUEST_START_ROOM).checkpoint;
     if (initialCheckpoint === null) throw new Error("Jungle Quest start room requires a checkpoint");
     this.checkpointValue = spawnForCheckpoint(room.checkpoint === null ? JUNGLE_QUEST_START_ROOM : room.id, initialCheckpoint);
+    this.bankedCheckpointRooms.add(this.checkpointValue.roomId);
     this.playerValue = options.initialPlayer ?? createJungleQuestPlayer(this.checkpointValue.position);
     this.livesValue = options.initialLives ?? profile.startingLives; this.scoreValue = options.initialScore ?? 0;
     this.elapsedSecondsValue = options.initialElapsedSeconds ?? 0; this.invulnerabilitySecondsValue = options.initialInvulnerabilitySeconds ?? 0;
@@ -90,7 +95,8 @@ export class JungleQuestSimulation {
     this.playerValue = Object.freeze({ ...this.playerValue, position: Object.freeze({ x, y: this.playerValue.position.y }), mode: this.playerValue.mode === "vine" || this.playerValue.mode === "ladder" ? "air" : this.playerValue.mode, vineId: null, vineAngleRadians: 0, vineAngularVelocity: 0 });
     events.push(Object.freeze({ type: "room-changed", from, to: target }));
     const checkpoint = this.room.checkpoint;
-    if (checkpoint !== null && this.checkpointValue.roomId !== target) {
+    if (checkpoint !== null && !this.bankedCheckpointRooms.has(target)) {
+      this.bankedCheckpointRooms.add(target);
       this.checkpointValue = spawnForCheckpoint(target, checkpoint); this.scoreValue += JUNGLE_QUEST_SCORING.checkpoint;
       events.push(Object.freeze({ type: "checkpoint", roomId: target, points: JUNGLE_QUEST_SCORING.checkpoint, position: this.checkpointValue.position }));
     }
