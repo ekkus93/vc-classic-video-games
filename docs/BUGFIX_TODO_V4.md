@@ -26,7 +26,7 @@ it, flip the marker to `[ ]`, and proceed.
 
 ## 1. Correctness of the canonical record
 
-- [ ] **CR4-001 — Fix `docs/SPEC.md` §11.2's DPR table, which contradicts its own caption**
+- [x] **CR4-001 — Fix `docs/SPEC.md` §11.2's DPR table, which contradicts its own caption**
   - The third column is headed `CSS px per logical px (before)` but holds the *after* values
     (`3 / 3.2 / 2.67 / 3` is `scale ÷ dpr`). The true *before* value is `3` at every DPR, exactly
     as the paragraph beneath the table already states. Restore the five-column form from

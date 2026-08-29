@@ -374,12 +374,12 @@ rather than CSS pixels changes how much of the panel the game fills at a fractio
 nearest-neighbor scaling" above asks for once quantization happens in the unit that actually
 reaches the panel. At a 1366x768 CSS viewport, against a 320x240 logical framebuffer:
 
-| DPR | device px per logical px (after) | CSS px per logical px (before) | on-screen game size |
-| --- | --- | --- | --- |
-| 1 | 3 | 3 | unchanged (960x720 CSS) |
-| 1.25 | 4 | 3.2 | larger (960x720 → 1024x768 CSS) |
-| 1.5 | 4 | 2.67 | **smaller** (960x720 → 853x640 CSS) |
-| 2 | 6 | 3 | unchanged (960x720 CSS) |
+| DPR | device px per logical px (after) | CSS px per logical px (before) | CSS px per logical px (after) | on-screen game size |
+| --- | --- | --- | --- | --- |
+| 1 | 3 | 3 | 3 | unchanged (960x720 CSS) |
+| 1.25 | 4 | 3 | 3.2 | larger (960x720 → 1024x768 CSS) |
+| 1.5 | 4 | 3 | 2.67 | **smaller** (960x720 → ≈853x640 CSS) |
+| 2 | 6 | 3 | 3 | unchanged (960x720 CSS) |
 
 The "before" column is DPR-independent because the pre-CR2-003 code fed `calculateViewport` CSS
 pixels directly (`floor(min(1366/320, 768/240)) = 3` at every DPR). At 1.5x -- a common Chromebook
