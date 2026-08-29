@@ -110,7 +110,7 @@ default, flip the marker to `[ ]`, and proceed.
   - Acceptance: `module.ts` exports only the module; the render test passes; the game renders
     identically (the existing lifecycle/render tests pass untouched).
 
-- [ ] **CR2-012 — Cache the pointer-bounds element**
+- [x] **CR2-012 — Cache the pointer-bounds element** (1f8c5ee)
   - Resolve `canvas.game-viewport` once per game-screen mount instead of per pointer event and per
     `viewport()` call; keep the `?? surface` fallback. See spec §3.4.
   - Acceptance: no behavior change; the CR-004 pointer test passes untouched; a test asserts the
