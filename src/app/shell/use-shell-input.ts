@@ -12,6 +12,7 @@ import {
 } from "./audio-unlock-gesture.js";
 import type { ShellController } from "./controller.js";
 import type { ShellGameInputBridge } from "./input-bridge.js";
+import { createPointerBoundsResolver } from "./pointer-bounds.js";
 
 export function useShellInput(
   controller: ShellController,
@@ -29,11 +30,13 @@ export function useShellInput(
     // not this outer shell container -- `surface` (<main class="app-shell">) carries its own
     // padding/header/footer chrome around the canvas, so using its size/bounds for pointer math
     // misaligned pointer-aimed gameplay (e.g. Missile Defense's cursor) from where the pointer
-    // visually is. Resolved fresh on each call since the canvas only exists while a game screen
-    // is mounted; falls back to the shell surface itself outside gameplay, where pointer position
-    // isn't meaningful anyway.
-    const resolvePointerBoundsElement = (): HTMLElement =>
-      surface.querySelector<HTMLElement>("canvas.game-viewport") ?? surface;
+    // visually is. Falls back to the shell surface itself outside gameplay, where pointer
+    // position isn't meaningful anyway. CR2-012: cached rather than re-queried on every call --
+    // see createPointerBoundsResolver's own doc for why and how.
+    const resolvePointerBoundsElement = createPointerBoundsResolver(
+      surface,
+      () => controller.snapshot.screen,
+    );
 
     const input = new BrowserInputController({
       window,
