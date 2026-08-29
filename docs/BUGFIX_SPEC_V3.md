@@ -57,8 +57,11 @@ String({toString(){throw ...}}) -> THROWS Error
 So a `ScoreService` that rejects with, or throws, such a value turns a contained persistence
 failure into an escaped game failure. A broken `logger` would do the same.
 
-**Intended behavior:** No input to `handle` — including a failure in the failure handler — can
-propagate out of `handle`.
+**Intended behavior:** No failure of `scores.submit` or of `reportError` — including a failure in
+the failure handler itself — can propagate out of `handle`. (CR4-005: this originally read "no
+input to `handle`," unqualified, which overclaimed — a throwing `readTerminalScore` does escape,
+deliberately; see the class doc-comment in `score-committer.ts` for why a throw from the game's
+own reader is left to surface rather than contained like the other two collaborators.)
 
 **Design decision:** Wrap every `reportError` invocation, on both paths, and swallow a throw from
 it. Swallowing is the right terminal behavior specifically here: the reporter *is* the error

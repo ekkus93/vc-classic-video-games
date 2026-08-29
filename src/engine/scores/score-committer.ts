@@ -38,6 +38,16 @@ export function terminalScoreOfType<
  * promise is deliberately not awaited and never surfaces a rejection to the caller -- a score
  * store that is full, corrupt, or unavailable must not take a playable run down with it -- so a
  * rejection is routed to `reportError` instead, inside the game's own boundary.
+ *
+ * CR4-005: this containment covers `scores.submit` (both a thrown exception, CR2-005, and a
+ * rejection) and `reportError` itself (CR3-001), on both the synchronous and the async path.
+ * It deliberately does **not** extend to `readTerminalScore`: that function is supplied by the
+ * calling game, not an external system, and a throw from it is a bug in that game's own code
+ * rather than an environmental failure (a full disk, a corrupt store, a broken logger) a
+ * playable run must survive. Containing it has no good resting state either -- discarding a
+ * legitimate score were the throw ever transient, or leaving `submitted` clear and silently
+ * re-invoking the same broken reader on every later frame -- so a throwing reader is left to
+ * escape loudly rather than be swallowed into a run that silently never scores.
  */
 export class ScoreCommitter<TEvent> {
   private submitted = false;

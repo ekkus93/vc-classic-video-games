@@ -99,8 +99,8 @@ it, flip the marker to `[ ]`, and proceed.
     this task changes no behavior, so no regression test applies; confirm the two moved CR3-003
     cases and the CR2-003 pointer tests pass, with the same total test count as before the move.
 
-- [!] **CR4-005 — Reconcile `ScoreCommitter`'s documented guarantee with its implementation** —
-  decision required; spec §3.2 default is **A** (narrow the documented guarantee).
+- [x] **CR4-005 — Reconcile `ScoreCommitter`'s documented guarantee with its implementation** —
+  decided: option **A**, narrow the documented guarantee (spec §3.2).
   - `docs/BUGFIX_SPEC_V3.md` §1.1 claims "no input to `handle` … can propagate out of `handle`",
     but a throwing game-supplied `readTerminalScore` does escape (verified by probe). Not
     reachable today — all ten games pass `terminalScoreOfType`, which cannot throw — but the code
