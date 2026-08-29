@@ -181,7 +181,7 @@ any order, can be interleaved).
   - Acceptance: `registry-asset-resolver.test.ts` and `registry-assets.test.ts` are merged into
     one file with one accurate task-ID reference, keeping the better of the two coverage sets.
 
-- [ ] **CR-022 — Update `docs/ASSET_POLICY.md` staleness**
+- [x] **CR-022 — Update `docs/ASSET_POLICY.md` staleness**
   - Acceptance: the doc no longer claims the attribution file is "intentionally empty"; it
     reflects that `assets/ATTRIBUTION.json` is an active, populated record.
 

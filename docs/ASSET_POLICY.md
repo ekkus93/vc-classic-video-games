@@ -15,19 +15,38 @@ Publicly observable gameplay behavior and general game mechanics may be used as 
 
 ## Original project assets
 
-Assets authored specifically for this project do not need an entry in `assets/ATTRIBUTION.json`, but their source files should be retained when practical.
+Assets authored specifically for this project are recorded in `assets/ATTRIBUTION.json` as
+`{ "path": ..., "original": true }`, with no licensing fields. Their source files should be
+retained when practical. Every asset in a game manifest must state which it is: an entry that
+omits `original` is rejected rather than assumed original, so an unclassified file cannot ship.
 
 ## Third-party assets
 
-Before adding a third-party asset, record an object in `assets/ATTRIBUTION.json` with:
+Before adding a third-party asset, record an object in `assets/ATTRIBUTION.json`. Validation
+requires:
 
 - `path`: repository-relative shipped asset path;
-- `title`: human-readable asset name;
-- `creator`: author/creator name;
+- `original`: `false`;
 - `source`: canonical source URL or provenance description;
 - `license`: SPDX identifier when one exists, otherwise the exact license name;
+- `copyright`: the copyright holder as the license requires it to be stated.
+
+Record as well, where they apply:
+
+- `title`: human-readable asset name;
+- `creator`: author/creator name;
 - `licenseUrl`: canonical license URL when applicable;
 - `modified`: whether the project modified the asset;
-- `notes`: optional attribution or modification notes required by the license.
+- `notes`: attribution or modification notes required by the license.
 
-The initial file is intentionally empty. P5 adds automated attribution validation once asset manifests exist.
+## Validation
+
+`npm run assets:check` (part of the CI sequence) enforces this and fails the build on a violation.
+It rejects an attribution entry or manifest asset that does not declare `original`, a duplicate
+attribution path, a non-original entry missing `source`/`license`/`copyright`, a manifest asset
+whose file is missing, and any manifest asset not marked original that has no matching attribution
+record.
+
+`assets/ATTRIBUTION.json` is an active, populated record, not a placeholder: it currently lists 32
+assets, all of them project-original audio. Adding the first third-party asset means adding the
+licensing fields above to its entry.
