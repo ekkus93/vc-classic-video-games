@@ -164,7 +164,6 @@ export class DeepDiggerGameInstance implements GameInstance {
   private effects: DeepDiggerEffects;
   private readonly scoreCommitter: DeepDiggerScoreCommitter;
   private runOptions: GameStartOptions | null = null;
-  private runDifficulty: DeepDiggerDifficultyId | null = null;
   private paused = false;
 
   public constructor(private readonly services: GameServices) {
@@ -188,7 +187,6 @@ export class DeepDiggerGameInstance implements GameInstance {
       difficulty,
     });
     this.runOptions = Object.freeze({ ...options });
-    this.runDifficulty = difficulty;
     this.paused = false;
   }
 
@@ -206,7 +204,13 @@ export class DeepDiggerGameInstance implements GameInstance {
     );
     this.effects.handle(events);
     this.effects.update(dtSeconds);
-    this.scoreCommitter.handle(events, this.runDifficulty ?? "default");
+    // CR2-001: submit under the same "default" mode every other game uses. Difficulty scoping
+    // already happens one layer down, in PersistentScoreService (src/engine/scores/scores.ts),
+    // which attaches the run's difficulty to every submission before it reaches the repository --
+    // the launcher's own high-score query is hard-coded to mode "default" and reads difficulty
+    // through that separate column, so a game-specific mode here was never actually read and just
+    // made every Deep Digger score invisible in the launcher.
+    this.scoreCommitter.handle(events);
   }
 
   public render(renderer: GameRenderer): void {
@@ -350,7 +354,6 @@ export class DeepDiggerGameInstance implements GameInstance {
     this.effects.destroy();
     this.simulation = null;
     this.runOptions = null;
-    this.runDifficulty = null;
     this.paused = false;
   }
 }

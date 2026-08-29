@@ -74,4 +74,25 @@ export const tests: readonly TestCase[] = [
       assert(difficultyRejected, "unsupported difficulty must fail closed");
     },
   },
+  {
+    name: "CR2-001 the real module submits its terminal score under mode default, not the run difficulty",
+    run: () => {
+      // Regression coverage at the actual call site: the module used to pass its own run
+      // difficulty as the submission's `mode` (this.scoreCommitter.handle(events, this.runDifficulty
+      // ?? "default")), which is a different field from the difficulty every submission already
+      // carries through PersistentScoreService -- and left every Deep Digger score filed under a
+      // mode the launcher's high-score query never reads (it is hard-coded to mode "default"), so
+      // no Deep Digger score was ever visible in the launcher regardless of difficulty played.
+      // With idle input, an approaching stalker reaches and repeatedly hits the respawning player
+      // until lives reach zero, at a fixed seed, well within the frame budget below.
+      const services = createFakeGameServices(0x1414);
+      const instance = DEEP_DIGGER_MODULE.create(services);
+      instance.start({ players: 1, difficulty: "bore", seed: 0x1414 });
+      for (let frame = 0; frame < 3000 && services.scores.submissions.length === 0; frame += 1) {
+        instance.update(1 / 60);
+      }
+      assert(services.scores.submissions.length === 1, "fixture premise: idle input must reach exactly one terminal submission");
+      assert(services.scores.submissions[0]?.mode === "default", "the module must submit under mode default like every other game, not the run difficulty");
+    },
+  },
 ];
