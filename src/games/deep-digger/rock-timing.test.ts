@@ -295,4 +295,81 @@ export const tests: readonly TestCase[] = [
       assertNoOverlap("settled frame");
     },
   },
+  {
+    name: "CR-010 a falling rock hits a player who walks in on an idle tick between fall steps",
+    run: () => {
+      // A rock only advances one cell every ROCK_FALL_STEP_SECONDS, so at a 0.02s tick it sits
+      // idle in a cell for three ticks out of every four. Contact used to be resolved only on the
+      // tick a rock changed cells, so walking into an idling rock was free. The player and the
+      // enemy start 19 columns apart, and the enemy gets only a handful of move intervals over
+      // the ~0.8s this fixture runs, so it never reaches the player and never confuses a hit.
+      const services = createFakeGameServices(0xc010);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 24,
+          rows: 16,
+          tunnels: [
+            { column: 2, row: 1 },
+            { column: 2, row: 2 },
+            { column: 2, row: 3 },
+            { column: 2, row: 4 },
+            { column: 2, row: 5 },
+            { column: 2, row: 6 },
+            { column: 2, row: 7 },
+            { column: 2, row: 8 },
+            { column: 0, row: 4 },
+            { column: 1, row: 4 },
+            { column: 20, row: 15 },
+          ],
+          playerSpawn: { column: 1, row: 4 },
+          enemySpawns: [{ column: 20, row: 15 }],
+          rockSpawns: [{ column: 2, row: 0 }],
+        },
+        initialInvulnerabilitySeconds: 0,
+      });
+
+      // Tick until the rock has just stepped into the cell beside the player.
+      let ticks = 0;
+      for (;;) {
+        simulation.update(IDLE_INPUT, 0.02);
+        ticks += 1;
+        assert(ticks < 200, "fixture must land the rock in the player's row");
+        const rock = simulation.rocks[0];
+        if (rock?.state === "falling" && rock.cell.row === 4) {
+          break;
+        }
+      }
+      const livesBeforeContact: number = simulation.lives;
+      assert(
+        livesBeforeContact === 3,
+        "the rock must not have touched the player on its way down",
+      );
+
+      // One idle tick, so the move below lands on a tick where the rock does not change cells.
+      simulation.update(IDLE_INPUT, 0.02);
+      const idling = simulation.rocks[0];
+      assert(
+        idling?.state === "falling" && idling.cell.row === 4,
+        "fixture premise: the rock must idle in place between fall steps",
+      );
+
+      const events = simulation.update({ move: "right", attack: false }, 0.02);
+      const settled = simulation.rocks[0];
+      assert(
+        settled?.state === "falling" && settled.cell.row === 4,
+        "the contact tick must be an idle tick, not one where the rock changed cells",
+      );
+      assert(
+        events.some((event) => event.type === "player-hit"),
+        "walking into a falling rock's cell must be a hit even between its fall steps",
+      );
+      const livesAfterContact: number = simulation.lives;
+      assert(
+        livesAfterContact === livesBeforeContact - 1,
+        "the contact must cost exactly one life",
+      );
+    },
+  },
 ];

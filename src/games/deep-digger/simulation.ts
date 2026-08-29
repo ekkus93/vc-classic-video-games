@@ -454,71 +454,88 @@ export class DeepDiggerSimulation {
     dtSeconds: number,
     events: DeepDiggerSimulationEvent[],
   ): void {
-    const profile = DEEP_DIGGER_DIFFICULTIES[this.options.difficulty];
     for (const rock of this.rockState) {
-      if (rock.state === "resting") {
-        continue;
+      this.advanceRock(rock, dtSeconds, events);
+      // CR-010: a rock only changes cells once every ROCK_FALL_STEP_SECONDS, so advanceRock's
+      // per-step contact resolution leaves it harmless on every tick in between -- long enough
+      // for a player to walk into, or straight through, a rock hanging in mid-air. Re-check the
+      // player against every rock that is still loose, every tick, not only on the ticks it
+      // moved. hitPlayer is idempotent within a tick (it grants invulnerability), so a rock that
+      // already hit the player during its step loop does not hit again here.
+      if (rock.state === "shaking" || rock.state === "falling") {
+        this.resolveRockPlayerContact(rock, events);
       }
-      let remainingSeconds = dtSeconds;
-      if (rock.state === "supported") {
-        const below = stepCell(rock.cell, "down");
-        if (
-          this.terrainValue.inBounds(below) &&
-          this.terrainValue.isTunnel(below) &&
-          !this.isRockAt(below, rock.id)
-        ) {
-          rock.state = "shaking";
-          rock.shakeRemainingSeconds = profile.rockShakeSeconds;
-          events.push(
-            Object.freeze({
-              type: "rock-loosened",
-              rockId: rock.id,
-              cell: copyCell(rock.cell),
-            }),
-          );
-        }
-        continue;
-      }
-      if (rock.state === "shaking") {
-        if (remainingSeconds < rock.shakeRemainingSeconds) {
-          rock.shakeRemainingSeconds -= remainingSeconds;
-          continue;
-        }
-        remainingSeconds -= rock.shakeRemainingSeconds;
-        rock.shakeRemainingSeconds = 0;
-        rock.state = "falling";
-        rock.fallStepRemainingSeconds = 0;
-        this.terrainValue.carve(rock.cell);
+    }
+  }
+
+  private advanceRock(
+    rock: MutableRock,
+    dtSeconds: number,
+    events: DeepDiggerSimulationEvent[],
+  ): void {
+    const profile = DEEP_DIGGER_DIFFICULTIES[this.options.difficulty];
+    if (rock.state === "resting") {
+      return;
+    }
+    let remainingSeconds = dtSeconds;
+    if (rock.state === "supported") {
+      const below = stepCell(rock.cell, "down");
+      if (
+        this.terrainValue.inBounds(below) &&
+        this.terrainValue.isTunnel(below) &&
+        !this.isRockAt(below, rock.id)
+      ) {
+        rock.state = "shaking";
+        rock.shakeRemainingSeconds = profile.rockShakeSeconds;
         events.push(
           Object.freeze({
-            type: "rock-falling",
+            type: "rock-loosened",
             rockId: rock.id,
             cell: copyCell(rock.cell),
           }),
         );
       }
-      if (rock.state !== "falling") {
-        continue;
+      return;
+    }
+    if (rock.state === "shaking") {
+      if (remainingSeconds < rock.shakeRemainingSeconds) {
+        rock.shakeRemainingSeconds -= remainingSeconds;
+        return;
       }
+      remainingSeconds -= rock.shakeRemainingSeconds;
+      rock.shakeRemainingSeconds = 0;
+      rock.state = "falling";
+      rock.fallStepRemainingSeconds = 0;
+      this.terrainValue.carve(rock.cell);
+      events.push(
+        Object.freeze({
+          type: "rock-falling",
+          rockId: rock.id,
+          cell: copyCell(rock.cell),
+        }),
+      );
+    }
+    if (rock.state !== "falling") {
+      return;
+    }
 
-      rock.fallStepRemainingSeconds -= remainingSeconds;
-      let steps = 0;
-      while (rock.fallStepRemainingSeconds <= 0 && steps < this.level.rows) {
-        steps += 1;
-        const below = stepCell(rock.cell, "down");
-        if (
-          !this.terrainValue.inBounds(below) ||
-          !this.terrainValue.isTunnel(below) ||
-          this.isRockAt(below, rock.id)
-        ) {
-          this.landRock(rock, events);
-          break;
-        }
-        rock.cell = copyCell(below);
-        rock.cellsFallen += 1;
-        rock.fallStepRemainingSeconds += ROCK_FALL_STEP_SECONDS;
-        this.resolveRockContacts(rock, events);
+    rock.fallStepRemainingSeconds -= remainingSeconds;
+    let steps = 0;
+    while (rock.fallStepRemainingSeconds <= 0 && steps < this.level.rows) {
+      steps += 1;
+      const below = stepCell(rock.cell, "down");
+      if (
+        !this.terrainValue.inBounds(below) ||
+        !this.terrainValue.isTunnel(below) ||
+        this.isRockAt(below, rock.id)
+      ) {
+        this.landRock(rock, events);
+        break;
       }
+      rock.cell = copyCell(below);
+      rock.cellsFallen += 1;
+      rock.fallStepRemainingSeconds += ROCK_FALL_STEP_SECONDS;
+      this.resolveRockContacts(rock, events);
     }
   }
 
@@ -562,6 +579,13 @@ export class DeepDiggerSimulation {
         );
       }
     }
+    this.resolveRockPlayerContact(rock, events);
+  }
+
+  private resolveRockPlayerContact(
+    rock: MutableRock,
+    events: DeepDiggerSimulationEvent[],
+  ): void {
     if (sameCell(this.playerValue.cell, rock.cell)) {
       this.hitPlayer(events);
     }

@@ -106,7 +106,7 @@ any order, can be interleaved).
     column-18 pair) with both falling simultaneously, and asserts they never occupy the same cell
     at the same simulated tick.
 
-- [ ] **CR-010 — Fix Deep Digger rock/player contact only checked on cell-change ticks**
+- [x] **CR-010 — Fix Deep Digger rock/player contact only checked on cell-change ticks**
   - Run the player-contact check every tick a rock is `"falling"`/`"shaking"` and occupying a
     cell. See `docs/BUGFIX_SPEC.md` §1.10.
   - Acceptance: a test has the player walk into a falling rock's cell during one of its idle
