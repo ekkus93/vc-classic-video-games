@@ -49,7 +49,7 @@ the marker to `[ ]`, and proceed.
 
 ## 3. Consistency and staleness
 
-- [ ] **CR3-003 — Remove the redundant `Math.max` from the pointer path's sizing**
+- [x] **CR3-003 — Remove the redundant `Math.max` from the pointer path's sizing**
   - `use-shell-input.ts` pre-floors the CSS size before calling `devicePhysicalSize`, which already
     floors at one device pixel; `App.tsx` does not. One flooring rule, in one place. See spec §3.1.
   - Acceptance: both call sites pass the raw CSS size; a test asserts the render and pointer sizing
