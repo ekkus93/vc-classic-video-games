@@ -63,7 +63,7 @@ it, flip the marker to `[ ]`, and proceed.
     The existing zero-box floor test is kept. The CR2-003 viewport and pointer tests pass
     untouched.
 
-- [ ] **CR4-003 — Cover the mixed-dimension branch of `resizeCanvasToDevicePixels`**
+- [x] **CR4-003 — Cover the mixed-dimension branch of `resizeCanvasToDevicePixels`**
   - All four existing fixtures have both dimensions matching the target or neither, so the
     conjunction in the unchanged-check is unpinned: `&&` → `||` survives the whole suite. The
     shipped code is correct (verified directly); this is a coverage gap on a reachable state — a

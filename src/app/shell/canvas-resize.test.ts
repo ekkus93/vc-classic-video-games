@@ -115,4 +115,53 @@ export const tests: readonly TestCase[] = [
       );
     },
   },
+  {
+    // CR4-003: every prior fixture had both dimensions matching the target or neither, so the
+    // conjunction in the unchanged-check (`canvas.width === targetWidth && canvas.height ===
+    // targetHeight`) was unpinned -- weakening it to `||` returned `false` (skipping the resize)
+    // as soon as *either* dimension already matched, leaving the other stale, and no existing test
+    // noticed. This covers the reachable state a window widened without being made taller
+    // produces: clientWidth changed, clientHeight did not.
+    name: "CR4-003 a stale width with an already-correct height still resizes, and resizes both correctly",
+    run: () => {
+      const dpr = 1.25;
+      const targetWidth = Math.round(1400 * dpr);
+      const targetHeight = Math.round(768 * dpr);
+      // Width starts at a stale value (not targetWidth); height already matches its target.
+      const canvas = new FakeCanvas(1400, 768, targetWidth - 1, targetHeight);
+
+      const resized = resizeCanvasToDevicePixels(canvas, dpr);
+
+      assert(resized, "a stale width alone must still trigger a resize, not be skipped");
+      assert(
+        canvas.width === targetWidth && canvas.height === targetHeight,
+        `expected ${targetWidth}x${targetHeight}, got ${canvas.width}x${canvas.height} -- ` +
+          "a resize that fires but leaves the stale dimension unwritten, or overwrites the " +
+          "already-correct one with the wrong value, must be caught here",
+      );
+    },
+  },
+  {
+    // Mirror of the case above: catches the version of the same mistake written the other way
+    // round (`canvas.width === targetWidth || canvas.height === targetHeight`), which the case
+    // above alone would not.
+    name: "CR4-003 a stale height with an already-correct width still resizes, and resizes both correctly",
+    run: () => {
+      const dpr = 1.25;
+      const targetWidth = Math.round(1366 * dpr);
+      const targetHeight = Math.round(900 * dpr);
+      // Height starts at a stale value (not targetHeight); width already matches its target.
+      const canvas = new FakeCanvas(1366, 900, targetWidth, targetHeight - 1);
+
+      const resized = resizeCanvasToDevicePixels(canvas, dpr);
+
+      assert(resized, "a stale height alone must still trigger a resize, not be skipped");
+      assert(
+        canvas.width === targetWidth && canvas.height === targetHeight,
+        `expected ${targetWidth}x${targetHeight}, got ${canvas.width}x${canvas.height} -- ` +
+          "a resize that fires but leaves the stale dimension unwritten, or overwrites the " +
+          "already-correct one with the wrong value, must be caught here",
+      );
+    },
+  },
 ];
