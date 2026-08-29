@@ -1,8 +1,8 @@
 import { assert, type TestCase } from "../../test/harness.js";
-import { JUNGLE_QUEST_SCORING } from "./design.js";
+import { JUNGLE_QUEST_RUN_RULES, JUNGLE_QUEST_SCORING } from "./design.js";
 import { createJungleQuestPlayer, type JungleQuestPlayerState } from "./player.js";
 import { JungleQuestSimulation } from "./simulation.js";
-import { jungleQuestCollectibleIds } from "./world.js";
+import { JUNGLE_QUEST_ROOMS, jungleQuestCollectibleIds } from "./world.js";
 const N=Object.freeze({horizontal:0 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
 function player(x:number,y:number):JungleQuestPlayerState{return createJungleQuestPlayer({x,y});}
 export const tests: readonly TestCase[]=[
@@ -30,23 +30,36 @@ export const tests: readonly TestCase[]=[
   const scoreAtSecondCheckpoint=s.score;
   assert(scoreAtSecondCheckpoint>=JUNGLE_QUEST_SCORING.checkpoint,"reaching root-vault must have awarded its checkpoint");
 
+  // The way back is not a mirror of the way out: the forward run drops into Echo Hollow's tunnel,
+  // and the tunnel's west end is a wall because Fern Gate has no tunnel to arrive in. The real
+  // return route climbs Echo Hollow's descent ladder back to the surface first.
   let backwardCheckpoints=0;
-  for(let i=0;i<900&&roomOf(s)!=="fern-gate";i+=1){
-    const events=s.update(HOLD_LEFT,1/60);
-    backwardCheckpoints+=events.filter((e)=>e.type==="checkpoint").length;
-  }
+  const walkBack=(input:Parameters<JungleQuestSimulation["update"]>[0],frames:number,until:()=>boolean):void=>{
+    for(let i=0;i<frames&&!until();i+=1){
+      const events=s.update(input,1/60);
+      backwardCheckpoints+=events.filter((e)=>e.type==="checkpoint").length;
+    }
+  };
+  walkBack(HOLD_LEFT,900,()=>roomOf(s)==="echo-hollow");
+  walkBack(HOLD_LEFT,900,()=>s.player.position.x<=44);
+  const CLIMB=Object.freeze({horizontal:0 as const,vertical:-1 as const,jumpPressed:false,vinePressed:false});
+  walkBack(CLIMB,600,()=>s.player.position.y<=183&&s.player.mode==="ground");
+  walkBack(HOLD_LEFT,900,()=>roomOf(s)==="fern-gate");
   assert(roomOf(s)==="fern-gate","fixture premise: the player must be able to walk back to the first checkpoint room");
   assert(backwardCheckpoints===0,"re-entering an already-banked checkpoint room must not award its bonus again");
   assert(Number(s.score)===scoreAtSecondCheckpoint,"backward travel must not add score for a checkpoint already banked");
 
-  // The respawn point is only observable through where a death puts the player, so kill the run
-  // back to it: the pit below the room floor costs a life and returns the player to the checkpoint.
-  const dying=new JungleQuestSimulation({difficulty:"expedition",initialPlayer:player(275,260)});
-  assert(dying.update(N,0).some((e)=>e.type==="player-hit"),"fixture premise: falling below the floor must cost a life");
-  const fernRespawn=dying.player.position.x;
-  for(let i=0;i<600&&s.player.position.y<260;i+=1)s.update({...HOLD_LEFT,horizontal:0 as const},1/60);
-  assert(roomOf(s)==="root-vault","a banked checkpoint must still respawn the player in root-vault, not back in fern-gate");
-  assert(s.player.position.x!==fernRespawn,"the respawn point must not regress to the earlier room's checkpoint");
+  // The respawn point is only observable through where a death puts the player. The player is now
+  // standing in Fern Gate, the room whose checkpoint they started on -- so dying here is exactly
+  // the case that would expose a respawn dragged backward: it must still return them to Root
+  // Vault's checkpoint, the last one banked, and not to the Fern Gate one they are standing next
+  // to. Fern Gate's contact hazard sits between them and the room's west side.
+  const livesBeforeDeath:number=s.lives;
+  for(let i=0;i<900&&s.lives===livesBeforeDeath;i+=1)s.update(HOLD_LEFT,1/60);
+  assert(Number(s.lives)===livesBeforeDeath-1,"fixture premise: walking west into Fern Gate's hazard must cost exactly one life");
+  assert(roomOf(s)==="root-vault","a banked checkpoint must still respawn the player in root-vault, not back in the fern-gate room they died in");
+  const rootVaultCheckpointX=28;
+  assert(s.player.position.x===rootVaultCheckpointX,`respawn must use Root Vault's checkpoint, got x=${s.player.position.x}`);
  }},
  {name:"CR-001 all four rooms are reachable by chained transitions from the checkpoint spawn",run:()=>{
   // CR-001's acceptance asks for the whole chain driven from a normal start, so this run injects
@@ -71,5 +84,47 @@ export const tests: readonly TestCase[]=[
   }
   assert(order.join(">")==="fern-gate>echo-hollow>root-vault>sun-shrine",`held input must chain through every room in order, got ${order.join(">")}`);
   assert(Number(s.lives)===3,"the route must be completable without dying, so the chain is real traversal and not respawn teleporting");
+ }},
+ {name:"CR-001 no room boundary ever hands the player into a fall",run:()=>{
+  // Walk into every boundary that leads somewhere, from every platform that reaches it, at that
+  // platform's own height. Exactly two outcomes are acceptable: the player crosses and is still
+  // standing on the other side, or the boundary behaves as a wall and holds them on-screen. What
+  // must never happen is crossing into empty space, which is what Echo Hollow's tunnel did at its
+  // west end -- Fern Gate has no tunnel, so the player was put down at tunnel height above a void
+  // and fell out of the world. Height is the whole story here, so the sweep is per platform, not
+  // per boundary.
+  const HALF_HEIGHT=JUNGLE_QUEST_RUN_RULES.playerHeight/2;
+  const WIDTH=JUNGLE_QUEST_RUN_RULES.logicalWidth;
+  const roomOf=(run:JungleQuestSimulation):string=>run.roomId;
+  let crossings=0;
+  let walls=0;
+  for(const room of JUNGLE_QUEST_ROOMS){
+    for(const side of ["next","previous"] as const){
+      if(room[side]===null)continue;
+      const edgeX=side==="next"?WIDTH:0;
+      for(const platform of room.platforms.filter((p)=>p.x1<=edgeX&&p.x2>=edgeX)){
+        const label=`${room.id}.${platform.id} (${side}, y=${platform.y})`;
+        const run=new JungleQuestSimulation({difficulty:"expedition",initialRoomId:room.id,initialPlayer:player(side==="next"?WIDTH-20:20,platform.y-HALF_HEIGHT)});
+        const horizontal:-1|0|1=side==="next"?1:-1;
+        const input=Object.freeze({horizontal,vertical:0 as const,jumpPressed:false,vinePressed:false});
+        for(let i=0;i<400&&roomOf(run)===room.id;i+=1)run.update(input,1/60);
+        const crossed=roomOf(run)!==room.id;
+        // Let the arrival settle, so a crossing that merely postpones the fall still shows up.
+        for(let i=0;i<180;i+=1)run.update(N,1/60);
+        const lives:number=run.lives;
+        assert(lives===3,`${label}: walking into this boundary cost a life -- it must either be crossable or behave as a wall, never a fall`);
+        assert(!run.ended,`${label}: walking into this boundary ended the run`);
+        if(crossed){
+          crossings+=1;
+          assert(run.player.mode==="ground",`${label}: crossed but the player is not standing on anything in ${roomOf(run)}`);
+        }else{
+          walls+=1;
+          const x=run.player.position.x;
+          assert(x>=0&&x<=WIDTH,`${label}: refused the crossing but let the player walk off-screen to x=${x.toFixed(1)}`);
+        }
+      }
+    }
+  }
+  assert(crossings>0&&walls>0,`the sweep must exercise both outcomes, got ${crossings} crossings and ${walls} walls`);
  }},
 ];

@@ -22,6 +22,32 @@ const HALF_WIDTH = JUNGLE_QUEST_RUN_RULES.playerWidth / 2;
 const HALF_HEIGHT = JUNGLE_QUEST_RUN_RULES.playerHeight / 2;
 function playerAabb(player: JungleQuestPlayerState): Aabb { return { x: player.position.x - HALF_WIDTH, y: player.position.y - HALF_HEIGHT, width: JUNGLE_QUEST_RUN_RULES.playerWidth, height: JUNGLE_QUEST_RUN_RULES.playerHeight }; }
 function collectibleAabb(x: number, y: number): Aabb { return { x: x - 5, y: y - 5, width: 10, height: 10 }; }
+/**
+ * How far above the arriving player's feet a platform may sit and still count as catching them.
+ * A player walking off the end of a platform dips a fraction of a pixel below its surface before
+ * anything catches them, so an exact "at or below the feet" test would read a level the player is
+ * standing on as being above them. This is deliberately far smaller than the gap between any two
+ * walkable heights in the world -- `world.test.ts` asserts that separation holds -- so widening
+ * past a sub-pixel dip can never blur the surface and the tunnel into the same level.
+ */
+const ENTRY_SUPPORT_TOLERANCE = HALF_HEIGHT;
+
+/**
+ * Whether `roomId` has a platform that will catch a player arriving at `entryX` with their feet at
+ * `feetY` -- any platform overlapping the arrival box whose surface is at (within
+ * `ENTRY_SUPPORT_TOLERANCE`) or below those feet. A platform well above the arrival point cannot
+ * catch a fall, which is the case that matters at a boundary between rooms whose walkable heights
+ * do not line up.
+ */
+function roomSupportsEntry(roomId: JungleQuestRoomId, entryX: number, feetY: number): boolean {
+  return jungleQuestRoom(roomId).platforms.some(
+    (platform) =>
+      platform.x1 <= entryX + HALF_WIDTH &&
+      platform.x2 >= entryX - HALF_WIDTH &&
+      platform.y >= feetY - ENTRY_SUPPORT_TOLERANCE,
+  );
+}
+
 function spawnForCheckpoint(roomId: JungleQuestRoomId, checkpoint: JungleQuestCheckpoint): RespawnPoint { return Object.freeze({ roomId, position: Object.freeze({ x: checkpoint.x, y: checkpoint.y }) }); }
 
 export class JungleQuestSimulation {
@@ -74,17 +100,29 @@ export class JungleQuestSimulation {
   }
   private resolveRoomTransition(events: JungleQuestSimulationEvent[]): void {
     const room = this.room; let target: JungleQuestRoomId | null = null; let x = this.playerValue.position.x;
-    if (x > JUNGLE_QUEST_RUN_RULES.logicalWidth + HALF_WIDTH) { target = room.next; x = HALF_WIDTH + 1; }
-    else if (x < -HALF_WIDTH) { target = room.previous; x = JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH - 1; }
+    const rightEntryX = HALF_WIDTH + 1;
+    const leftEntryX = JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH - 1;
+    const feetY = this.playerValue.position.y + HALF_HEIGHT;
+    // CR-001: a boundary is only travelable if the room behind it has a floor under where the
+    // player arrives. Echo Hollow's tunnel runs the full width of the room, but Fern Gate to its
+    // west has no tunnel -- only surface and a ledge above -- so walking west along the tunnel
+    // used to hand the player into empty space at tunnel height and drop them out of the world.
+    // Height is what distinguishes those two crossings, and the x-only trigger below cannot see
+    // it, so the reachability test has to.
+    const canGoRight = room.next !== null && roomSupportsEntry(room.next, rightEntryX, feetY);
+    const canGoLeft = room.previous !== null && roomSupportsEntry(room.previous, leftEntryX, feetY);
+    if (x > JUNGLE_QUEST_RUN_RULES.logicalWidth + HALF_WIDTH && canGoRight) { target = room.next; x = rightEntryX; }
+    else if (x < -HALF_WIDTH && canGoLeft) { target = room.previous; x = leftEntryX; }
     if (target === null) {
-      // CR-001: only clamp against an edge with no adjoining room to travel into. Clamping the
+      // CR-001: only clamp against an edge the player cannot actually travel through. Clamping the
       // near-edge position back to the on-screen bound every frame (as this used to do
       // unconditionally) fights the transition trigger above: it never lets position accumulate
       // past the visible edge toward the trigger threshold, so a room with a real neighbor could
-      // never actually be crossed by real input. A room boundary that leads nowhere (no
-      // `previous`/`next`) still needs the clamp so the player can't run off-screen forever.
-      const minX = room.previous === null ? HALF_WIDTH : -Infinity;
-      const maxX = room.next === null ? JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH : Infinity;
+      // never actually be crossed by real input. An edge that leads nowhere -- no adjoining room,
+      // or none with a floor at this height -- still needs the clamp, both so the player cannot
+      // run off-screen forever and so an unenterable neighbor reads as a wall rather than a fall.
+      const minX = canGoLeft ? -Infinity : HALF_WIDTH;
+      const maxX = canGoRight ? Infinity : JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_WIDTH;
       const clampedX = Math.max(minX, Math.min(maxX, this.playerValue.position.x));
       if (clampedX !== this.playerValue.position.x) {
         this.playerValue = Object.freeze({ ...this.playerValue, position: Object.freeze({ x: clampedX, y: this.playerValue.position.y }) });

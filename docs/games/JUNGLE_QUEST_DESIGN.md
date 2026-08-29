@@ -11,7 +11,13 @@ The run crosses four connected rooms at a fixed 320×240 logical resolution:
 3. **Root Vault** — second checkpoint, tunnel/surface connection, hazard, and Root Crystal.
 4. **Sun Shrine** — final route, Sky Amber, and the finish shrine.
 
-The lower tunnel intentionally provides a continuous alternate route through the middle expedition instead of making the vine the only viable traversal mechanic.
+The lower tunnel intentionally provides a continuous alternate route through the middle expedition
+instead of making the vine the only viable traversal mechanic. It spans the two middle rooms and
+no further: Fern Gate has no tunnel, so the tunnel's west end is a wall rather than a doorway.
+A room boundary is only travelable when the room behind it has floor under the arrival point at
+the height the player arrives at, so a boundary the player cannot be delivered safely through
+holds them like the world edge instead of dropping them. To return west from the tunnel, climb
+Echo Hollow's descent ladder back to the surface.
 
 ## Controls
 
