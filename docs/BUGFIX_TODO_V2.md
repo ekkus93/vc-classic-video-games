@@ -116,7 +116,7 @@ default, flip the marker to `[ ]`, and proceed.
   - Acceptance: no behavior change; the CR-004 pointer test passes untouched; a test asserts the
     query runs once across many pointer events on one mounted screen.
 
-- [ ] **CR2-013 — Pin CR-015's tie-clash count exactly**
+- [x] **CR2-013 — Pin CR-015's tie-clash count exactly** (a4c58a9)
   - Replace `clashes <= 2` with the exact count the fixed seed produces, with a comment naming the
     seed and the cause of the second clash. See spec §3.5.
   - Acceptance: the test asserts an exact count and still fails against the pre-CR-015 code.
