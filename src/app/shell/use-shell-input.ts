@@ -4,6 +4,7 @@ import {
   BrowserInputController,
   ShellInputRouter,
   calculateViewport,
+  devicePhysicalSize,
 } from "../../engine/index.js";
 import {
   attachAudioUnlockGestures,
@@ -38,20 +39,27 @@ export function useShellInput(
       window,
       pointerSurface: surface,
       pointerBoundsSurface: resolvePointerBoundsElement,
+      // CR2-003: sized in device pixels -- see App.tsx's present loop, which sizes the visible
+      // canvas's backing store the same way -- and paired with BrowserPointerAdapter's own
+      // devicePixelRatio option below, so both sides quantize calculateViewport's integer scale
+      // identically. See BrowserPointerAdapter's constructor doc for why they must match exactly,
+      // not merely each be correct on their own.
       viewport: () => {
         const game = controller.selectedGame;
         const bounds = resolvePointerBoundsElement();
+        const dpr = window.devicePixelRatio;
         return calculateViewport(
           {
             width: game?.logicalWidth ?? 320,
             height: game?.logicalHeight ?? 240,
           },
           {
-            width: Math.max(1, bounds.clientWidth),
-            height: Math.max(1, bounds.clientHeight),
+            width: devicePhysicalSize(Math.max(1, bounds.clientWidth), dpr),
+            height: devicePhysicalSize(Math.max(1, bounds.clientHeight), dpr),
           },
         );
       },
+      devicePixelRatio: () => window.devicePixelRatio,
       settings: () => controller.snapshot.settings.input,
     });
     const router = new ShellInputRouter();

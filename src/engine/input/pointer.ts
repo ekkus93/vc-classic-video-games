@@ -107,11 +107,29 @@ export class BrowserPointerAdapter {
    * coordinates against the wrong box and misaligns pointer-aimed gameplay from where the pointer
    * visually is. Defaults to `surface` itself, preserving the old (bounds === listening surface)
    * behavior for callers that have no such mismatch.
+   *
+   * CR2-003: `devicePixelRatio`, if given, scales the CSS-pixel event offset into device pixels
+   * before it reaches `viewport()`'s output. This exists to agree with the render path, not to
+   * "fix" pointer math on its own -- `event.clientX`/`getBoundingClientRect()` are both CSS
+   * pixels, so pointer math is internally self-consistent (and DPR-correct) even without this.
+   * The reason it still has to change: `calculateViewport`'s integer scale is `floor(physical /
+   * logical)`, and `floor` is not linear in `devicePixelRatio` -- a CSS size just under an integer
+   * multiple of the logical size can floor to a different scale once expanded to device pixels
+   * than it did in CSS pixels. If the render path (see `presentFramebuffer`'s caller) sizes its
+   * backing store, and therefore its own `calculateViewport` call, in device pixels while pointer
+   * math stays in CSS pixels, the two can quantize to genuinely different viewports at exactly
+   * those boundary sizes -- not just a scale-factor mismatch, but a different letterbox offset --
+   * and a click would target the wrong logical position relative to what is actually drawn.
+   * Scaling the physical coordinate here, together with `viewport()` being fed the same
+   * device-pixel physical size the render path uses, keeps both sides quantizing identically.
+   * Defaults to `() => 1`, preserving the old (CSS-pixel) behavior for callers with no such
+   * device-pixel render path to agree with.
    */
   public constructor(
     private readonly surface: HTMLElement,
     private readonly provider: PointerInputProvider,
     private readonly boundsSurface: () => HTMLElement | null = () => surface,
+    private readonly devicePixelRatio: () => number = () => 1,
   ) {}
 
   public attach(): void {
@@ -141,7 +159,11 @@ export class BrowserPointerAdapter {
 
   private moveFromEvent(event: PointerEvent): void {
     const bounds = (this.boundsSurface() ?? this.surface).getBoundingClientRect();
-    this.provider.move(event.clientX - bounds.left, event.clientY - bounds.top);
+    const dpr = this.devicePixelRatio();
+    this.provider.move(
+      (event.clientX - bounds.left) * dpr,
+      (event.clientY - bounds.top) * dpr,
+    );
   }
 
   private readonly onPointerMove = (event: PointerEvent): void => {

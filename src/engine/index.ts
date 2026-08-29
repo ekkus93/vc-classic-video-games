@@ -149,7 +149,11 @@ export {
   presentFramebuffer,
 } from "./render/logical-framebuffer.js";
 export type { CanvasSurface } from "./render/logical-framebuffer.js";
-export { calculateViewport, physicalToLogical } from "./render/viewport.js";
+export {
+  calculateViewport,
+  devicePhysicalSize,
+  physicalToLogical,
+} from "./render/viewport.js";
 export type { LogicalPoint, Size2D, Viewport } from "./render/viewport.js";
 export { SpriteAnimation } from "./render/sprite-animation.js";
 export type { SpriteAnimationOptions } from "./render/sprite-animation.js";

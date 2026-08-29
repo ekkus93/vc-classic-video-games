@@ -355,6 +355,19 @@ torn down by the shell alongside the renderer it feeds -- a distinct concern fro
 fixed-step/render driver loop (§10) and from the shell's input-polling RAF chain, the same way
 each of those is independently started and cancelled by the effect that owns it.
 
+Scaling is computed in device pixels, not CSS pixels (CR2-003). `calculateViewport`'s
+integer-scale guarantee only holds in whatever unit its physical-size argument is expressed in; a
+canvas backing store sized in CSS pixels is itself rescaled onto the panel by the browser's own,
+non-integer compositing scale on any display where `devicePixelRatio` is not 1 (1.25x and 1.5x are
+common Chromebook settings), which defeats the guarantee where it actually matters. The present
+loop therefore sizes the visible canvas's backing store via `devicePhysicalSize(cssSize,
+devicePixelRatio)` (`round(cssSize * devicePixelRatio)`, floored at one device pixel) every frame
+-- not only on resize, since `devicePixelRatio` itself changes under browser zoom without firing a
+resize event -- and calls `calculateViewport`/`presentFramebuffer` against that device-pixel size.
+The pointer path (§12.5) is sized identically, for the same reason: `floor()` is not linear in
+`devicePixelRatio`, so quantizing the render viewport and the pointer viewport independently, in
+different units, can pick different integer scales at the same CSS size.
+
 ### 11.3 Frame ownership
 
 Each game draws only into the game surface supplied by the runtime. Launcher UI overlays such as pause, confirm-exit, and global notifications are owned by the application shell.
@@ -429,6 +442,16 @@ Mappings shall be configurable before final release. Conflict detection must pre
 ### 12.5 Pointer input
 
 Missile Defense and any future cursor-target game may request a pointer service. The pointer service shall normalize coordinates into logical game-space coordinates and shall not expose screen-size-specific behavior to the game.
+
+Physical pointer coordinates are measured against the actual visible game canvas, not an outer
+container with its own padding/chrome (CR-004), and are scaled into device pixels by the same
+`devicePixelRatio` the present loop uses to size the canvas backing store, before being mapped
+through `calculateViewport`'s output (CR2-003). Both must agree in unit and in the physical size
+fed to `calculateViewport`, not merely each independently produce a plausible result: because the
+viewport's integer scale is a `floor()`, computing it separately in CSS pixels for pointer input
+and in device pixels for rendering can quantize to a different whole-number scale at the same CSS
+size, which would misalign where a click resolves from where the frame it clicked on was actually
+drawn.
 
 ## 13. Audio
 

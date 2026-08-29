@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { LogicalFramebuffer, presentFramebuffer } from "../engine/index.js";
+import {
+  LogicalFramebuffer,
+  devicePhysicalSize,
+  presentFramebuffer,
+} from "../engine/index.js";
 import {
   diagnosticPing,
   getPlatformInfo,
@@ -104,9 +108,19 @@ export function App({ controller }: AppProps = {}) {
 
     let frame = 0;
     const present = (): void => {
-      if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
-        canvas.width = Math.max(1, canvas.clientWidth);
-        canvas.height = Math.max(1, canvas.clientHeight);
+      // CR2-003: the backing store is sized in device pixels, not CSS pixels, so the integer
+      // scale calculateViewport picks (via presentFramebuffer) is an integer on the physical
+      // panel -- what P3-005 actually wants -- rather than merely in the CSS layout unit the
+      // browser is about to non-integer-rescale again on any non-1 devicePixelRatio display
+      // (1.25x and 1.5x are common Chromebook settings). Recomputed every frame, not just on
+      // resize, since window.devicePixelRatio itself changes under browser zoom without firing a
+      // resize event; the CSS box (canvas.clientWidth/clientHeight, driven by layout) is
+      // untouched, so the browser still composites the backing store onto exactly that box.
+      const targetWidth = devicePhysicalSize(canvas.clientWidth, window.devicePixelRatio);
+      const targetHeight = devicePhysicalSize(canvas.clientHeight, window.devicePixelRatio);
+      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
       }
       presentFramebuffer(displayContext, framebuffer, canvas.width, canvas.height);
       frame = window.requestAnimationFrame(present);

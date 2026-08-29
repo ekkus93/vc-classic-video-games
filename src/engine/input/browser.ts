@@ -16,6 +16,12 @@ export interface BrowserInputControllerOptions {
    * `pointerSurface` itself when omitted.
    */
   readonly pointerBoundsSurface?: () => HTMLElement | null;
+  /**
+   * CR2-003: scales the CSS-pixel pointer offset into device pixels, to agree with a `viewport()`
+   * that is itself computed in device pixels (see `BrowserPointerAdapter`'s constructor doc for
+   * why this has to match, not just "also be correct"). Defaults to `() => 1` when omitted.
+   */
+  readonly devicePixelRatio?: () => number;
   readonly viewport: () => Viewport;
   readonly settings: () => InputSettings;
 }
@@ -47,6 +53,7 @@ export class BrowserInputController {
       options.pointerSurface,
       this.pointer,
       options.pointerBoundsSurface,
+      options.devicePixelRatio,
     );
     this.input = new InputManager(
       this.keyboard,
