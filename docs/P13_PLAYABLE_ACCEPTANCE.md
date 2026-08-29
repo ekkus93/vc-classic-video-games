@@ -5,6 +5,14 @@
 - [x] Canonical registry exposes Jungle Quest beside Space Rocks.
 - [x] Deterministic running, braking, jumping, ladder traversal, vine latch/swing/release.
 - [x] Four connected rooms, collectibles, checkpoints, alternate tunnel route, and a true pit path.
+- [x] Room transitions actually fire from held movement input, not only from injected start
+      positions past the threshold, and all four rooms are reachable by chained real-input
+      transitions (CR-001). Before that fix, the edge trigger was clamped back every frame and no
+      room boundary could be crossed by playing, which is what this item had asserted.
+- [x] A diagonal held at a ladder end applies horizontal movement immediately on dismount, without
+      needing the vertical input released first (CR-002).
+- [x] Walking back into an already-banked checkpoint room re-awards nothing and does not move the
+      respawn point backward (CR-024).
 - [x] Hazards, pit recovery, lives, respawn protection, timer, scoring, completion, and terminal states.
 - [x] Terminal score submission occurs once; rejected persistence is contained.
 - [x] Shared audio routing, bounded particles, and owned loop teardown.
@@ -13,6 +21,14 @@
 - [x] Injected update/render failures transition to recoverable runtime error and release resources.
 
 ## Human playable checks before final integration
+
+CR-025 re-verification (2026-08-28): the room-transition items below are the ones CR-001 made
+unreachable, and they are now backed by the automated regression tests listed above. The remaining
+boxes are unticked because they need a real browser/Tauri surface with physical input and audio,
+not because they failed - they are left for the native-hardware pass, the same status every other
+game carries in `docs/P18_RELEASE_ACCEPTANCE.md`. `docs/TODO.md`'s P13 markers were re-checked
+against this and are accurate as they stand: P13-001 through P13-009 complete, P13-010 `[~]`
+pending that pass.
 
 Run the production app with a keyboard and physical standard gamepad and verify:
 

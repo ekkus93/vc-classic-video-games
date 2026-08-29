@@ -197,7 +197,7 @@ any order, can be interleaved).
     backward re-entry — or, if backward re-entry turns out to be impossible by level geometry,
     the test documents why and this task is marked complete on that basis instead.
 
-- [ ] **CR-025 — Correct `docs/TODO.md` P13 status once CR-001/CR-002 land**
+- [x] **CR-025 — Correct `docs/TODO.md` P13 status once CR-001/CR-002 land**
   - `docs/TODO.md` currently marks P13-007/008/009 `[x]` despite CR-001 making their acceptance
     criteria unreachable through real input before this remediation. Once CR-001 and CR-002 are
     fixed and verified, re-run the relevant `docs/P13_PLAYABLE_ACCEPTANCE.md` manual checklist
