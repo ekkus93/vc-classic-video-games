@@ -1,4 +1,5 @@
 import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import { ParticleBurstField } from "../../engine/index.js";
 import { BUG_BARRAGE_LIMITS } from "./design.js";
 import type { BugBarrageSimulationEvent } from "./simulation.js";
 
@@ -10,23 +11,19 @@ export const BUG_BARRAGE_AUDIO_IDS = Object.freeze({
   wave: "bug-barrage.audio.wave",
 });
 
-interface BugBarrageParticle {
-  readonly position: Vector2;
-  readonly velocity: Vector2;
-  readonly ageSeconds: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
+const PARTICLE_RADIUS = 1.25;
 
 export class BugBarrageEffects {
-  private particlesValue: readonly BugBarrageParticle[] = Object.freeze([]);
-  private burstSerial = 0;
+  private readonly particles = new ParticleBurstField({
+    maxParticles: BUG_BARRAGE_LIMITS.maxEffects,
+    phaseStep: 0.41421356237,
+    speedScaleBase: 0.65,
+  });
 
   public constructor(private readonly audio: AudioService) {}
 
   public get particleCount(): number {
-    return this.particlesValue.length;
+    return this.particles.count;
   }
 
   public handle(events: readonly BugBarrageSimulationEvent[]): void {
@@ -63,74 +60,32 @@ export class BugBarrageEffects {
   }
 
   public update(dtSeconds: number): void {
-    if (!Number.isFinite(dtSeconds) || dtSeconds < 0) {
-      throw new RangeError("dtSeconds must be a non-negative finite number");
-    }
-    this.particlesValue = Object.freeze(
-      this.particlesValue
-        .map((particle) =>
-          Object.freeze({
-            ...particle,
-            position: Object.freeze({
-              x: particle.position.x + particle.velocity.x * dtSeconds,
-              y: particle.position.y + particle.velocity.y * dtSeconds,
-            }),
-            ageSeconds: particle.ageSeconds + dtSeconds,
-          }),
-        )
-        .filter((particle) => particle.ageSeconds < particle.lifetimeSeconds),
-    );
+    this.particles.update(dtSeconds);
   }
 
   public render(renderer: GameRenderer): void {
-    for (const particle of this.particlesValue) {
-      renderer.fillCircle(
-        particle.position.x,
-        particle.position.y,
-        particle.radius,
-        particle.color,
-      );
-    }
+    this.particles.render(renderer);
   }
 
   public destroy(): void {
-    this.particlesValue = Object.freeze([]);
+    this.particles.clear();
   }
 
   private burst(
     position: Vector2,
-    requestedCount: number,
+    count: number,
     speed: number,
     lifetimeSeconds: number,
     color: string,
   ): void {
-    const count = Math.min(
-      requestedCount,
-      BUG_BARRAGE_LIMITS.maxEffects - this.particlesValue.length,
-    );
-    if (count <= 0) {
-      return;
-    }
-    const next = [...this.particlesValue];
-    const phase = (this.burstSerial * 0.41421356237) % 1;
-    this.burstSerial += 1;
-    for (let index = 0; index < count; index += 1) {
-      const angle = Math.PI * 2 * (phase + index / count);
-      const speedScale = 0.65 + ((index + this.burstSerial) % 4) * 0.1;
-      next.push(
-        Object.freeze({
-          position: Object.freeze({ ...position }),
-          velocity: Object.freeze({
-            x: Math.cos(angle) * speed * speedScale,
-            y: Math.sin(angle) * speed * speedScale,
-          }),
-          ageSeconds: 0,
-          lifetimeSeconds,
-          radius: 1.25,
-          color,
-        }),
-      );
-    }
-    this.particlesValue = Object.freeze(next);
+    this.particles.burst({
+      x: position.x,
+      y: position.y,
+      count,
+      speed,
+      lifetimeSeconds,
+      radius: PARTICLE_RADIUS,
+      color,
+    });
   }
 }

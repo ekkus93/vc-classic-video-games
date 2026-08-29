@@ -1,7 +1,6 @@
 import type { AudioService, GameRenderer } from "../../engine/index.js";
-import {
-  DEEP_DIGGER_RUN_RULES,
-} from "./design.js";
+import { ParticleBurstField } from "../../engine/index.js";
+import { DEEP_DIGGER_RUN_RULES } from "./design.js";
 import type { DeepDiggerSimulationEvent } from "./simulation.js";
 import type { GridCell } from "./terrain.js";
 
@@ -18,16 +17,7 @@ export const DEEP_DIGGER_EFFECT_RULES = Object.freeze({
   maxParticles: 56,
 });
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  ageSeconds: number;
-  lifetimeSeconds: number;
-  radius: number;
-  color: string;
-}
+const PARTICLE_RADIUS = 1.1;
 
 function cellCenter(cell: GridCell): { readonly x: number; readonly y: number } {
   return Object.freeze({
@@ -43,13 +33,17 @@ function cellCenter(cell: GridCell): { readonly x: number; readonly y: number } 
 }
 
 export class DeepDiggerEffects {
-  private particles: Particle[] = [];
-  private serial = 0;
+  private readonly particles = new ParticleBurstField({
+    maxParticles: DEEP_DIGGER_EFFECT_RULES.maxParticles,
+    // Deep Digger has always advanced the ring phase even for a burst the cap swallowed whole,
+    // which shifts the next burst that does fit. Kept as-is so a full field looks unchanged.
+    advanceSerialOnDroppedBurst: true,
+  });
 
   public constructor(private readonly audio: AudioService) {}
 
   public get particleCount(): number {
-    return this.particles.length;
+    return this.particles.count;
   }
 
   public handle(events: readonly DeepDiggerSimulationEvent[]): void {
@@ -106,60 +100,36 @@ export class DeepDiggerEffects {
   }
 
   public update(dtSeconds: number): void {
-    if (!Number.isFinite(dtSeconds) || dtSeconds < 0) {
-      throw new RangeError("dtSeconds must be a non-negative finite number");
-    }
-    this.particles = this.particles
-      .map((particle) => ({
-        ...particle,
-        x: particle.x + particle.vx * dtSeconds,
-        y: particle.y + particle.vy * dtSeconds,
-        ageSeconds: particle.ageSeconds + dtSeconds,
-      }))
-      .filter((particle) => particle.ageSeconds < particle.lifetimeSeconds);
+    this.particles.update(dtSeconds);
   }
 
   public render(renderer: GameRenderer): void {
-    for (const particle of this.particles) {
-      renderer.fillCircle(particle.x, particle.y, particle.radius, particle.color);
-    }
+    this.particles.render(renderer);
   }
 
   public destroy(): void {
     for (const assetId of Object.values(DEEP_DIGGER_AUDIO_IDS)) {
       this.audio.stop(assetId);
     }
-    this.particles = [];
+    this.particles.clear();
   }
 
   private burst(
     cell: GridCell,
-    requestedCount: number,
+    count: number,
     color: string,
     speed: number,
     lifetimeSeconds: number,
   ): void {
-    const available = Math.max(
-      0,
-      DEEP_DIGGER_EFFECT_RULES.maxParticles - this.particles.length,
-    );
-    const count = Math.min(requestedCount, available);
     const center = cellCenter(cell);
-    const phase = (this.serial * 0.38196601125) % 1;
-    this.serial += 1;
-    for (let index = 0; index < count; index += 1) {
-      const angle = Math.PI * 2 * (phase + index / Math.max(1, count));
-      const speedScale = 0.7 + ((index + this.serial) % 4) * 0.1;
-      this.particles.push({
-        x: center.x,
-        y: center.y,
-        vx: Math.cos(angle) * speed * speedScale,
-        vy: Math.sin(angle) * speed * speedScale,
-        ageSeconds: 0,
-        lifetimeSeconds,
-        radius: 1.1,
-        color,
-      });
-    }
+    this.particles.burst({
+      x: center.x,
+      y: center.y,
+      count,
+      speed,
+      lifetimeSeconds,
+      radius: PARTICLE_RADIUS,
+      color,
+    });
   }
 }

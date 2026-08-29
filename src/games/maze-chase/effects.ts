@@ -1,4 +1,5 @@
 import type { AudioService, GameRenderer } from "../../engine/index.js";
+import { ParticleBurstField } from "../../engine/index.js";
 import { MAZE_CHASE_RUN_RULES } from "./design.js";
 import type { MazeChaseSimulationEvent } from "./simulation.js";
 
@@ -19,16 +20,7 @@ export const MAZE_CHASE_EFFECT_RULES = Object.freeze({
   levelBurst: 18,
 });
 
-interface MazeParticle {
-  readonly x: number;
-  readonly y: number;
-  readonly vx: number;
-  readonly vy: number;
-  readonly age: number;
-  readonly lifetime: number;
-  readonly radius: number;
-  readonly color: string;
-}
+const PARTICLE_RADIUS = 1.25;
 
 function toScreen(position: { readonly x: number; readonly y: number }): {
   readonly x: number;
@@ -41,13 +33,16 @@ function toScreen(position: { readonly x: number; readonly y: number }): {
 }
 
 export class MazeChaseEffects {
-  private particlesValue: readonly MazeParticle[] = Object.freeze([]);
-  private serial = 0;
+  private readonly particles = new ParticleBurstField({
+    maxParticles: MAZE_CHASE_EFFECT_RULES.maxParticles,
+    speedScaleBase: 0.72,
+    speedScaleStep: 0.09,
+  });
 
   public constructor(private readonly audio: AudioService) {}
 
   public get particleCount(): number {
-    return this.particlesValue.length;
+    return this.particles.count;
   }
 
   public handle(events: readonly MazeChaseSimulationEvent[]): void {
@@ -91,68 +86,33 @@ export class MazeChaseEffects {
   }
 
   public update(dtSeconds: number): void {
-    if (!Number.isFinite(dtSeconds) || dtSeconds < 0) {
-      throw new RangeError("dtSeconds must be a non-negative finite number");
-    }
-    this.particlesValue = Object.freeze(
-      this.particlesValue
-        .map((particle) =>
-          Object.freeze({
-            ...particle,
-            x: particle.x + particle.vx * dtSeconds,
-            y: particle.y + particle.vy * dtSeconds,
-            age: particle.age + dtSeconds,
-          }),
-        )
-        .filter((particle) => particle.age < particle.lifetime),
-    );
+    this.particles.update(dtSeconds);
   }
 
   public render(renderer: GameRenderer): void {
-    for (const particle of this.particlesValue) {
-      renderer.fillCircle(particle.x, particle.y, particle.radius, particle.color);
-    }
+    this.particles.render(renderer);
   }
 
   public destroy(): void {
-    this.particlesValue = Object.freeze([]);
+    this.particles.clear();
   }
 
   private burst(
     position: { readonly x: number; readonly y: number },
-    requestedCount: number,
+    count: number,
     color: string,
     speed: number,
-    lifetime: number,
+    lifetimeSeconds: number,
   ): void {
-    const available = Math.max(
-      0,
-      MAZE_CHASE_EFFECT_RULES.maxParticles - this.particlesValue.length,
-    );
-    const count = Math.min(requestedCount, available);
-    if (count === 0) {
-      return;
-    }
     const center = toScreen(position);
-    const particles = [...this.particlesValue];
-    const phase = (this.serial * 0.38196601125) % 1;
-    this.serial += 1;
-    for (let index = 0; index < count; index += 1) {
-      const angle = Math.PI * 2 * (phase + index / count);
-      const speedScale = 0.72 + ((index + this.serial) % 4) * 0.09;
-      particles.push(
-        Object.freeze({
-          x: center.x,
-          y: center.y,
-          vx: Math.cos(angle) * speed * speedScale,
-          vy: Math.sin(angle) * speed * speedScale,
-          age: 0,
-          lifetime,
-          radius: 1.25,
-          color,
-        }),
-      );
-    }
-    this.particlesValue = Object.freeze(particles);
+    this.particles.burst({
+      x: center.x,
+      y: center.y,
+      count,
+      speed,
+      lifetimeSeconds,
+      radius: PARTICLE_RADIUS,
+      color,
+    });
   }
 }

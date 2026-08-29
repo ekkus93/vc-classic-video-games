@@ -132,6 +132,12 @@ export {
 export type { Aabb, Circle } from "./math/collision.js";
 export { XorShift32 } from "./random/xorshift32.js";
 export { CanvasGameRenderer } from "./render/renderer.js";
+export { ParticleBurstField } from "./effects/particle-burst.js";
+export type {
+  BurstParticle,
+  ParticleBurst,
+  ParticleBurstFieldOptions,
+} from "./effects/particle-burst.js";
 export type {
   HorizontalTextAlign,
   SpriteSourceRect,

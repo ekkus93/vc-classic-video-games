@@ -41,6 +41,13 @@ function requireDelta(dtSeconds: number): void {
   }
 }
 
+/**
+ * CR-017: this is deliberately not on the shared `ParticleBurstField`. Sky Riders caps by keeping
+ * the newest particles and dropping the oldest, where every other game refuses particles once the
+ * field is full, and it phases its burst ring in radians rather than turns. That is a different
+ * burst model, not another copy of the shared one, and folding it in would have changed how the
+ * game looks under load.
+ */
 export class SkyRidersEffects {
   private particleState: readonly SkyRidersParticle[] = Object.freeze([]);
   private burstSerial = 0;

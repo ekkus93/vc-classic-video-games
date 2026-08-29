@@ -1,8 +1,5 @@
-import type {
-  AudioService,
-  GameRenderer,
-  Vector2,
-} from "../../engine/index.js";
+import type { AudioService, GameRenderer, Vector2 } from "../../engine/index.js";
+import { ParticleBurstField } from "../../engine/index.js";
 import { SPACE_ROCKS_RUN_RULES } from "./design.js";
 import type { SpaceRocksSimulationEvent } from "./simulation.js";
 
@@ -22,15 +19,6 @@ export const SPACE_ROCKS_EFFECT_RULES = Object.freeze({
   waveClearParticles: 18,
 });
 
-interface SpaceRocksParticle {
-  readonly position: Vector2;
-  readonly velocity: Vector2;
-  readonly ageSeconds: number;
-  readonly lifetimeSeconds: number;
-  readonly radius: number;
-  readonly color: string;
-}
-
 interface BurstStyle {
   readonly count: number;
   readonly speed: number;
@@ -44,21 +32,20 @@ const CENTER = Object.freeze({
   y: SPACE_ROCKS_RUN_RULES.logicalHeight / 2,
 });
 
-function requireDelta(dtSeconds: number): void {
-  if (!Number.isFinite(dtSeconds) || dtSeconds < 0) {
-    throw new RangeError("dtSeconds must be a non-negative finite number");
-  }
-}
-
 export class SpaceRocksEffects {
-  private particlesValue: readonly SpaceRocksParticle[] = Object.freeze([]);
+  private readonly particles = new ParticleBurstField({
+    maxParticles: SPACE_ROCKS_EFFECT_RULES.maxParticles,
+    phaseStep: 0.61803398875,
+    speedScaleBase: 0.65,
+    speedScaleSteps: 5,
+    indexStride: 7,
+  });
   private thrustLoopActive = false;
-  private burstSerial = 0;
 
   public constructor(private readonly audio: AudioService) {}
 
   public get particleCount(): number {
-    return this.particlesValue.length;
+    return this.particles.count;
   }
 
   public setThrust(active: boolean): void {
@@ -124,32 +111,11 @@ export class SpaceRocksEffects {
   }
 
   public update(dtSeconds: number): void {
-    requireDelta(dtSeconds);
-    this.particlesValue = Object.freeze(
-      this.particlesValue
-        .map((particle) =>
-          Object.freeze({
-            ...particle,
-            position: Object.freeze({
-              x: particle.position.x + particle.velocity.x * dtSeconds,
-              y: particle.position.y + particle.velocity.y * dtSeconds,
-            }),
-            ageSeconds: particle.ageSeconds + dtSeconds,
-          }),
-        )
-        .filter((particle) => particle.ageSeconds < particle.lifetimeSeconds),
-    );
+    this.particles.update(dtSeconds);
   }
 
   public render(renderer: GameRenderer): void {
-    for (const particle of this.particlesValue) {
-      renderer.fillCircle(
-        particle.position.x,
-        particle.position.y,
-        particle.radius,
-        particle.color,
-      );
-    }
+    this.particles.render(renderer);
   }
 
   public destroy(): void {
@@ -157,39 +123,10 @@ export class SpaceRocksEffects {
       this.audio.stop(SPACE_ROCKS_AUDIO_IDS.thrust);
       this.thrustLoopActive = false;
     }
-    this.particlesValue = Object.freeze([]);
+    this.particles.clear();
   }
 
   private spawnBurst(position: Vector2, style: BurstStyle): void {
-    const available = Math.max(
-      0,
-      SPACE_ROCKS_EFFECT_RULES.maxParticles - this.particlesValue.length,
-    );
-    const count = Math.min(style.count, available);
-    if (count === 0) {
-      return;
-    }
-
-    const next = [...this.particlesValue];
-    const phase = (this.burstSerial * 0.61803398875) % 1;
-    this.burstSerial += 1;
-    for (let index = 0; index < count; index += 1) {
-      const angle = Math.PI * 2 * (phase + index / Math.max(1, count));
-      const speedScale = 0.65 + ((index * 7 + this.burstSerial) % 5) * 0.1;
-      next.push(
-        Object.freeze({
-          position: Object.freeze({ ...position }),
-          velocity: Object.freeze({
-            x: Math.cos(angle) * style.speed * speedScale,
-            y: Math.sin(angle) * style.speed * speedScale,
-          }),
-          ageSeconds: 0,
-          lifetimeSeconds: style.lifetimeSeconds,
-          radius: style.radius,
-          color: style.color,
-        }),
-      );
-    }
-    this.particlesValue = Object.freeze(next);
+    this.particles.burst({ x: position.x, y: position.y, ...style });
   }
 }

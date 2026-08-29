@@ -151,7 +151,7 @@ any order, can be interleaved).
     existing per-game score-submission test continues to pass with import-path-only changes;
     `docs/SPEC.md` documents the new shared module.
 
-- [ ] **CR-017 — Extract shared bounded particle-burst system into `src/engine/`**
+- [x] **CR-017 — Extract shared bounded particle-burst system into `src/engine/`**
   - Migrate applicable games' `effects.ts` to configure and drive it instead of reimplementing
     it. See `docs/BUGFIX_SPEC.md` §3.2.
   - Acceptance: one shared, configurable particle utility exists in `src/engine/`; each migrated

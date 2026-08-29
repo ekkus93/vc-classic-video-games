@@ -547,6 +547,25 @@ Every game submits its run score through the same shared committer in
 Each game's `src/games/<name>/score-submission.ts` is a thin subclass that names its terminal
 event and keeps the game-specific class and error-handler type names its module and tests use.
 
+#### 16.4.2 Shared `ParticleBurstField`
+
+Games that draw particle bursts drive the shared bounded field in
+`src/engine/effects/particle-burst.ts` rather than reimplementing the age/velocity/cap loop:
+
+- a burst fans `count` particles around a rotating ring phase, each at a quantized fraction of the
+  burst speed, and the requested count is a request -- `maxParticles` wins, so a burst into a full
+  field is trimmed or dropped and the population never grows unbounded;
+- bursts consume no randomness, so a replayed run draws the same particles;
+- the ring phase, jitter constants, and cap are per-game configuration, which is what keeps each
+  game's existing look intact through the extraction.
+
+Eight games use it (Barrel Climber, Bug Barrage, Deep Digger, Jungle Quest, Maze Chase, River
+Hopper, Space Rocks, Star Defender). Missile Defense draws no particles. Sky Riders keeps its own
+implementation: it caps by dropping the oldest particles rather than refusing new ones, and phases
+its ring in radians rather than turns, so it is a different burst model rather than a copy of this
+one. Star Defender uses the shared field but draws the particles itself, against its scrolling
+camera.
+
 ## 17. Launcher and shell UX
 
 ### 17.1 Startup
