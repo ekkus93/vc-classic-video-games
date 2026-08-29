@@ -127,7 +127,7 @@ built for testability — its constructor takes an injectable `AudioContextFacto
 (e.g. `FakeGameRenderer`). The gap is that nobody wrote the fake and the tests, not that the class
 resists testing.
 
-- [ ] **TC-002a — Build fakes**
+- [x] **TC-002a — Build fakes**
   - [ ] A minimal fake object satisfying the subset of the real `AudioContext`/`GainNode`/
     `AudioBufferSourceNode` surface the class actually calls: `createGain()` (returns an object
     with a settable `.gain.value` and a `.connect()` that records what it connected to),
@@ -137,14 +137,14 @@ resists testing.
     and `.suspend()` (both settable to resolve and optionally to flip `.state`).
   - [ ] A fake `AudioBufferResolver` backed by a `Map<string, unknown>` the test can seed, so
     `getAudioBuffer` returns a canned marker "buffer" for known ids and `null` for unknown ones.
-- [ ] **TC-002b — Volume and settings**
+- [x] **TC-002b — Volume and settings**
   - [ ] `configure()` with a non-finite volume (`NaN`, `Infinity`) throws `RangeError` for each of
     `masterVolume`/`musicVolume`/`effectsVolume` in turn.
   - [ ] `configure()` clamps out-of-range volumes (negative and `> 1`) into `[0, 1]`.
   - [ ] `configure({ muted: true, masterVolume: 0.8, ... })` sets the master gain's `.value` to
     `0` regardless of `masterVolume`, while `musicGain`/`sfxGain` still reflect
     `musicVolume`/`effectsVolume` unmuted (per `applySettings`'s asymmetric mute handling).
-- [ ] **TC-002c — `unlock()`**
+- [x] **TC-002c — `unlock()`**
   - [ ] First call creates the context via the injected factory exactly once and wires
     `musicGain`/`sfxGain` → `masterGain` → `context.destination`, verified via the fake's recorded
     `.connect()` calls.
@@ -153,7 +153,7 @@ resists testing.
     "running"` afterward.
   - [ ] Calling `unlock()` when the fake context's `.state` is `"suspended"` calls `.resume()` and
     resolves once the fake flips `.state` to `"running"`.
-- [ ] **TC-002d — Playback**
+- [x] **TC-002d — Playback**
   - [ ] `playEffect`/`playLoop` are a no-op (no buffer source created) when `isUnlocked` is still
     `false`.
   - [ ] `playEffect`/`playLoop` are a no-op when the resolver returns `null` for the requested
@@ -170,10 +170,19 @@ resists testing.
   - [ ] `pauseAll()`/`resumeAll()` call `context.suspend()`/`context.resume()` only when the
     context is currently in the matching state (`"running"` for pause, `"suspended"` for resume) —
     calling `pauseAll()` twice in a row only suspends once.
-  - Acceptance: `src/engine/audio/audio-service.test.ts` exists and passes; every case above is
-    present; confirm at least the mute-override and the "no-op before unlock" cases actually pin
-    behavior by a targeted mutation-and-revert, since those are the two easiest to get
-    silently wrong. `npm run test` passes with the new file included.
+  - **Investigated and strengthened:** the original "no-op before unlock" case only tried
+    `playEffect` while `context` was still `null` (never unlocked), which cannot distinguish
+    `play()`'s `isUnlocked` check from its separate `context === null` check -- removing the
+    `isUnlocked` half of that guard went uncaught until the fixture added a second scenario: unlock
+    the service, then force the fake context back to `"suspended"` (as `pauseAll()` would), and
+    confirm `playEffect` still does nothing even though `context` is non-null.
+  - Acceptance: `src/engine/audio/audio-service.test.ts` exists and passes (12 cases). All twelve
+    were confirmed to catch a defect by mutating the corresponding line in `audio-service.ts`
+    (removing `clampVolume`'s throw; removing the mute override; always recreating the context in
+    `unlock()`; removing the `isUnlocked` half of `play()`'s guard; routing every source to the sfx
+    bus regardless of `bus`; removing the `"ended"` listener; making `stop()` ignore `assetId`; and
+    removing `pauseAll()`'s running-state guard) and reverted afterward. `npm run test` now at 467
+    (455 + 12).
 
 ## TC-003 — Make `BrowserGameServices.preload()` testable, then cover its branches
 
