@@ -573,4 +573,51 @@ export const tests: readonly TestCase[] = [
       );
     },
   },
+  {
+    name: "CR2-008 a shaking rock still blocks player movement into its cell -- the per-tick contact check never needs to fire for it",
+    run: () => {
+      // The rock at (2,0) has open support at (2,1), so it loosens on the very first tick. The
+      // player, parked one cell away at (1,0), then tries to move directly into the shaking
+      // rock's own cell -- exactly the case the per-tick contact check's removed "shaking" branch
+      // claimed to guard. It can't actually happen: isRockAt (called with no ignoredRockId, as
+      // every player-movement check is) blocks entry into any non-falling rock's cell, so the
+      // move itself is refused before contact is ever a question.
+      const services = createFakeGameServices(0x2008);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 5,
+          rows: 5,
+          tunnels: [
+            { column: 1, row: 0 },
+            { column: 2, row: 1 },
+          ],
+          playerSpawn: { column: 1, row: 0 },
+          enemySpawns: [{ column: 1, row: 0 }],
+          rockSpawns: [{ column: 2, row: 0 }],
+        },
+        initialInvulnerabilitySeconds: 100,
+      });
+
+      const loosened = simulation.update(IDLE_INPUT, 0);
+      assert(loosened.some((event) => event.type === "rock-loosened"), "fixture must loosen the rock on the first tick");
+      assert(simulation.rocks[0]?.state === "shaking", "the rock must be shaking, not yet falling, going into the move attempt");
+
+      const movedInto = simulation.update({ move: "right", attack: false }, 0.02);
+      assert(
+        simulation.player.cell.column === 1 && simulation.player.cell.row === 0,
+        "moving into a shaking rock's cell must be refused, leaving the player in place",
+      );
+      assert(
+        !movedInto.some((event) => event.type === "dug"),
+        "a refused move must not carve the rock's cell as though the player had entered it",
+      );
+      assert(
+        !movedInto.some((event) => event.type === "player-hit"),
+        "a shaking rock the player never entered must never register as a hit",
+      );
+      assert(simulation.lives === 3, "a blocked move must cost no life");
+    },
+  },
 ];

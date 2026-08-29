@@ -459,10 +459,16 @@ export class DeepDiggerSimulation {
       // CR-010: a rock only changes cells once every ROCK_FALL_STEP_SECONDS, so advanceRock's
       // per-step contact resolution leaves it harmless on every tick in between -- long enough
       // for a player to walk into, or straight through, a rock hanging in mid-air. Re-check the
-      // player against every rock that is still loose, every tick, not only on the ticks it
-      // moved. hitPlayer is idempotent within a tick (it grants invulnerability), so a rock that
-      // already hit the player during its step loop does not hit again here.
-      if (rock.state === "shaking" || rock.state === "falling") {
+      // player against every falling rock, every tick, not only on the ticks it moved. hitPlayer
+      // is idempotent within a tick (it grants invulnerability), so a rock that already hit the
+      // player during its step loop does not hit again here.
+      //
+      // CR2-008: "shaking" is deliberately excluded -- a shaking rock is still sitting in its own
+      // earth cell, and isRockAt (called with no ignoredRockId, as every player-movement check
+      // does) blocks the player from ever entering any non-falling rock's cell. The player can
+      // therefore never be co-located with a shaking rock, so re-checking it here can never fire;
+      // only "falling" ever needs this per-tick check.
+      if (rock.state === "falling") {
         this.resolveRockPlayerContact(rock, events);
       }
     }
