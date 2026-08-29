@@ -9,6 +9,13 @@ import type { InputSettings } from "./settings.js";
 export interface BrowserInputControllerOptions {
   readonly window: Window;
   readonly pointerSurface: HTMLElement;
+  /**
+   * CR-004: element whose bounding box actually defines the pointer's physical coordinate
+   * origin/size, resolved fresh per pointer event. Must describe the same box `viewport()`
+   * measures, or pointer coordinates will be computed against the wrong element. Defaults to
+   * `pointerSurface` itself when omitted.
+   */
+  readonly pointerBoundsSurface?: () => HTMLElement | null;
   readonly viewport: () => Viewport;
   readonly settings: () => InputSettings;
 }
@@ -36,7 +43,11 @@ export class BrowserInputController {
           ),
         ),
     );
-    this.pointerAdapter = new BrowserPointerAdapter(options.pointerSurface, this.pointer);
+    this.pointerAdapter = new BrowserPointerAdapter(
+      options.pointerSurface,
+      this.pointer,
+      options.pointerBoundsSurface,
+    );
     this.input = new InputManager(
       this.keyboard,
       this.gamepad,

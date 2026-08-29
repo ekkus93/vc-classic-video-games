@@ -50,7 +50,7 @@ any order, can be interleaved).
     goal-reached. Existing road-hazard-mid-chain test continues to pass unchanged (that path was
     already correct — use it as the behavioral parity reference).
 
-- [ ] **CR-004 — Fix pointer coordinates measured against the wrong DOM element**
+- [x] **CR-004 — Fix pointer coordinates measured against the wrong DOM element**
   - Point `src/app/shell/use-shell-input.ts`'s pointer-coordinate pipeline at the actual
     `.game-screen` canvas element instead of the padded `app-shell` container. See
     `docs/BUGFIX_SPEC.md` §1.4.

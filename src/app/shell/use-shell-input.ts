@@ -24,19 +24,31 @@ export function useShellInput(
       return undefined;
     }
 
+    // CR-004: the game canvas is the actual on-screen box a pointer should be measured against,
+    // not this outer shell container -- `surface` (<main class="app-shell">) carries its own
+    // padding/header/footer chrome around the canvas, so using its size/bounds for pointer math
+    // misaligned pointer-aimed gameplay (e.g. Missile Defense's cursor) from where the pointer
+    // visually is. Resolved fresh on each call since the canvas only exists while a game screen
+    // is mounted; falls back to the shell surface itself outside gameplay, where pointer position
+    // isn't meaningful anyway.
+    const resolvePointerBoundsElement = (): HTMLElement =>
+      surface.querySelector<HTMLElement>("canvas.game-viewport") ?? surface;
+
     const input = new BrowserInputController({
       window,
       pointerSurface: surface,
+      pointerBoundsSurface: resolvePointerBoundsElement,
       viewport: () => {
         const game = controller.selectedGame;
+        const bounds = resolvePointerBoundsElement();
         return calculateViewport(
           {
             width: game?.logicalWidth ?? 320,
             height: game?.logicalHeight ?? 240,
           },
           {
-            width: Math.max(1, surface.clientWidth),
-            height: Math.max(1, surface.clientHeight),
+            width: Math.max(1, bounds.clientWidth),
+            height: Math.max(1, bounds.clientHeight),
           },
         );
       },

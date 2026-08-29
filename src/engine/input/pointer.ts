@@ -96,9 +96,22 @@ export class StaticPointerInputService implements PointerInputService {
 export class BrowserPointerAdapter {
   private attached = false;
 
+  /**
+   * CR-004: `surface` is the element pointer events are listened on -- it must stay mounted for
+   * the adapter's whole lifetime, so callers typically pass a stable ancestor container.
+   * `boundsSurface`, if given, is resolved fresh on every pointer event and is the element whose
+   * `getBoundingClientRect()` actually defines the physical-coordinate origin/size a caller's
+   * `viewport()` callback should also be measuring against. They must agree: if the listening
+   * surface has padding/chrome the visible game box doesn't (as this app's outer shell container
+   * does around its canvas), using the listening surface's own bounds for both computes physical
+   * coordinates against the wrong box and misaligns pointer-aimed gameplay from where the pointer
+   * visually is. Defaults to `surface` itself, preserving the old (bounds === listening surface)
+   * behavior for callers that have no such mismatch.
+   */
   public constructor(
     private readonly surface: HTMLElement,
     private readonly provider: PointerInputProvider,
+    private readonly boundsSurface: () => HTMLElement | null = () => surface,
   ) {}
 
   public attach(): void {
@@ -127,7 +140,7 @@ export class BrowserPointerAdapter {
   }
 
   private moveFromEvent(event: PointerEvent): void {
-    const bounds = this.surface.getBoundingClientRect();
+    const bounds = (this.boundsSurface() ?? this.surface).getBoundingClientRect();
     this.provider.move(event.clientX - bounds.left, event.clientY - bounds.top);
   }
 
