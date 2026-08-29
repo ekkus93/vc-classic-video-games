@@ -91,7 +91,7 @@ default, flip the marker to `[ ]`, and proceed.
 
 ## 3. Code quality
 
-- [ ] **CR2-009 — Reformat Jungle Quest to one statement per line** — do this last.
+- [x] **CR2-009 — Reformat Jungle Quest to one statement per line** — do this last. (53dac44)
   - Mechanical reformat of every `src/games/jungle-quest/*.ts` and `*.test.ts` to the style the
     other games use. No identifier, expression, or statement-order changes. See spec §3.1.
   - Acceptance: the commit touches only Jungle Quest files; `npm run test` passes before and after
