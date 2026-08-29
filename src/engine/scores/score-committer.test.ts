@@ -27,6 +27,24 @@ class RejectingScores implements ScoreService {
   }
 }
 
+/**
+ * CR2-005: a `ScoreService` whose `submit` throws synchronously, before ever returning a promise
+ * -- a submission it validates eagerly, say. `ScoreService.submit` is typed as returning
+ * `Promise<void>`, but nothing in the interface stops an implementation from throwing instead of
+ * rejecting; `ScoreCommitter` has to contain both shapes of failure, not just the one that awaits
+ * cleanly.
+ */
+class ThrowingScores implements ScoreService {
+  public attempts = 0;
+
+  public constructor(private readonly failure: Error) {}
+
+  public submit(): Promise<void> {
+    this.attempts += 1;
+    throw this.failure;
+  }
+}
+
 function committer(
   scores: ScoreService,
   reportError?: (error: unknown) => void,
@@ -104,6 +122,29 @@ export const tests: readonly TestCase[] = [
       await flush();
 
       assert(scores.attempts === 1, "a run without a reporter must still submit exactly once");
+    },
+  },
+  {
+    name: "CR2-005 a synchronous throw from submit is contained exactly like a rejection",
+    run: () => {
+      const failure = new Error("score store validation failed synchronously");
+      const scores = new ThrowingScores(failure);
+      const reported: unknown[] = [];
+      const commit = committer(scores, (error) => reported.push(error));
+
+      // `handle` must return normally -- a synchronous throw inside it must not propagate out and
+      // be mistaken for a failure of the game's own update().
+      commit.handle([{ type: "game-over", score: 42 }]);
+      assert(
+        reported.length === 1 && reported[0] === failure,
+        "a synchronous throw must reach the game's reporter exactly like a rejection would",
+      );
+
+      // The failed attempt must still count as "submitted" -- a second terminal frame in the same
+      // run must not retry, the same guarantee CR-016's rejection test makes for async failures.
+      commit.handle([{ type: "game-over", score: 43 }]);
+      assert(scores.attempts === 1, "a contained synchronous failure must not be retried");
+      assert(reported.length === 1, "the reporter must not be called again for the ignored second frame");
     },
   },
   {

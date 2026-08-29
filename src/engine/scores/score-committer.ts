@@ -57,9 +57,21 @@ export class ScoreCommitter<TEvent> {
       return;
     }
     this.submitted = true;
-    void this.scores
-      .submit({ score, mode })
-      .catch((error: unknown) => this.reportError(error));
+    // CR2-005: `scores.submit` is an async method by its declared type, but nothing stops an
+    // implementation from throwing synchronously before it ever returns a promise -- a
+    // submission it validates eagerly, say. The `.catch()` below only ever contains a
+    // *rejection*; a synchronous throw here would escape `handle` entirely and reach the calling
+    // game's `update`, which is exactly the "must not take a playable run down with it" failure
+    // this class exists to prevent. Wrapping the call itself, not just its result, closes that
+    // gap. `submitted` stays set either way: a throw is a failed attempt, not a reason to retry.
+    let pending: Promise<void>;
+    try {
+      pending = this.scores.submit({ score, mode });
+    } catch (error) {
+      this.reportError(error);
+      return;
+    }
+    void pending.catch((error: unknown) => this.reportError(error));
   }
 
   public reset(): void {
