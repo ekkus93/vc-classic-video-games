@@ -142,4 +142,30 @@ export const tests: readonly TestCase[]=[
   for(let i=0;i<120;i+=1)edge.update(HOLD_RIGHT,1/60);
   assert(Math.abs(edge.player.position.x-(JUNGLE_QUEST_RUN_RULES.logicalWidth-HALF_WIDTH))<1e-6,`a world edge must keep the screen-edge clamp, got x=${edge.player.position.x}`);
  }},
+ {name:"CR2-004 Sun Shrine's tunnel floor now reaches the room edge instead of dropping the player mid-room",run:()=>{
+  // The tunnel *backdrop* has always been painted across the whole room, but its floor used to
+  // stop at x=112 -- well short of the room edge, and past the shrine-ascent ladder (x=82) that is
+  // plainly the intended exit. Entering from Root Vault (feet at tunnel height, near the west
+  // edge) and holding right used to walk the player off that floor into a fall a few pixels past
+  // the ladder, with no hazard or warning involved. Four seconds of held input is comfortably
+  // enough to cross the old failure point (~106 logical pixels away) many times over.
+  const HOLD_RIGHT=Object.freeze({horizontal:1 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
+  const HALF_WIDTH=JUNGLE_QUEST_RUN_RULES.playerWidth/2;
+  const s=new JungleQuestSimulation({difficulty:"expedition",initialRoomId:"sun-shrine",initialPlayer:player(6,218)});
+  const livesBefore:number=s.lives;
+  for(let i=0;i<240;i+=1)s.update(HOLD_RIGHT,1/60);
+  const livesAfterFourSeconds:number=s.lives;
+  assert(livesAfterFourSeconds===livesBefore,`holding right along the tunnel floor must not cost a life within four seconds, got ${livesBefore}->${livesAfterFourSeconds}`);
+  assert(!s.ended,"the run must not end from an unmarked drop in the finish room");
+  assert(s.roomId==="sun-shrine","Sun Shrine's east edge has no next room, so the player must stay in this room, not fall through it");
+  assert(Math.abs(s.player.position.y-218)<1e-6,"the player must still be walking the tunnel floor, not having fallen to a different height");
+
+  // Keep holding right until the world-edge clamp is reached, confirming the extended floor
+  // carries the player the whole way rather than merely surviving the first four seconds.
+  for(let i=0;i<300&&s.player.position.x<JUNGLE_QUEST_RUN_RULES.logicalWidth-HALF_WIDTH-1e-6;i+=1)s.update(HOLD_RIGHT,1/60);
+  const livesAfterFull:number=s.lives;
+  assert(livesAfterFull===livesBefore,`holding right the entire way to the room edge must not cost a life, got ${livesBefore}->${livesAfterFull}`);
+  assert(Math.abs(s.player.position.x-(JUNGLE_QUEST_RUN_RULES.logicalWidth-HALF_WIDTH))<1e-6,`the extended floor must carry the player all the way to the world-edge clamp, got x=${s.player.position.x}`);
+  assert(Math.abs(s.player.position.y-218)<1e-6,"the player must still be walking the tunnel floor at the clamp, not having fallen");
+ }},
 ];

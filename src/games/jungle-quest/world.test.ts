@@ -59,4 +59,29 @@ export const tests: readonly TestCase[] = [
     const sealed = JUNGLE_QUEST_ROOMS.flatMap((room) => jungleQuestSealedPassages(room).map((passage) => `${room.id}.${passage.platform.id}:${passage.side}`));
     assertDeepEqual(sealed, ["echo-hollow.echo-tunnel:previous"], "sealed passages must match the authored world");
   }},
+  { name: "CR2-004 every tunnel platform spans the room's full width, matching the tunnel backdrop drawn behind it", run: () => {
+    // This is the general form of the bug CR2-004 fixed: module.ts paints the tunnel band
+    // (TUNNEL_BAND_TOP, 42px tall) across the *entire* width of every room, unconditionally, but
+    // Sun Shrine's tunnel *floor* used to stop at x=112 -- well short of that -- with nothing
+    // marking where the walkable part actually ended. A CR-001-style edge sweep alone cannot
+    // catch this shape of bug: it only checks the two room edges, and this drop was mid-room, past
+    // the room's own exit ladder. This is deliberately narrower than "every platform end is safe
+    // to walk off" would be -- a general sweep like that would have to special-case Fern Gate's
+    // ledge (a legitimate drop onto the ground below) and its chasm (a legitimate, already-tested
+    // pit hazard) to avoid flagging real design, which risks the check quietly rubber-stamping a
+    // real hole in exactly the way it is meant to prevent. A tunnel-kind platform's width has no
+    // such legitimate short reading: the backdrop drawn behind it makes an unconditional claim
+    // (this whole band is where the tunnel floor is) that only this platform's own extent can
+    // honor, so requiring the two to match is the one general rule this room shape supports.
+    const width = JUNGLE_QUEST_RUN_RULES.logicalWidth;
+    for (const room of JUNGLE_QUEST_ROOMS) {
+      for (const p of room.platforms) {
+        if (p.kind !== "tunnel") continue;
+        assert(
+          p.x1 === 0 && p.x2 === width,
+          `${room.id}.${p.id} spans ${p.x1}..${p.x2}, but the tunnel backdrop is drawn across the room's full 0..${width} -- a tunnel floor shorter than that leaves an unmarked drop where the backdrop still implies floor`,
+        );
+      }
+    }
+  }},
 ];

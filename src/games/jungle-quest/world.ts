@@ -50,7 +50,14 @@ const ROOMS: readonly JungleQuestRoom[] = Object.freeze([
   }),
   Object.freeze({
     id: "sun-shrine", title: "Sun Shrine", previous: "root-vault", next: null,
-    platforms: Object.freeze([platform("shrine-ground", 0, 320, SURFACE_Y, "surface"), platform("shrine-tunnel", 0, 112, TUNNEL_Y, "tunnel")]),
+    // CR2-004: the tunnel band drawn across the whole room (see TUNNEL_BAND_TOP in module.ts) used
+    // to visually suggest a passage wider than the floor actually was -- this platform ended at
+    // x=112 while nothing marked the drop, so walking east past the shrine-ascent ladder (x=82)
+    // fell out of the world. Extended to the room's own east edge, where Sun Shrine's `next: null`
+    // means there is no adjoining room to travel into, so the existing world-edge clamp
+    // (resolveRoomTransition) simply holds the player on-screen there -- the same dead-end shape
+    // Echo Hollow's tunnel already has at its own sealed west end.
+    platforms: Object.freeze([platform("shrine-ground", 0, 320, SURFACE_Y, "surface"), platform("shrine-tunnel", 0, 320, TUNNEL_Y, "tunnel")]),
     ladders: Object.freeze([Object.freeze({ id: "shrine-ascent", x: 82, yTop: SURFACE_Y, yBottom: TUNNEL_Y })]), vines: Object.freeze([]),
     hazards: Object.freeze([Object.freeze({ x: 142, y: 182, width: 22, height: 8 })]),
     collectibles: Object.freeze([Object.freeze({ id: "sky-amber", x: 232, y: 176, label: "Sky Amber" })]), checkpoint: null,
