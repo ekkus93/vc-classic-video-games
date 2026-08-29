@@ -77,8 +77,8 @@ default, flip the marker to `[ ]`, and proceed.
   - Rename to `emergencyFiredThisUpdate` and correct the comment. See spec §2.2.
   - Acceptance: no behavior change; both CR-006 tests pass untouched.
 
-- [ ] **CR2-007 — Decide and document Maze Chase's compound-tick ordering** — decided: keep
-  hit-then-clear (spec §2.3).
+- [x] **CR2-007 — Decide and document Maze Chase's compound-tick ordering** — decided: keep
+  hit-then-clear (spec §2.3). (1c8151f)
   - Add one sentence to `MAZE_CHASE_DESIGN.md` and a comment at the
     `resolveCollisions`/`resolveLevelClear` call site explaining the order is deliberate.
   - Acceptance: the design doc states the ordering; the CR-014 tests assert it; `simulation.ts`
