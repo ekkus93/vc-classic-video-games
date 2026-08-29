@@ -352,4 +352,49 @@ export const tests: readonly TestCase[] = [
       assert(simulation.update("up", 1).length === 0, "terminal simulation must stop advancing");
     },
   },
+  {
+    name: "CR-003 a chained buffered hop still triggers the water hazard it lands on",
+    run: () => {
+      const stage = stageWithLane({
+        row: 4,
+        kind: "river",
+        direction: 1,
+        speed: 0,
+        entityWidth: 20,
+        spacing: 100,
+        phase: 50,
+        palette: "moss",
+      });
+      const simulation = new RiverHopperSimulation({
+        difficulty: "channel",
+        stages: [stage],
+        initialPlayer: { x: 179, row: 5 },
+      });
+      simulation.update("up", 0.01);
+      assert(simulation.player.moving, "hop toward the water row must be in progress");
+      simulation.update("up", 0.01);
+      assert(simulation.player.bufferedDirection === "up", "a second press mid-hop must buffer, not start a new hop yet");
+      const events = simulation.update(null, RIVER_HOPPER_RUN_RULES.hopDurationSeconds);
+      assert(simulation.lives === 3, "landing on open water must cost a life even though a hop was buffered to chain immediately on landing");
+      assert(events.some((event) => event.type === "life-lost" && event.reason === "water"), "chained-hop landing on water must still be detected");
+    },
+  },
+  {
+    name: "CR-003 a chained buffered hop still registers landing on the goal row",
+    run: () => {
+      const simulation = new RiverHopperSimulation({
+        difficulty: "channel",
+        stages: [EMPTY_STAGE],
+        initialPlayer: { x: riverHopperGoalCenter(0), row: 1 },
+      });
+      simulation.update("up", 0.01);
+      assert(simulation.player.moving, "hop toward the goal row must be in progress");
+      simulation.update("right", 0.01);
+      assert(simulation.player.bufferedDirection === "right", "a second press mid-hop must buffer, not start a new hop yet");
+      const events = simulation.update(null, RIVER_HOPPER_RUN_RULES.hopDurationSeconds);
+      assert(simulation.filledGoals[0] === true, "landing on the goal row must still register even though a hop was buffered to chain immediately on landing");
+      assert(simulation.player.row === RIVER_HOPPER_RUN_RULES.startRow, "a filled goal must respawn the runner, discarding the buffered chain");
+      assert(events.some((event) => event.type === "goal-filled" && event.slotIndex === 0), "chained-hop landing on the goal must still emit its scoring event");
+    },
+  },
 ];

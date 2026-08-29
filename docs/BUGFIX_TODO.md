@@ -41,7 +41,7 @@ any order, can be interleaved).
     bottom end and asserts horizontal movement takes effect immediately after dismounting, without
     needing the vertical input released first.
 
-- [ ] **CR-003 — Fix River Hopper buffered-hop hazard/goal bypass**
+- [x] **CR-003 — Fix River Hopper buffered-hop hazard/goal bypass**
   - Evaluate `resolveRiverSupport` and `resolveGoal` against the just-landed position before a
     buffered hop is allowed to chain into a new one. See `docs/BUGFIX_SPEC.md` §1.3.
   - Acceptance: a regression test reproduces the exact scenario found in review (river lane, no

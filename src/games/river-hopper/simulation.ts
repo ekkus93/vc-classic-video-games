@@ -284,6 +284,7 @@ export class RiverHopperSimulation {
       return Object.freeze(events);
     }
     this.resolveRiverSupport(events);
+    this.resolveBufferedHop(events);
 
     return Object.freeze(events);
   }
@@ -353,12 +354,12 @@ export class RiverHopperSimulation {
         position: this.positionValue,
       }),
     );
-
-    const buffered = this.bufferedDirectionValue;
-    this.bufferedDirectionValue = null;
-    if (buffered !== null) {
-      this.beginHop(buffered, events);
-    }
+    // CR-003: do NOT start a buffered hop here. The landed-on row still has to be checked for a
+    // water/goal/road/boundary outcome (that happens later in update(), after advanceHop
+    // returns); chaining straight into a new hop from this point left activeHop non-null by the
+    // time those checks ran, and every one of them short-circuits on activeHop !== null -- so a
+    // buffered hop silently skipped hazard resolution for the row it just landed on. See
+    // resolveBufferedHop, called only after all of that resolution has run.
   }
 
   private supportingPlatformVelocity(): number | null {
@@ -415,6 +416,23 @@ export class RiverHopperSimulation {
     if (!riverHopperLaneOverlaps(riverLane, playerBounds(this.positionValue))) {
       this.loseLife("water", events);
     }
+  }
+
+  // CR-003: starts a queued hop only once every hazard/goal check for the row the player just
+  // landed on has already run this tick. If any of those checks lost a life or cleared a goal,
+  // they (via loseLife/respawnPlayer) already cleared bufferedDirectionValue, so this becomes a
+  // no-op for that case -- it only actually starts a hop when the landed-on row was genuinely
+  // safe.
+  private resolveBufferedHop(events: RiverHopperSimulationEvent[]): void {
+    if (this.activeHop !== null) {
+      return;
+    }
+    const buffered = this.bufferedDirectionValue;
+    if (buffered === null) {
+      return;
+    }
+    this.bufferedDirectionValue = null;
+    this.beginHop(buffered, events);
   }
 
   private resolveGoal(events: RiverHopperSimulationEvent[]): boolean {
