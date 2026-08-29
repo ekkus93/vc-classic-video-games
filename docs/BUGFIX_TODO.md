@@ -124,7 +124,7 @@ any order, can be interleaved).
   - Acceptance: tests call `parseScoreEntry`/`parseScoreDocument` directly with an invalid
     `gameId` and with a malformed entry, asserting `ScoreValidationError` is thrown in each case.
 
-- [ ] **CR-013 — Add test for Bug Barrage `maxChains` split-fallback boundary (P11-008)**
+- [x] **CR-013 — Add test for Bug Barrage `maxChains` split-fallback boundary (P11-008)**
   - Acceptance: a test drives chain count to `maxChains` and exercises the fallback branch at
     `simulation.ts:399`, asserting `assertBounds()` does not throw and the entity count stays at
     or under the cap.

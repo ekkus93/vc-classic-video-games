@@ -34,6 +34,27 @@ function safeChain(): BugBarrageChain {
   return chainWithSegments([{ x: 24, y: 24 }]);
 }
 
+// Single-segment filler chains parked along the top of the field, used to hold the chain list at
+// BUG_BARRAGE_LIMITS.maxChains so a split has no room to add a chain. Ids continue past the
+// chain built by chainWithSegments (chain 1, segment ids 1..n) so nothing collides.
+function fillerChains(count: number): readonly BugBarrageChain[] {
+  return Object.freeze(
+    Array.from({ length: count }, (_unused, index) =>
+      Object.freeze({
+        id: index + 2,
+        segments: Object.freeze([
+          Object.freeze({
+            id: index + 100,
+            position: Object.freeze({ x: 8 + index * 9, y: 24 }),
+            direction: 1 as const,
+            verticalDirection: 1 as const,
+          }),
+        ]),
+      }),
+    ),
+  );
+}
+
 export const tests: readonly TestCase[] = [
   {
     name: "P11-002 player moves in four directions and clamps to the lower defense region",
@@ -96,6 +117,66 @@ export const tests: readonly TestCase[] = [
       assert(simulation.chains.length === 2, "middle segment destruction must split the chain");
       assert(simulation.segmentCount === 2, "exactly the hit segment must be removed");
       assert(simulation.obstacles.length === 1, "destroyed segment must seed one bounded pod");
+    },
+  },
+  {
+    name: "CR-013/P11-008 a mid-chain hit at the maxChains cap falls back to shrinking in place",
+    run: () => {
+      // Same middle-segment sweep as the P11-006 test above, but with the chain list already
+      // sitting at BUG_BARRAGE_LIMITS.maxChains, so the split (which would need one more chain
+      // slot) is not affordable and destroySegment must take its shrink-in-place fallback.
+      const target = chainWithSegments([
+        { x: 130, y: 195 },
+        { x: 160, y: 195 },
+        { x: 190, y: 195 },
+      ]);
+      const filler = fillerChains(BUG_BARRAGE_LIMITS.maxChains - 1);
+      const simulation = new BugBarrageSimulation({
+        rng: new SeededRandomService(13),
+        difficulty: "swarm",
+        initialObstacles: [],
+        initialChains: [target, ...filler],
+        initialPlayerPosition: { x: 160, y: 216 },
+        initialInvulnerabilitySeconds: 10,
+      });
+      assert(
+        simulation.chains.length === BUG_BARRAGE_LIMITS.maxChains,
+        "fixture premise: the run must start exactly at the chain cap",
+      );
+      const segmentsBefore = simulation.segmentCount;
+
+      // assertBounds() runs at the end of update() and throws if any cap is exceeded, so an
+      // update that returns at all is itself the bounds assertion for this frame.
+      const events = simulation.update(
+        { horizontal: 0, vertical: 0, fire: true },
+        0.1,
+      );
+
+      assert(
+        events.some((event) => event.type === "segment-destroyed"),
+        "the spark sweep must still destroy the crossed middle segment at the cap",
+      );
+      assert(
+        simulation.chains.length <= BUG_BARRAGE_LIMITS.maxChains,
+        "the fallback must not push the chain count past the cap",
+      );
+      assert(
+        simulation.chains.length === BUG_BARRAGE_LIMITS.maxChains,
+        "the hit chain must survive as one shrunken chain, not be split or dropped",
+      );
+      assert(
+        simulation.segmentCount === segmentsBefore - 1,
+        "exactly the hit segment must be removed",
+      );
+      const survivor = simulation.chains.find((chain) => chain.id === target.id);
+      assert(
+        survivor !== undefined && survivor.segments.length === 2,
+        "the two surviving segments must stay joined in the original chain",
+      );
+      assert(
+        survivor.segments.every((segment) => segment.id !== target.segments[1]?.id),
+        "the destroyed segment must not remain in the shrunken chain",
+      );
     },
   },
   {
