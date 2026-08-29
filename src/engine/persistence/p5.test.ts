@@ -9,7 +9,12 @@ import {
   parseGlobalSettings,
 } from "./settings.js";
 import { NamespacedGameStorageService } from "./game-storage.js";
-import { ScoreRepository } from "../scores/scores.js";
+import {
+  ScoreRepository,
+  ScoreValidationError,
+  parseScoreDocument,
+  parseScoreEntry,
+} from "../scores/scores.js";
 
 function expectThrows(operation: () => unknown, type: new (...args: never[]) => Error): void {
   let thrown: unknown = null;
@@ -145,6 +150,59 @@ export const tests: readonly TestCase[] = [
         top.map((entry) => entry.initials),
         ["CCC", "AAA", "BBB"],
         "score ordering must be deterministic",
+      );
+    },
+  },
+  {
+    name: "CR-012/P5-008 score validation rejects invalid game IDs and malformed entries",
+    run: () => {
+      const validEntry = {
+        gameId: "space-rocks",
+        mode: "solo",
+        difficulty: "normal",
+        score: 100,
+        initials: "AAA",
+        timestamp: "2026-01-02T00:00:00.000Z",
+        sequence: 0,
+      };
+      assert(
+        parseScoreEntry(validEntry).gameId === "space-rocks",
+        "the fixture entry must be valid apart from the field each case corrupts",
+      );
+
+      expectThrows(
+        () => parseScoreEntry({ ...validEntry, gameId: "Space Rocks" }),
+        ScoreValidationError,
+      );
+      expectThrows(
+        () => parseScoreEntry({ ...validEntry, score: -1 }),
+        ScoreValidationError,
+      );
+      expectThrows(
+        () => parseScoreEntry({ ...validEntry, timestamp: "not-a-date" }),
+        ScoreValidationError,
+      );
+      expectThrows(() => parseScoreEntry("not-an-object"), ScoreValidationError);
+
+      // A document is only as valid as its entries: one malformed entry must reject the whole
+      // document rather than being silently dropped from it.
+      expectThrows(
+        () =>
+          parseScoreDocument({
+            version: 1,
+            nextSequence: 1,
+            entries: [validEntry, { ...validEntry, gameId: "Space Rocks" }],
+          }),
+        ScoreValidationError,
+      );
+      expectThrows(
+        () => parseScoreDocument({ version: 2, nextSequence: 0, entries: [] }),
+        ScoreValidationError,
+      );
+      expectThrows(
+        () =>
+          parseScoreDocument({ version: 1, nextSequence: -1, entries: [] }),
+        ScoreValidationError,
       );
     },
   },

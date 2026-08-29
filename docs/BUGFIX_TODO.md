@@ -120,7 +120,7 @@ any order, can be interleaved).
     duplicate difficulties, alongside the existing duplicate-ID/malformed-field tests in
     `src/engine/game/metadata.test.ts`.
 
-- [ ] **CR-012 — Add tests for score-entry validation rejection paths (P5-008)**
+- [x] **CR-012 — Add tests for score-entry validation rejection paths (P5-008)**
   - Acceptance: tests call `parseScoreEntry`/`parseScoreDocument` directly with an invalid
     `gameId` and with a malformed entry, asserting `ScoreValidationError` is thrown in each case.
 
