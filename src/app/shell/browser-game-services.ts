@@ -6,6 +6,7 @@ import {
   parseAssetManifest,
   type AssetService,
   type AudioBufferResolver,
+  type AudioContextFactory,
   type GameLogger,
   type GameModule,
   type GameServices,
@@ -14,6 +15,25 @@ import {
 } from "../../engine/index.js";
 import { SeededRandomService } from "../../engine/random/seeded-service.js";
 import type { ShellGameInputBridge } from "./input-bridge.js";
+
+/**
+ * Structural shape `preload` needs from a `fetch` response -- a real `Response` satisfies this on
+ * its own; tests supply a plain object instead. Narrower than `Response` (no `headers`, `body`,
+ * etc.) so a fake never needs to implement browser API surface `preload` doesn't touch.
+ */
+export interface BrowserFetchResponse {
+  readonly ok: boolean;
+  readonly status: number;
+  json(): Promise<unknown>;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+/**
+ * `preload`'s own view of `fetch` -- the real global `fetch` satisfies this type as-is (a wider
+ * function, accepting more input shapes and returning the full `Response`, can always stand in
+ * for a narrower one), so production callers pass nothing and get real network behavior.
+ */
+export type BrowserFetch = (input: string) => Promise<BrowserFetchResponse>;
 
 class BrowserGameAssetStore implements AssetService, AudioBufferResolver {
   private readonly values = new Map<string, unknown>();
@@ -58,6 +78,17 @@ export class BrowserGameServices {
   public constructor(
     private readonly documents: JsonDocumentStore,
     private readonly input: ShellGameInputBridge,
+    private readonly fetchImpl: BrowserFetch = fetch,
+    // The `typeof AudioContext === "undefined"` guard lives in this default rather than in
+    // requireAudioContext() itself, so an injected test factory (which supplies its own fake and
+    // never references the global) isn't blocked by it running in an environment -- this test
+    // runner (Node, no jsdom) -- that has no such global at all.
+    private readonly createAudioContext: AudioContextFactory = () => {
+      if (typeof AudioContext === "undefined") {
+        throw new Error("Web Audio is unavailable in this environment");
+      }
+      return new AudioContext();
+    },
   ) {}
 
   public async create(
@@ -97,10 +128,7 @@ export class BrowserGameServices {
     if (this.context !== null) {
       return this.context;
     }
-    if (typeof AudioContext === "undefined") {
-      throw new Error("Web Audio is unavailable in this environment");
-    }
-    this.context = new AudioContext();
+    this.context = this.createAudioContext();
     return this.context;
   }
 
@@ -116,7 +144,7 @@ export class BrowserGameServices {
       );
     }
 
-    const manifestResponse = await fetch(manifestUrl);
+    const manifestResponse = await this.fetchImpl(manifestUrl);
     if (!manifestResponse.ok) {
       throw new Error(
         `Could not load ${module.metadata.title} asset manifest: HTTP ${manifestResponse.status}`,
@@ -143,7 +171,7 @@ export class BrowserGameServices {
 
       let buffer = this.decodedAudio.get(url);
       if (buffer === undefined) {
-        const response = await fetch(url);
+        const response = await this.fetchImpl(url);
         if (!response.ok) {
           if (entry.required) {
             throw new Error(`Required audio ${entry.id} failed: HTTP ${response.status}`);

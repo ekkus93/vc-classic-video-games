@@ -194,18 +194,22 @@ exercised without a real browser. This is the same shape of problem this codebas
 solved twice (`resizeCanvasToDevicePixels`, `createPointerBoundsResolver`): make the dependency
 injectable, then the branch coverage becomes ordinary unit testing.
 
-- [ ] **TC-003a — Inject `fetch` and the `AudioContext` factory**
-  - Add a `fetch`-like parameter to `BrowserGameServices`'s constructor (a type such as
-    `(input: string) => Promise<Response>`, or reuse a narrower structural interface exposing
-    only `.ok`/`.status`/`.json()`/`.arrayBuffer()` if the real `Response` type is inconvenient to
-    fake) defaulting to the global `fetch` so production behavior is unchanged.
-  - `requireAudioContext`'s `new AudioContext()` already flows through the constructor-provided
-    context indirectly via `SharedWebAudioService`'s own `AudioContextFactory` — thread the same
-    factory (or a second one, if `preload()`'s `decodeAudioData` needs a context independent of
-    playback timing) so `preload()` never calls `new AudioContext()` itself.
-  - This is a pure refactor: no behavior change for real callers. Confirm the existing
-    `space-rocks-route.test.ts`-style shell route tests (any route test that exercises a real
-    module's asset preload through `BrowserGameServices`) pass untouched.
+- [x] **TC-003a — Inject `fetch` and the `AudioContext` factory**
+  - Added `BrowserFetchResponse`/`BrowserFetch` — a narrow structural interface exposing only
+    `.ok`/`.status`/`.json()`/`.arrayBuffer()`, matching this project's minimal-structural-fake
+    convention rather than casting through the full `Response` DOM type. The real global `fetch`
+    is assignable to `BrowserFetch` as-is (a wider function can always stand in for a narrower
+    required shape), so the constructor's new `fetchImpl: BrowserFetch = fetch` parameter needs no
+    wrapper for production use.
+  - `requireAudioContext` now calls an injected `createAudioContext: AudioContextFactory`
+    (reusing the engine's own exported type) instead of `new AudioContext()` directly. The
+    `typeof AudioContext === "undefined"` environment guard moved from `requireAudioContext` into
+    the *default* factory itself, so an injected test factory (which never references the global)
+    isn't blocked by that guard running in Node, where no such global exists at all.
+  - Confirmed via `grep`: no existing test imported `BrowserGameServices` at all before this task
+    (consistent with the original finding — this class had zero coverage). This is a pure
+    refactor: full `npm run test` (467 cases) passes unchanged before and after, confirming no
+    behavior change for real callers.
 - [ ] **TC-003b — Add `browser-game-services.test.ts`**
   - [ ] `resolveAssetUrl === undefined` on the module throws, and the error message names the
     module's title.
