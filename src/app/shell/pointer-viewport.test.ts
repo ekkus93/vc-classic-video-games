@@ -1,6 +1,6 @@
 import { assert, type TestCase } from "../../test/harness.js";
 import { devicePhysicalSize } from "../../engine/index.js";
-import { pointerViewportPhysicalSize } from "./use-shell-input.js";
+import { pointerViewportPhysicalSize } from "./pointer-viewport.js";
 
 const DPRS: readonly number[] = [1, 1.25, 1.5, 2, 3];
 

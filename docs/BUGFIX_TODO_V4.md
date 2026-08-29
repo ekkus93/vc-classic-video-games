@@ -76,7 +76,7 @@ it, flip the marker to `[ ]`, and proceed.
 
 ## 3. Consistency and code quality
 
-- [ ] **CR4-004 — Move `pointerViewportPhysicalSize` into its own module** — do this first.
+- [x] **CR4-004 — Move `pointerViewportPhysicalSize` into its own module** — do this first.
   - The helper's doc-comment says it mirrors `createPointerBoundsResolver`, but it was left inside
     `use-shell-input.ts`, whose first line imports React — so its test drags React, the shell
     controller, the input bridge and the audio-unlock module into the runner to exercise four
