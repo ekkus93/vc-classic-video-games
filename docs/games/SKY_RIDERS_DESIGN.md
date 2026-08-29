@@ -60,7 +60,12 @@ Rider combat is resolved only when a player and Storm Rider overlap and neither 
 The canonical altitude rule compares rider-center Y coordinates (smaller Y is higher):
 
 - if one rider is at least **4 logical pixels** higher than the other, the higher rider wins;
-- if the height difference is less than 4 pixels, the collision is a tie and both riders receive a deterministic separating bounce;
+- if the height difference is less than 4 pixels, the collision is a tie and both riders receive a
+  deterministic separating bounce. The bounce sets, rather than adds to, both velocities, and the
+  pair stays inside the overlap threshold for several frames while it separates, so a tie bounce
+  applies only to a pair that is not already moving apart along the bounce axis. One collision
+  therefore produces one bounce; a pair that closes again under its own power (an enemy turning
+  back into the player before they finish separating) is a new collision and bounces again;
 - no random value is consulted when deciding the winner.
 
 A player victory removes that Storm Rider and awards the canonical defeat score. An enemy victory costs the player one reserve and respawns the player with temporary protection if reserves remain.

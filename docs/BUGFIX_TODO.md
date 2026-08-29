@@ -136,7 +136,7 @@ any order, can be interleaved).
     clear, or whichever ordering is intended) is well-defined and doesn't corrupt entity/timer
     state.
 
-- [ ] **CR-015 — Add Sky Riders population-invariant and tie-clash tests (P12)**
+- [x] **CR-015 — Add Sky Riders population-invariant and tie-clash tests (P12)**
   - Acceptance: a runtime assertion (or an explicit code comment justifying its absence) guards
     `enemyState.length + stormSeedState.length <= maxEnemies` after every mutation path, not just
     at construction. A new multi-frame test covers a stationary tie-bounce to confirm riders don't

@@ -122,9 +122,12 @@ export class SkyRidersSimulation {
     this.stepPlayers(inputs, dtSeconds, events);
     this.stepEnemies(dtSeconds, events);
     this.stepStormSeeds(dtSeconds, events);
+    this.assertPopulationBounds("storm seeds");
     this.resolveCombat(events);
+    this.assertPopulationBounds("combat");
     this.resolveTerminalState(events);
     this.resolveWaveClear(events);
+    this.assertPopulationBounds("wave clear");
     return Object.freeze(events);
   }
 
@@ -239,6 +242,13 @@ export class SkyRidersSimulation {
           break;
         }
         const playerDirection: -1 | 1 = wrappedHorizontalDelta(enemy.rider.position.x, player.rider.position.x) < 0 ? -1 : 1;
+        // CR-015: a tie bounce sets, rather than adds to, both riders' velocities, and the pair
+        // stays inside the overlap threshold for several frames while it separates. Re-running
+        // the bounce on each of those frames pinned them to a constant separation speed and
+        // emitted a fresh combat-clash (audio + particles) every frame for one collision. Bounce
+        // only a pair that is not already moving apart along the bounce axis; a pair that closes
+        // again later is closing under its own power and clashes again, as it should.
+        if ((player.rider.velocity.x - enemy.rider.velocity.x) * playerDirection > 0) continue;
         player = Object.freeze({ ...player, rider: bounceRiderFromTie(player.rider, playerDirection) });
         enemy = Object.freeze({ ...enemy, rider: bounceRiderFromTie(enemy.rider, playerDirection === 1 ? -1 : 1) });
         players[pi] = player; enemies[ei] = enemy;
@@ -248,6 +258,15 @@ export class SkyRidersSimulation {
     }
     this.playerState = Object.freeze(players);
     this.enemyState = Object.freeze(enemies.filter((enemy) => !defeated.has(enemy.rider.id)));
+  }
+  // CR-015: the constructor rejects an over-cap initial population, but every later mutation path
+  // -- a defeat trading an enemy for a storm seed, a seed reforming back into an enemy, a wave
+  // clear repopulating from scratch -- can move the two lists independently. Each is meant to
+  // conserve or shrink the total; this re-asserts that after each of them rather than trusting it.
+  private assertPopulationBounds(stage: string): void {
+    if (this.enemyState.length + this.stormSeedState.length > SKY_RIDERS_RUN_RULES.maxEnemies) {
+      throw new Error(`Sky Riders opponent population invariant violated after ${stage}`);
+    }
   }
   private resolveTerminalState(events: SkyRidersSimulationEvent[]): void {
     if (this.playerState.some((p) => p.active)) return;
