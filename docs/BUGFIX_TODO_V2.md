@@ -54,8 +54,8 @@ default, flip the marker to `[ ]`, and proceed.
     test added in CR-005) asserts the backing store is resized to `round(client × dpr)`;
     `docs/SPEC.md`'s viewport section states that scaling is computed in device pixels.
 
-- [ ] **CR2-004 — Resolve Sun Shrine's mid-room tunnel end** — decided: option **A**, extend the
-  floor to the room edge (spec §1.4).
+- [x] **CR2-004 — Resolve Sun Shrine's mid-room tunnel end** — decided: option **A**, extend the
+  floor to the room edge (spec §1.4). (178c646)
   - Apply the chosen option and add the interior-platform-end sweep to `world.test.ts` in the same
     change so the next unmarked drop announces itself.
   - Acceptance: holding right from Sun Shrine's tunnel entry for 4 s loses no life (A) or reaches a
