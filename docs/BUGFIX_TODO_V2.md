@@ -65,7 +65,7 @@ default, flip the marker to `[ ]`, and proceed.
 
 ## 2. Latent correctness
 
-- [ ] **CR2-005 — Contain synchronous throws in `ScoreCommitter`**
+- [x] **CR2-005 — Contain synchronous throws in `ScoreCommitter`** (c167a79)
   - Wrap the `submit` call so a synchronous throw reaches `reportError` like a rejection does;
     `submitted` stays set either way. See spec §2.1.
   - Acceptance: a test with a `ScoreService` whose `submit` throws synchronously asserts `handle`
