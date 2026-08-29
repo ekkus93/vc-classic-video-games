@@ -325,7 +325,7 @@ module.ts` (296 lines) has neither; it is only reached through `space-rocks-rout
 drives it through the full shell at the happy path (launch → pause → restart → exit) and never
 reaches its validation, asset-resolution, or pre-launch-render branches.
 
-- [ ] **TC-006a — Create `src/games/space-rocks/module.test.ts`**
+- [x] **TC-006a — Create `src/games/space-rocks/module.test.ts`**
   - [ ] "real module consumes shared input and renders headlessly": construct
     `SpaceRocksGameInstance` with `createFakeGameServices`, `start()` with one player, hold
     thrust/rotate/fire inputs across a few `update()` ticks, `render()` with `FakeGameRenderer`,
@@ -351,9 +351,36 @@ reaches its validation, asset-resolution, or pre-launch-render branches.
     `ThrowingRenderer` subclass of `FakeGameRenderer`, asserting the runtime transitions to
     `"error"` state, releases `activeGameId`, and stops owned audio in each case — mirroring
     `sky-riders/module.integration.test.ts`'s two equivalent cases exactly.
-  - Acceptance: the new file exists, is named consistently with the majority convention
+  - **Investigated and adjusted twice:**
+    1. The audio-cleanup assertion in the first case originally checked
+       `services.audio.activeCount === 0` after `destroy()`, mirroring Deep Digger's equivalent
+       test. That doesn't hold for Space Rocks: `SpaceRocksEffects.destroy()` stops only the
+       thrust loop it explicitly tracks, not every audio id ever played (Deep Digger's `destroy()`
+       explicitly stops every `DEEP_DIGGER_AUDIO_IDS` entry; Space Rocks' does not), and the fake
+       audio service has no decay for one-shot `playEffect` calls the way a real
+       `AudioBufferSourceNode`'s `"ended"` event provides. Changed to check specifically that the
+       thrust loop stops, which is what `destroy()` actually guarantees and the one real
+       still-making-noise concern.
+    2. The launch-validation case originally checked only `error instanceof Error` for the bad
+       difficulty, matching Deep Digger's own test — but `SpaceRocksSimulation`'s constructor also
+       indexes `SPACE_ROCKS_DIFFICULTIES[difficulty]` unguarded, so removing `resolveDifficulty`'s
+       own check entirely still throws a `TypeError` from that unrelated property access, which an
+       `instanceof`-only check cannot tell apart from `resolveDifficulty` doing its job. Confirmed
+       by mutation, then tightened to check the specific `"Unsupported Space Rocks difficulty"`
+       message.
+  - Also confirmed, so as not to over-claim: the update-failure-isolation case's mutation (removing
+    `simulation.ts`'s own `dtSeconds` guard) is not independently catchable, because Space Rocks
+    validates `dtSeconds` defensively in five separate places (`simulation.ts`, `ship.ts`,
+    `rocks.ts`, `projectiles.ts`, `world.ts`) — any one of the other four still throws. This is a
+    property of the production code (genuine defense in depth), not a gap in the test: the test's
+    actual claim is that `ActiveGameRuntime` isolates a real failure, not which internal guard
+    produces it, and that claim holds regardless of which guard fires.
+  - Acceptance: the new file exists (7 cases), is named consistently with the majority convention
     (`module.test.ts`), and passes; `space-rocks-route.test.ts` continues to pass untouched;
-    `npm run test` count increases by the number of new cases above.
+    `npm run test` now at 455 (448 + 7). Every case above except the two noted as investigated was
+    confirmed to catch a defect via a targeted mutation (removing the `players` check, removing/
+    corrupting `resolveDifficulty`'s check, returning a URL for an unknown asset path, and changing
+    the title-screen text) and reverted afterward.
 
 ---
 
