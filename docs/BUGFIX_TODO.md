@@ -185,7 +185,7 @@ any order, can be interleaved).
   - Acceptance: the doc no longer claims the attribution file is "intentionally empty"; it
     reflects that `assets/ATTRIBUTION.json` is an active, populated record.
 
-- [ ] **CR-023 — Fix Jungle Quest mislabeled test task-ID comments**
+- [x] **CR-023 — Fix Jungle Quest mislabeled test task-ID comments**
   - Acceptance: `src/games/jungle-quest/player.test.ts` (and any other mislabeled files found
     during the fix) have task-ID comments that match what each test actually covers.
 
