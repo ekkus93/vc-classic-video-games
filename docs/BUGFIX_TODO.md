@@ -34,7 +34,7 @@ any order, can be interleaved).
     real-input transitions in a test. `docs/P13_PLAYABLE_ACCEPTANCE.md`'s "reach a further room"
     item can be manually re-verified once this lands.
 
-- [ ] **CR-002 — Fix Jungle Quest ladder-end diagonal-input lock**
+- [x] **CR-002 — Fix Jungle Quest ladder-end diagonal-input lock**
   - Gate ladder re-entry on the same mount-detection condition used for a fresh mount, not on
     `vertical !== 0` alone. See `docs/BUGFIX_SPEC.md` §1.2.
   - Acceptance: a test holds a diagonal (vertical + horizontal) input at a ladder's top and

@@ -77,7 +77,15 @@ export function stepJungleQuestPlayer(state: JungleQuestPlayerState, input: Jung
   if (state.mode === "vine" && activeVine !== null) return stepVine(state, activeVine, input, dtSeconds);
   const activeLadder = ladderNear(room, state.position);
   if (state.mode === "ladder" && activeLadder !== null) return Object.freeze({ state: stepLadder(state, activeLadder, input, dtSeconds), events: Object.freeze([]) });
-  if (input.vertical !== 0 && activeLadder !== null) { const ladderState = enterLadder(state, activeLadder); return Object.freeze({ state: stepLadder(ladderState, activeLadder, input, dtSeconds), events: Object.freeze([]) }); }
+  // CR-002: only mount/re-mount a ladder on pure vertical intent. Without the `horizontal === 0`
+  // guard, a player who has just dismounted at a ladder end (mode flipped to "ground" by
+  // stepLadder's atEnd case) but is still holding a diagonal -- e.g. up+right -- would
+  // immediately re-satisfy this same condition every frame (ladderNear still matches right at
+  // the end), re-enter the ladder, get clamped back to the same end, and dismount again, without
+  // ever reaching the horizontal-movement code below. Requiring no simultaneous horizontal input
+  // lets a diagonal hold fall through to ordinary ground/air movement once dismounted, while a
+  // pure vertical hold can still climb or re-approach the ladder as before.
+  if (input.vertical !== 0 && input.horizontal === 0 && activeLadder !== null) { const ladderState = enterLadder(state, activeLadder); return Object.freeze({ state: stepLadder(ladderState, activeLadder, input, dtSeconds), events: Object.freeze([]) }); }
   if (input.vinePressed) {
     const vine = latchableVine(room, state.position);
     if (vine !== null) {
