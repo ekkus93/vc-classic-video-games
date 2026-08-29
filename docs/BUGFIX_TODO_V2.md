@@ -44,7 +44,7 @@ default, flip the marker to `[ ]`, and proceed.
     `cellsFallen` matching. Each fails against the pre-fix code. Existing `rock-timing` and
     `simulation` tests pass untouched.
 
-- [ ] **CR2-003 — Compute viewport scaling in device pixels**
+- [x] **CR2-003 — Compute viewport scaling in device pixels** (d4f7ff6)
   - Size the present loop's backing store by `devicePixelRatio`, give `BrowserPointerAdapter` a
     matching `devicePixelRatio` option, and extract the sizing rule into a pure helper both use.
     See spec §1.3 for the end-to-end design.
