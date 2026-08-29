@@ -474,11 +474,14 @@ export class DeepDiggerSimulation {
     events: DeepDiggerSimulationEvent[],
   ): void {
     const profile = DEEP_DIGGER_DIFFICULTIES[this.options.difficulty];
-    if (rock.state === "resting") {
-      return;
-    }
     let remainingSeconds = dtSeconds;
-    if (rock.state === "supported") {
+    // CR2-002: a "resting" rock needs the exact same support check a "supported" one gets --
+    // digging under a landed rock, or knocking out a rock it landed on, must re-loosen it. The
+    // previous unconditional early return here made a rock's support permanent after its first
+    // landing: dig under it and nothing happened, or drop the rock it rested on and it stayed
+    // floating in mid-air over open tunnel. Once loosened, `"resting"` is otherwise identical to
+    // `"supported"`, so it shares this branch instead of a separate one.
+    if (rock.state === "supported" || rock.state === "resting") {
       const below = stepCell(rock.cell, "down");
       if (
         this.terrainValue.inBounds(below) &&
@@ -556,6 +559,11 @@ export class DeepDiggerSimulation {
         cell: copyCell(rock.cell),
       }),
     );
+    // CR2-002: now that a resting rock can re-loosen and fall again (see advanceRock), its next
+    // landing must score only that fall's distance. Reset after the event above reports this
+    // fall's own cellsFallen, so a second landing cannot re-pay cells this rock already scored on
+    // its first landing.
+    rock.cellsFallen = 0;
   }
 
   private resolveRockContacts(

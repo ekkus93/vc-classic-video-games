@@ -2,7 +2,7 @@ import { DEEP_DIGGER_DIFFICULTIES } from "./design.js";
 import { createFakeGameServices } from "../../engine/testing/fake-services.js";
 import { assert, type TestCase } from "../../test/harness.js";
 import { createDeepDiggerLevel, type DeepDiggerLevelDefinition } from "./level.js";
-import { DeepDiggerSimulation } from "./simulation.js";
+import { DeepDiggerSimulation, type DeepDiggerSimulationEvent } from "./simulation.js";
 
 const IDLE_INPUT = Object.freeze({ move: null, attack: false } as const);
 const SURVEY_SHAKE_SECONDS = DEEP_DIGGER_DIFFICULTIES.survey.rockShakeSeconds;
@@ -34,6 +34,16 @@ function createRockTimingSimulation(seed: number): DeepDiggerSimulation {
     level: rockTimingLevel(),
     initialInvulnerabilitySeconds: 10,
   });
+}
+
+/**
+ * `simulation.rocks[n]?.state` narrows across repeated reads inside one function scope (TypeScript
+ * treats the getter access path as stable, though it returns a fresh snapshot every call), so a
+ * loop condition re-reading state after an earlier assertion has already narrowed it away trips a
+ * spurious "no overlap" comparison error. Reading through a plain function call breaks that.
+ */
+function rockState(simulation: DeepDiggerSimulation, index: number): string | undefined {
+  return simulation.rocks[index]?.state;
 }
 
 function loosenRock(simulation: DeepDiggerSimulation): void {
@@ -369,6 +379,197 @@ export const tests: readonly TestCase[] = [
       assert(
         livesAfterContact === livesBeforeContact - 1,
         "the contact must cost exactly one life",
+      );
+    },
+  },
+  {
+    name: "CR2-002 a rock resting on another rock re-loosens once that rock falls away",
+    run: () => {
+      // Rock A falls from (2,0) down an open shaft and lands directly on rock B, which sits
+      // "supported" at (2,3) on solid earth at (2,4). Before the fix, A's "resting" state was
+      // terminal: it never rechecked its support, so once B later fell away A would be left
+      // floating over open tunnel forever. With the fix, A's support is rechecked exactly like a
+      // freshly-supported rock's, so it must re-loosen and fall further once B is gone.
+      const services = createFakeGameServices(0x2002);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 6,
+          rows: 10,
+          tunnels: [
+            { column: 2, row: 1 },
+            { column: 2, row: 2 },
+            // A sealed pocket for the player and enemy, well away from the rock column.
+            { column: 0, row: 9 },
+          ],
+          playerSpawn: { column: 0, row: 9 },
+          enemySpawns: [{ column: 0, row: 9 }],
+          rockSpawns: [
+            { column: 2, row: 0 },
+            { column: 2, row: 3 },
+          ],
+        },
+        initialInvulnerabilitySeconds: 100,
+      });
+
+      let ticks = 0;
+      for (; rockState(simulation, 0) !== "resting"; ticks += 1) {
+        simulation.update(IDLE_INPUT, 0.02);
+        assert(ticks < 200, "fixture must let rock A land on rock B");
+      }
+      const landedA = simulation.rocks[0];
+      assert(
+        landedA?.cell.row === 2 && rockState(simulation, 1) === "supported",
+        "rock A must come to rest directly on rock B, which stays supported on its own earth floor",
+      );
+
+      // Dig out B's own support so B, in turn, falls away -- carving straight through terrain
+      // rather than driving the player there, since only the rock behavior is under test.
+      simulation.terrain.carve({ column: 2, row: 4 });
+      for (ticks = 0; rockState(simulation, 1) !== "resting"; ticks += 1) {
+        simulation.update(IDLE_INPUT, 0.02);
+        assert(ticks < 200, "fixture must let rock B fall away once its support is dug out");
+      }
+      assert(
+        simulation.rocks[1]?.cell.row === 4,
+        "rock B must land one cell down, on the earth its own support check requires",
+      );
+
+      // Rock A is still reported "resting" at row 2 at this exact instant only because rocks
+      // advance in array order within one tick -- A's own check ran before B's departure carved
+      // the cell between them open this same tick. It must not stay there: give it a short,
+      // separately-bounded window (well short of the fixture's own 200-tick timeout above) to
+      // recheck its support and re-loosen (leaving "resting" for "shaking", still at row 2 --
+      // shaking does not itself move a rock).
+      for (
+        ticks = 0;
+        rockState(simulation, 0) === "resting" && simulation.rocks[0]?.cell.row === 2;
+        ticks += 1
+      ) {
+        simulation.update(IDLE_INPUT, 0.02);
+        assert(ticks < 10, "rock A must not remain resting above the now-open, rock-free cell rock B vacated");
+      }
+      assert(
+        rockState(simulation, 0) === "shaking",
+        "rock A must re-loosen (re-enter the shake delay) once its support is gone, not skip straight to falling or stay put",
+      );
+
+      // Let the re-loosened rock actually fall and land again, proving it is not merely stuck
+      // shaking in place -- the floating-forever bug this guards against left it "resting" and
+      // silent, not "shaking" and stuck, so this final leg is the fix's real payoff.
+      for (ticks = 0; rockState(simulation, 0) !== "resting"; ticks += 1) {
+        simulation.update(IDLE_INPUT, 0.02);
+        assert(ticks < 200, "fixture must let the re-loosened rock finish falling and land again");
+      }
+      assert(
+        (simulation.rocks[0]?.cell.row ?? 0) > 2,
+        "rock A must actually fall further once its support is gone, not merely change state in place",
+      );
+    },
+  },
+  {
+    name: "CR2-002 digging directly under a landed rock re-loosens it after the shake delay",
+    run: () => {
+      // A single rock lands on solid earth with nothing else involved, then that earth is dug out
+      // from directly beneath it. Before the fix this did nothing at all -- a landed rock's
+      // support was never rechecked, full stop, independent of whether anything else had ever sat
+      // beneath it.
+      const services = createFakeGameServices(0x2003);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 6,
+          rows: 10,
+          tunnels: [
+            { column: 2, row: 1 },
+            { column: 2, row: 2 },
+            { column: 0, row: 9 },
+          ],
+          playerSpawn: { column: 0, row: 9 },
+          enemySpawns: [{ column: 0, row: 9 }],
+          rockSpawns: [{ column: 2, row: 0 }],
+        },
+        initialInvulnerabilitySeconds: 100,
+      });
+
+      let ticks = 0;
+      for (; rockState(simulation, 0) !== "resting"; ticks += 1) {
+        simulation.update(IDLE_INPUT, 0.02);
+        assert(ticks < 200, "fixture must let the rock land on the earth floor at row 2");
+      }
+      assert(simulation.rocks[0]?.cell.row === 2, "the rock must land on the earth floor at row 2");
+
+      simulation.terrain.carve({ column: 2, row: 3 });
+      let reloosened: readonly { readonly type: string }[] = [];
+      for (ticks = 0; rockState(simulation, 0) === "resting"; ticks += 1) {
+        reloosened = simulation.update(IDLE_INPUT, 0.02);
+        assert(ticks < 200, "fixture must let the rock re-loosen and start shaking again");
+      }
+      assert(
+        reloosened.some((event) => event.type === "rock-loosened"),
+        "digging under a landed rock must re-fire rock-loosened, not silently do nothing",
+      );
+      assert(simulation.rocks[0]?.state === "shaking", "the rock must re-enter the shake delay, not fall immediately");
+    },
+  },
+  {
+    name: "CR2-002 a rock's second landing scores only that fall's own cells, not the first fall's again",
+    run: () => {
+      // Same re-loosening setup as above, but this one drives the rock all the way to its second
+      // landing and checks the score and event payload. cellsFallen must reset after the first
+      // landing, or the second rock-landed event double-counts the first fall's distance.
+      const services = createFakeGameServices(0x2004);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 6,
+          rows: 10,
+          tunnels: [
+            { column: 2, row: 1 },
+            { column: 2, row: 2 },
+            { column: 0, row: 9 },
+          ],
+          playerSpawn: { column: 0, row: 9 },
+          enemySpawns: [{ column: 0, row: 9 }],
+          rockSpawns: [{ column: 2, row: 0 }],
+        },
+        initialInvulnerabilitySeconds: 100,
+      });
+
+      let ticks = 0;
+      let firstLanding: DeepDiggerSimulationEvent | undefined;
+      for (; firstLanding === undefined; ticks += 1) {
+        const events = simulation.update(IDLE_INPUT, 0.02);
+        firstLanding = events.find((event) => event.type === "rock-landed");
+        assert(ticks < 200, "fixture must let the rock reach its first landing");
+      }
+      assert(
+        firstLanding.type === "rock-landed" && firstLanding.cellsFallen === 2 && firstLanding.points === 40,
+        "the rock's first fall must cover exactly the two cells from row 0 to row 2",
+      );
+      const scoreAfterFirstLanding: number = simulation.score;
+
+      // Dig two cells beneath it, so its second fall covers a different distance (one cell) than
+      // its first (two cells) -- if cellsFallen were not reset, this second landing's cellsFallen
+      // and points would read as cumulative (3 cells) rather than just this fall's own distance.
+      simulation.terrain.carve({ column: 2, row: 3 });
+
+      let secondLanding: DeepDiggerSimulationEvent | undefined;
+      for (ticks = 0; secondLanding === undefined; ticks += 1) {
+        const events = simulation.update(IDLE_INPUT, 0.02);
+        secondLanding = events.find((event) => event.type === "rock-landed");
+        assert(ticks < 200, "fixture must let the rock reach its second landing");
+      }
+      assert(
+        secondLanding.type === "rock-landed" && secondLanding.cellsFallen === 1 && secondLanding.points === 20,
+        `the second landing must score only its own one-cell fall, not the first fall's cells again -- got cellsFallen=${String((secondLanding as { cellsFallen?: number }).cellsFallen)}`,
+      );
+      assert(
+        simulation.score === scoreAfterFirstLanding + 20,
+        "total score must grow by exactly the second fall's own points, not the first fall's points a second time",
       );
     },
   },
