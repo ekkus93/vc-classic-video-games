@@ -48,4 +48,28 @@ export const tests: readonly TestCase[]=[
   assert(roomOf(s)==="root-vault","a banked checkpoint must still respawn the player in root-vault, not back in fern-gate");
   assert(s.player.position.x!==fernRespawn,"the respawn point must not regress to the earlier room's checkpoint");
  }},
+ {name:"CR-001 all four rooms are reachable by chained transitions from the checkpoint spawn",run:()=>{
+  // CR-001's acceptance asks for the whole chain driven from a normal start, so this run injects
+  // no player position at all -- it begins where a real run begins, at the Fern Gate checkpoint,
+  // and holds right for the entire route. The two scripted jumps are the two obstacles Fern Gate
+  // puts between the checkpoint and its right edge (the contact hazard at 214-238, then the pit
+  // between the left and right ground platforms at 258-296); every later room is crossed by the
+  // held run alone, Echo Hollow via the lower tunnel it drops into.
+  const s=new JungleQuestSimulation({difficulty:"expedition"});
+  const roomOf=(run:JungleQuestSimulation):string=>run.roomId;
+  const order:string[]=[roomOf(s)];
+  let firedInRoom=new Set<number>();
+  for(let i=0;i<2000&&order[order.length-1]!=="sun-shrine";i+=1){
+    const grounded=s.player.mode==="ground";
+    const x=s.player.position.x;
+    const trigger=roomOf(s)==="fern-gate"?[200,250].find((v)=>x>=v&&x<v+3):undefined;
+    const jump=grounded&&trigger!==undefined&&!firedInRoom.has(trigger);
+    if(jump)firedInRoom.add(trigger);
+    const before=roomOf(s);
+    s.update({horizontal:1,vertical:0,jumpPressed:jump,vinePressed:false},1/60);
+    if(roomOf(s)!==before){order.push(roomOf(s));firedInRoom=new Set<number>();}
+  }
+  assert(order.join(">")==="fern-gate>echo-hollow>root-vault>sun-shrine",`held input must chain through every room in order, got ${order.join(">")}`);
+  assert(Number(s.lives)===3,"the route must be completable without dying, so the chain is real traversal and not respawn teleporting");
+ }},
 ];
