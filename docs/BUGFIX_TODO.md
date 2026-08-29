@@ -115,7 +115,7 @@ any order, can be interleaved).
 
 ## 2. Test-coverage gaps
 
-- [ ] **CR-011 — Add tests for `GameMetadata` duplicate-value rejection (P2-001)**
+- [x] **CR-011 — Add tests for `GameMetadata` duplicate-value rejection (P2-001)**
   - Acceptance: tests assert rejection for duplicate player counts, duplicate input kinds, and
     duplicate difficulties, alongside the existing duplicate-ID/malformed-field tests in
     `src/engine/game/metadata.test.ts`.

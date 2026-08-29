@@ -135,6 +135,39 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
+    name: "CR-011/P2-001 metadata parser rejects duplicate players, inputs, and difficulties",
+    run: () => {
+      const parsed = metadata("test-game", "Test Game");
+
+      expectThrows(
+        () => parseGameMetadata({ ...parsed, players: [1, 1] }),
+        GameMetadataValidationError,
+        "duplicate player counts must be rejected",
+      );
+      expectThrows(
+        () =>
+          parseGameMetadata({
+            ...parsed,
+            supportedInputs: ["keyboard", "keyboard"],
+          }),
+        GameMetadataValidationError,
+        "duplicate supported input kinds must be rejected",
+      );
+      expectThrows(
+        () =>
+          parseGameMetadata({
+            ...parsed,
+            difficulties: [
+              { id: "normal", label: "Normal" },
+              { id: "normal", label: "Normal Again" },
+            ],
+          }),
+        GameMetadataValidationError,
+        "duplicate difficulty IDs must be rejected",
+      );
+    },
+  },
+  {
     name: "registry validates modules, rejects duplicate IDs, and enumerates metadata",
     run: () => {
       const events: string[] = [];
