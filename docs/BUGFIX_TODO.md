@@ -129,7 +129,7 @@ any order, can be interleaved).
     `simulation.ts:399`, asserting `assertBounds()` does not throw and the entity count stays at
     or under the cap.
 
-- [ ] **CR-014 — Add test for Maze Chase compound hit+level-clear ordering (P10)**
+- [x] **CR-014 — Add test for Maze Chase compound hit+level-clear ordering (P10)**
   - Acceptance: a dedicated fixture (isolated per `CLAUDE.md`'s fixed-timestep testing guidance)
     covers a move that both empties the last collectible and lands the player on a
     non-vulnerable enemy in the same tick, asserting the resulting state (life lost, then level

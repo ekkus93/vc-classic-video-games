@@ -40,6 +40,19 @@ const NORMAL_COLLISION_MAZE = parseMaze([
   "#########",
 ]);
 
+// CR-014: NORMAL_COLLISION_MAZE with its second pellet removed, so the single pellet at (2,1)
+// is the whole collectible field. Walking right off the start collects that last collectible and
+// closes on the non-vulnerable amber sentinel at (3,1) inside the same update, which is the only
+// way to drive collectAtPlayer -> resolveCollisions -> resolveLevelClear all in one tick.
+const COMPOUND_CLEAR_MAZE = parseMaze([
+  "#########",
+  "#P.A# B #",
+  "# ###   #",
+  "# X #   #",
+  "# C   D #",
+  "#########",
+]);
+
 const BONUS_MAZE = parseMaze([
   "###########",
   "#P.X    A #",
@@ -54,6 +67,117 @@ function eventTypes(events: readonly { readonly type: string }[]): string {
 }
 
 export const tests: readonly TestCase[] = [
+  {
+    name: "CR-014/P10 a tick that both empties the field and hits a sentinel resolves hit then clear",
+    run: () => {
+      const services = createFakeGameServices(0x1014);
+      const simulation = new MazeChaseSimulation({
+        rng: services.rng,
+        difficulty: "circuit",
+        maze: COMPOUND_CLEAR_MAZE,
+        initialLives: 3,
+        initialRespawnGraceSeconds: 0,
+      });
+      const events = simulation.update({ desiredDirection: "right" }, 0.2);
+      const order = eventTypes(events);
+
+      assert(
+        order.includes("pellet-collected"),
+        "the move must collect the field's last collectible",
+      );
+      assert(order.includes("player-hit"), "the same move must run into the sentinel");
+      assert(order.includes("level-cleared"), "emptying the field must still clear the level");
+      assert(
+        order.indexOf("player-hit") < order.indexOf("level-cleared"),
+        "the compound tick must resolve the life loss before the level clear, not interleave them",
+      );
+
+      const livesAfterCompound: number = simulation.lives;
+      const levelAfterCompound: number = simulation.level;
+      assert(livesAfterCompound === 2, "the compound tick must cost exactly one life");
+      assert(!simulation.gameOver, "a nonterminal compound tick must leave the run playable");
+      assert(levelAfterCompound === 2, "the level must advance exactly once");
+      assert(
+        simulation.remainingPellets.size === COMPOUND_CLEAR_MAZE.pellets.size &&
+          simulation.remainingPowerItems.size === COMPOUND_CLEAR_MAZE.powerItems.size,
+        "the new level must repopulate the full collectible field",
+      );
+      assert(
+        simulation.player.cell.x === COMPOUND_CLEAR_MAZE.playerStart.x &&
+          simulation.player.cell.y === COMPOUND_CLEAR_MAZE.playerStart.y,
+        "the runner must end the tick at the authored start, not double-reset somewhere else",
+      );
+      assert(
+        simulation.enemies.length === 4 &&
+          simulation.enemies.every((enemy) => enemy.respawnSeconds === 0),
+        "both resets must leave a full, live sentinel roster with no stale respawn timers",
+      );
+      assert(
+        simulation.enemies.every((enemy) => {
+          const start = COMPOUND_CLEAR_MAZE.enemyStarts[enemy.id];
+          return enemy.mover.cell.x === start.x && enemy.mover.cell.y === start.y;
+        }),
+        "every sentinel must be back on its authored start cell",
+      );
+      assert(
+        simulation.vulnerabilitySeconds === 0 && simulation.bonusSeconds === 0,
+        "the level clear must leave no power or bonus timer running into the new level",
+      );
+      assert(
+        simulation.respawnGraceSeconds > 0,
+        "the new level must start inside a bounded grace period",
+      );
+
+      // The state must stay coherent afterwards rather than only looking right for one frame.
+      // This one-pellet field clears again on the next identical move, and the grace period the
+      // clear installed must absorb the sentinel contact this time instead of costing a life.
+      const followUp = simulation.update({ desiredDirection: "right" }, 0.2);
+      assert(
+        eventTypes(followUp).includes("level-cleared"),
+        "the repopulated field must still be clearable through the normal path",
+      );
+      assert(
+        !eventTypes(followUp).includes("player-hit"),
+        "the grace period installed by the clear must absorb the next sentinel contact",
+      );
+      const levelAfterFollowUp: number = simulation.level;
+      const livesAfterFollowUp: number = simulation.lives;
+      assert(
+        levelAfterFollowUp === levelAfterCompound + 1 &&
+          livesAfterFollowUp === livesAfterCompound &&
+          !simulation.gameOver,
+        "the compound tick must not corrupt level or life accounting for later ticks",
+      );
+    },
+  },
+  {
+    name: "CR-014/P10 a fatal compound tick ends the run instead of clearing the level",
+    run: () => {
+      const services = createFakeGameServices(0x1015);
+      const simulation = new MazeChaseSimulation({
+        rng: services.rng,
+        difficulty: "circuit",
+        maze: COMPOUND_CLEAR_MAZE,
+        initialLives: 1,
+        initialRespawnGraceSeconds: 0,
+      });
+      const events = simulation.update({ desiredDirection: "right" }, 0.2);
+      const order = eventTypes(events);
+
+      assert(order.includes("player-hit"), "the final life must still be consumed");
+      assert(order.includes("game-over"), "losing the final life must terminate the run");
+      assert(
+        !order.includes("level-cleared"),
+        "a run that ended on this tick must not also bank a level clear",
+      );
+      const finalLives: number = simulation.lives;
+      const finalLevel: number = simulation.level;
+      assert(
+        simulation.gameOver && finalLives === 0 && finalLevel === 1,
+        "the terminal state must be stable and must not advance the level",
+      );
+    },
+  },
   {
     name: "P10-003 simulation retains a short early turn request until the intersection",
     run: () => {
