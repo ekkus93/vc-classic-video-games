@@ -189,12 +189,16 @@ export class StarDefenderSimulation {
   private invulnerabilityValue: number;
   private fireCooldownValue = 0;
   private emergencyLatched = false;
-  // CR-006: true only for the remainder of the update() call in which handleEmergency actually
-  // consumed a charge and wiped the wave. resolveWaveClear reads this to withhold the
-  // combat-clear charge refund when the clear it's observing was the emergency action's own
-  // doing -- otherwise using the "limited" emergency action never actually cost anything, since
-  // wiping the wave immediately refunded the charge that wipe just spent.
-  private emergencyClearedWaveThisUpdate = false;
+  // CR-006/CR2-006: true for the remainder of the update() call in which handleEmergency actually
+  // consumed a charge -- not specifically "the wave was cleared by it", despite the name this
+  // replaced (emergencyClearedWaveThisUpdate) implying that condition was checked. It isn't:
+  // handleEmergency unconditionally empties enemyState whenever it spends a charge, so today
+  // "fired" and "cleared the wave" are the same event and this flag is accurate either way. If
+  // the burst's own effect ever became partial (a bounded blast radius, off-screen survivors),
+  // "fired" and "cleared" would diverge and this flag would need to become the latter -- actually
+  // checking that the wave is empty -- rather than silently keeping the former's meaning under a
+  // name that now claims otherwise.
+  private emergencyFiredThisUpdate = false;
   private gameOverValue = false;
   private nextEnemyId = 1;
   private nextProjectileId = 1;
@@ -270,7 +274,7 @@ export class StarDefenderSimulation {
     }
 
     const events: StarDefenderSimulationEvent[] = [];
-    this.emergencyClearedWaveThisUpdate = false;
+    this.emergencyFiredThisUpdate = false;
     this.invulnerabilityValue = Math.max(0, this.invulnerabilityValue - dtSeconds);
     this.fireCooldownValue = Math.max(0, this.fireCooldownValue - dtSeconds);
     this.playerState = stepStarDefenderPlayer(
@@ -646,7 +650,7 @@ export class StarDefenderSimulation {
     }
 
     this.emergencyChargesValue -= 1;
-    this.emergencyClearedWaveThisUpdate = true;
+    this.emergencyFiredThisUpdate = true;
     const inhabitants = [...this.inhabitantState];
     const destroyed = this.enemyState.length;
     for (const enemy of this.enemyState) {
@@ -874,7 +878,7 @@ export class StarDefenderSimulation {
     const bonus = starDefenderWaveClearScore(clearedWave);
     this.scoreValue += bonus;
     this.waveValue += 1;
-    if (!this.emergencyClearedWaveThisUpdate) {
+    if (!this.emergencyFiredThisUpdate) {
       this.emergencyChargesValue = Math.min(
         STAR_DEFENDER_RUN_RULES.maxEmergencyCharges,
         this.emergencyChargesValue + 1,
