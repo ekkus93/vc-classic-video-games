@@ -84,7 +84,7 @@ default, flip the marker to `[ ]`, and proceed.
   - Acceptance: the design doc states the ordering; the CR-014 tests assert it; `simulation.ts`
     says at the call site why the order is what it is.
 
-- [ ] **CR2-008 — Remove the dead `"shaking"` branch from the per-tick rock contact check**
+- [x] **CR2-008 — Remove the dead `"shaking"` branch from the per-tick rock contact check** (700aa45)
   - Check `"falling"` only; explain in the comment why shaking rocks need no check. See spec §2.4.
   - Acceptance: a test asserts a player walking into a shaking rock's cell is blocked and not hit;
     CR-010's test passes untouched.
