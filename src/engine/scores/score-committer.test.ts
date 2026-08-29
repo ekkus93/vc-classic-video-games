@@ -60,6 +60,30 @@ async function flush(): Promise<void> {
   await Promise.resolve();
 }
 
+/**
+ * Node tracks a rejected promise's handler across microtask boundaries but only fires
+ * `unhandledRejection` once the current macrotask finishes draining -- waiting on further
+ * `Promise.resolve()` ticks (`flush`) is not enough to observe it. A real timer tick is.
+ */
+async function flushMacrotask(): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * The frontend `tsconfig` deliberately has no Node type definitions (this code runs in a
+ * browser), so `process` cannot be named directly. `scripts/test.mjs` does run these tests under
+ * Node, though, and that is the only environment this helper is used from -- a minimal structural
+ * type for the one API this file needs, resolved off `globalThis`, is enough.
+ */
+interface NodeUnhandledRejectionSource {
+  on(event: "unhandledRejection", listener: (reason: unknown) => void): void;
+  off(event: "unhandledRejection", listener: (reason: unknown) => void): void;
+}
+
+function nodeProcess(): NodeUnhandledRejectionSource | undefined {
+  return (globalThis as { process?: NodeUnhandledRejectionSource }).process;
+}
+
 export const tests: readonly TestCase[] = [
   {
     name: "CR-016 shared score committer submits one terminal score per run",
@@ -145,6 +169,59 @@ export const tests: readonly TestCase[] = [
       commit.handle([{ type: "game-over", score: 43 }]);
       assert(scores.attempts === 1, "a contained synchronous failure must not be retried");
       assert(reported.length === 1, "the reporter must not be called again for the ignored second frame");
+    },
+  },
+  {
+    name: "CR3-001 a synchronous throw from submit is contained even when the reporter also throws",
+    run: () => {
+      const failure = new Error("score store validation failed synchronously");
+      const scores = new ThrowingScores(failure);
+      const reporterFailure = new Error("logger is broken too");
+      const commit = committer(scores, () => {
+        throw reporterFailure;
+      });
+
+      // `handle` must return normally even though both the score service and the reporter it is
+      // routed to throw -- there is nothing left to report to, so the failure is swallowed rather
+      // than escaping into the game's update().
+      commit.handle([{ type: "game-over", score: 42 }]);
+
+      assert(scores.attempts === 1, "the submit attempt happened exactly once");
+      commit.handle([{ type: "game-over", score: 43 }]);
+      assert(scores.attempts === 1, "a contained synchronous failure must not be retried");
+    },
+  },
+  {
+    name: "CR3-001 a rejected submission is contained even when the reporter also throws",
+    run: async () => {
+      const failure = new Error("score store unavailable");
+      const scores = new RejectingScores(failure);
+      const reporterFailure = new Error("logger is broken too");
+      const commit = committer(scores, () => {
+        throw reporterFailure;
+      });
+
+      const proc = nodeProcess();
+      assert(proc !== undefined, "this test must run under Node to observe unhandled rejections");
+
+      let unhandledRejection: unknown;
+      const onUnhandledRejection = (reason: unknown): void => {
+        unhandledRejection = reason;
+      };
+      proc.on("unhandledRejection", onUnhandledRejection);
+      try {
+        commit.handle([{ type: "game-over", score: 42 }]);
+        await flush();
+        await flushMacrotask();
+      } finally {
+        proc.off("unhandledRejection", onUnhandledRejection);
+      }
+
+      assert(scores.attempts === 1, "the submit attempt happened exactly once");
+      assert(
+        unhandledRejection === undefined,
+        "a throwing reporter on the rejection path must not surface as an unhandled rejection",
+      );
     },
   },
   {

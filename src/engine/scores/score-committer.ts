@@ -68,13 +68,28 @@ export class ScoreCommitter<TEvent> {
     try {
       pending = this.scores.submit({ score, mode });
     } catch (error) {
-      this.reportError(error);
+      this.report(error);
       return;
     }
-    void pending.catch((error: unknown) => this.reportError(error));
+    void pending.catch((error: unknown) => this.report(error));
   }
 
   public reset(): void {
     this.submitted = false;
+  }
+
+  // CR3-001: `reportError` is the game's own failure channel, so a throw from it has nowhere left
+  // to go -- escaping into the caller's update() reproduces exactly the "a failing score store
+  // must not take a playable run down with it" bug this class exists to prevent, just one level
+  // removed. Swallowing here is deliberate, not an oversight: the alternatives are escaping (the
+  // bug) or recursing into the same broken reporter. This must hold on both the synchronous throw
+  // path and the rejection path identically -- before this fix the async path merely relocated a
+  // throwing reporter into an unhandled rejection, which is a quieter leak, not containment.
+  private report(error: unknown): void {
+    try {
+      this.reportError(error);
+    } catch {
+      // Nothing left to report to; see comment above.
+    }
   }
 }

@@ -24,7 +24,7 @@ the marker to `[ ]`, and proceed.
 
 ## 1. Correctness
 
-- [ ] **CR3-001 — Contain a throwing `reportError` in `ScoreCommitter`**
+- [x] **CR3-001 — Contain a throwing `reportError` in `ScoreCommitter`**
   - Wrap every `reportError` invocation on both the synchronous and the rejection path, and
     swallow a throw from the reporter itself. Do not change the ten game handlers. See spec §1.1.
   - Acceptance: a test with a `ScoreService` that throws synchronously *and* a reporter that
