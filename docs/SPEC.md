@@ -368,6 +368,27 @@ The pointer path (§12.5) is sized identically, for the same reason: `floor()` i
 `devicePixelRatio`, so quantizing the render viewport and the pointer viewport independently, in
 different units, can pick different integer scales at the same CSS size.
 
+**Known trade-off at fractional DPR (CR3-007):** computing the integer scale in device pixels
+rather than CSS pixels changes how much of the panel the game fills at a fractional
+`devicePixelRatio` -- accepted deliberately, since it is exactly what "prefer integer
+nearest-neighbor scaling" above asks for once quantization happens in the unit that actually
+reaches the panel. At a 1366x768 CSS viewport, against a 320x240 logical framebuffer:
+
+| DPR | device px per logical px (after) | CSS px per logical px (before) | on-screen game size |
+| --- | --- | --- | --- |
+| 1 | 3 | 3 | unchanged (960x720 CSS) |
+| 1.25 | 4 | 3.2 | larger (960x720 → 1024x768 CSS) |
+| 1.5 | 4 | 2.67 | **smaller** (960x720 → 853x640 CSS) |
+| 2 | 6 | 3 | unchanged (960x720 CSS) |
+
+The "before" column is DPR-independent because the pre-CR2-003 code fed `calculateViewport` CSS
+pixels directly (`floor(min(1366/320, 768/240)) = 3` at every DPR). At 1.5x -- a common Chromebook
+setting -- the game now occupies noticeably less of the panel in exchange for each logical pixel
+landing on an exact 4 device pixels instead of a non-integer 4.5; decided as option A over
+reopening the integer-scaling preference P3-005 already settled. Verified arithmetically against
+the real `calculateViewport`/`devicePhysicalSize`; the visual check on physical 1.25x/1.5x hardware
+is a `docs/P18_RELEASE_ACCEPTANCE.md` human item, not settled here.
+
 ### 11.3 Frame ownership
 
 Each game draws only into the game surface supplied by the runtime. Launcher UI overlays such as pause, confirm-exit, and global notifications are owned by the application shell.

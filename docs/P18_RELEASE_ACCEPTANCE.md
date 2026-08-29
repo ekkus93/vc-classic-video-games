@@ -75,7 +75,8 @@ Run the ten game checklists in launcher order or P-number order. To reduce dupli
 4. Exercise audio, mute/unmute, pause/resume, restart, and return-to-launcher checks while each game is already active.
 5. Perform each game's repeated lifecycle cycles without restarting the Tauri application.
 6. Perform P15 maximum-density performance observation and P16 dense later-level observation on the selected reference Chromebook.
-7. Record results directly in each per-game checklist and update the table above.
+7. CR3-007: with the Chromebook's display scale set to a fractional value (1.25x, and separately 1.5x, if the device's display settings offer them), launch any one game and eyeball the on-screen game size and pixel crispness -- `docs/SPEC.md` §11.2 records that CR2-003 makes this deliberately larger at 1.25x and smaller at 1.5x than at integer scales, and this is the pass that confirms it looks acceptable on real hardware rather than only arithmetically. Record the display scale(s) exercised and the observation.
+8. Record results directly in each per-game checklist and update the table above.
 
 Do not merge P18-001 with the separate cross-game soak, hot-plug, suspend/resume, corrupted-persistence, or offline release tasks. Those remain P18-006 through P18-010, although observations made during P18-001 may be reused as evidence when they exactly satisfy those later criteria.
 

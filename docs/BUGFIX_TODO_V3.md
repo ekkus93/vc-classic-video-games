@@ -89,8 +89,8 @@ the marker to `[ ]`, and proceed.
 
 ## 4. Manual verification
 
-- [!] **CR3-007 — Record CR2-003's on-screen size change at fractional DPR** — decision required;
-  spec §4.1 default is **A** (accept the trade and document it).
+- [x] **CR3-007 — Record CR2-003's on-screen size change at fractional DPR** — decided: option
+  **A**, accept the trade and document it (spec §4.1).
   - Computing the integer scale in device pixels changes how much of the panel the game fills at a
     fractional `devicePixelRatio`: larger at 1.25×, **smaller** at 1.5× (960×720 → 853×640 CSS at
     1366×768). 1.5× is a common Chromebook setting and this has only ever been checked
