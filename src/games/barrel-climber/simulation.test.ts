@@ -56,6 +56,47 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
+    name: "CR-007 a narrowly cleared hazard is either vaulted or hit, never both in the same frame",
+    run: () => {
+      // Feet sit exactly on the old "feetAboveHazard" threshold (hazard.y - hazardRadius + 1)
+      // while also precisely intersecting the hazard's hit circle -- the overlap band the review
+      // identified between the vault approximation and the exact hit test.
+      const simulation = new BarrelClimberSimulation({
+        rng: new SeededRandomService(10),
+        difficulty: "shift",
+        initialPlayer: player({ x: 100, y: 95, velocityY: -20, mode: "airborne" }),
+        // "rolling" hazards recompute y from platform geometry every step, ignoring any y given
+        // here -- use "falling" so the exact crafted y actually survives the dt=0 step.
+        initialHazards: [hazard({ x: 100, y: 100, mode: "falling", platformId: null, ladderId: null })],
+        initialSpawnDelaySeconds: 999,
+        initialInvulnerabilitySeconds: 0,
+      });
+      const events = simulation.update(NEUTRAL, 0);
+      const vaulted = events.some((event) => event.type === "hazard-vaulted");
+      const hit = events.some((event) => event.type === "player-hit");
+      assert(hit, "the precise hit test must register contact at this narrow clearance");
+      assert(!vaulted, "a hazard that is actually intersecting must not also be credited as vaulted in the same frame");
+      assert(simulation.score === 0, "no vault points must be awarded when the hazard actually hit the player");
+    },
+  },
+  {
+    name: "CR-007 a genuinely cleared hazard just outside the hit radius still vaults normally",
+    run: () => {
+      const simulation = new BarrelClimberSimulation({
+        rng: new SeededRandomService(10),
+        difficulty: "shift",
+        initialPlayer: player({ x: 100, y: 93, velocityY: -20, mode: "airborne" }),
+        initialHazards: [hazard({ x: 100, y: 100, mode: "falling", platformId: null, ladderId: null })],
+        initialSpawnDelaySeconds: 999,
+        initialInvulnerabilitySeconds: 0,
+      });
+      const events = simulation.update(NEUTRAL, 0);
+      assert(events.some((event) => event.type === "hazard-vaulted"), "clearing the hazard just outside its hit radius must still award the vault");
+      assert(events.every((event) => event.type !== "player-hit"), "a genuinely cleared hazard must not also register a hit");
+      assert(simulation.score === BARREL_CLIMBER_SCORING.vaultHazard, "vault points must still be awarded for a real clearance");
+    },
+  },
+  {
     name: "P16-007 final hazard collision consumes the last life and emits one terminal event",
     run: () => {
       const simulation = new BarrelClimberSimulation({

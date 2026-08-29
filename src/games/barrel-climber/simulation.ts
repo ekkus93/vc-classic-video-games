@@ -238,7 +238,13 @@ export class BarrelClimberSimulation {
       }
       const horizontallyClose = Math.abs(this.playerState.x - hazard.x) <= hazardRadius + PLAYER_HALF_WIDTH + 1;
       const feetAboveHazard = this.playerState.y <= hazard.y - hazardRadius + 1;
-      if (!horizontallyClose || !feetAboveHazard) {
+      // CR-007: the "feet above" approximation above and the precise circle-rect hit test used by
+      // resolvePlayerHit overlap in a real band near minimum jump clearance -- a narrowly-cleared
+      // jump could satisfy both simultaneously and get credited with vaulting the hazard while
+      // also losing a life to it, in the same frame. Make intersectsHazard (the same test
+      // resolvePlayerHit uses) the tie-breaker: only award the vault when this hazard is NOT
+      // currently intersecting, so the two outcomes stay mutually exclusive for a given hazard.
+      if (!horizontallyClose || !feetAboveHazard || intersectsHazard(this.playerState, hazard)) {
         continue;
       }
       this.vaultedThisJump.add(hazard.id);

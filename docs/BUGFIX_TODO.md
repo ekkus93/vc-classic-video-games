@@ -81,7 +81,7 @@ any order, can be interleaved).
     designed (if that refund-on-clear behavior is otherwise intentional — confirm with
     `docs/games/*` design doc for Star Defender before removing it wholesale).
 
-- [ ] **CR-007 — Fix Barrel Climber simultaneous vault+hit**
+- [x] **CR-007 — Fix Barrel Climber simultaneous vault+hit**
   - Make the hit check the single source of truth per hazard per frame; derive the vault
     condition as a strict subset of "not intersecting." See `docs/BUGFIX_SPEC.md` §1.7.
   - Acceptance: a new test places the player at narrow (~1-2px) clearance over a hazard and
