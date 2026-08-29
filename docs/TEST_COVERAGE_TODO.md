@@ -42,7 +42,7 @@ carried inhabitant reaching `playfieldTop + 2` and being dropped as `"lost"` by 
 `simulation.test.ts`'s `P15-007/P15-008` scenario exercises (the emergency burst destroying the
 carrier), and nothing names or asserts the altitude-drop path directly.
 
-- [ ] **TC-001a — Create `src/games/star-defender/enemies.test.ts`**
+- [x] **TC-001a — Create `src/games/star-defender/enemies.test.ts`**
   - [ ] Test `createStarDefenderWave`: enemy-type selection follows `selector = (index + wave) % 6`
     (`< 3` snatcher, `< 5` stalker, else skimmer) for at least two different `wave` values so the
     `wave`-dependent offset is actually exercised, not just `index` in isolation.
@@ -79,7 +79,7 @@ carrier), and nothing names or asserts the altitude-drop path directly.
   - [ ] Test `updateStarDefenderEnemies` with **no grounded inhabitants left**: a snatcher with no
     target roams at the documented `92` altitude and `0.7 × speedScale` horizontal rate rather than
     pursuing or idling at its previous position.
-- [ ] **TC-001b — Create `src/games/star-defender/inhabitants.test.ts`**
+- [x] **TC-001b — Create `src/games/star-defender/inhabitants.test.ts`**
   - [ ] Test `createInitialStarDefenderInhabitants`: produces exactly
     `STAR_DEFENDER_RUN_RULES.inhabitantCount` inhabitants, evenly spaced with jitter bounded by
     `± spacing * 0.14` (half of the `0.28` jitter factor) around each slot's center, and is
@@ -106,13 +106,17 @@ carrier), and nothing names or asserts the altitude-drop path directly.
   - [ ] Test `resolveStarDefenderFallingCatches` ignores inhabitants in every state other than
     `"falling"` even when they are within the catch radius (e.g. a `"ground"` inhabitant standing
     where the radius check alone would otherwise match).
-  - Acceptance: both new files exist and pass; `npm run test` count increases by roughly the
-    number of new cases above; the altitude-drop path, the capture-radius boundary, and the
-    multi-inhabitant `scoreDelta` summation are each confirmed to actually pin behavior by
-    temporarily mutating the corresponding line in `enemies.ts`/`inhabitants.ts` (e.g. flip a
-    comparison operator or a threshold constant) and watching the new test fail, then reverting —
-    per this project's established verification discipline. The existing `simulation.test.ts`
-    Star Defender cases (`P15-*`, `CR-006`) pass untouched.
+  - Acceptance: both new files exist and pass (20 new cases, `npm run test` at 443); the
+    altitude-drop path, the capture-radius gate, the wrap-aware nearest-target search, the
+    falling-landing threshold, the carried-return threshold, the multi-inhabitant `scoreDelta`
+    summation, the rescue-catch radius, and the falling-state guard were each confirmed to
+    actually pin behavior by mutating the corresponding line and watching the new test fail, then
+    reverting. Two fixtures needed correcting during that pass: the altitude-drop and
+    falling-landing fixtures originally overshot their thresholds by a wide margin (a large
+    `dtSeconds` landing far past the boundary in either direction), so a mutation that shifted the
+    threshold went unnoticed until the fixtures were rebuilt to land precisely at the boundary via
+    the same rate formula the source uses. The existing `simulation.test.ts` Star Defender cases
+    (`P15-*`, `CR-006`) pass untouched.
 
 ## TC-002 — Unit-test `SharedWebAudioService`
 
