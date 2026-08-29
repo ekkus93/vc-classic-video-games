@@ -189,6 +189,12 @@ export class StarDefenderSimulation {
   private invulnerabilityValue: number;
   private fireCooldownValue = 0;
   private emergencyLatched = false;
+  // CR-006: true only for the remainder of the update() call in which handleEmergency actually
+  // consumed a charge and wiped the wave. resolveWaveClear reads this to withhold the
+  // combat-clear charge refund when the clear it's observing was the emergency action's own
+  // doing -- otherwise using the "limited" emergency action never actually cost anything, since
+  // wiping the wave immediately refunded the charge that wipe just spent.
+  private emergencyClearedWaveThisUpdate = false;
   private gameOverValue = false;
   private nextEnemyId = 1;
   private nextProjectileId = 1;
@@ -264,6 +270,7 @@ export class StarDefenderSimulation {
     }
 
     const events: StarDefenderSimulationEvent[] = [];
+    this.emergencyClearedWaveThisUpdate = false;
     this.invulnerabilityValue = Math.max(0, this.invulnerabilityValue - dtSeconds);
     this.fireCooldownValue = Math.max(0, this.fireCooldownValue - dtSeconds);
     this.playerState = stepStarDefenderPlayer(
@@ -639,6 +646,7 @@ export class StarDefenderSimulation {
     }
 
     this.emergencyChargesValue -= 1;
+    this.emergencyClearedWaveThisUpdate = true;
     const inhabitants = [...this.inhabitantState];
     const destroyed = this.enemyState.length;
     for (const enemy of this.enemyState) {
@@ -866,10 +874,12 @@ export class StarDefenderSimulation {
     const bonus = starDefenderWaveClearScore(clearedWave);
     this.scoreValue += bonus;
     this.waveValue += 1;
-    this.emergencyChargesValue = Math.min(
-      STAR_DEFENDER_RUN_RULES.maxEmergencyCharges,
-      this.emergencyChargesValue + 1,
-    );
+    if (!this.emergencyClearedWaveThisUpdate) {
+      this.emergencyChargesValue = Math.min(
+        STAR_DEFENDER_RUN_RULES.maxEmergencyCharges,
+        this.emergencyChargesValue + 1,
+      );
+    }
     events.push(
       Object.freeze({
         type: "wave-cleared",

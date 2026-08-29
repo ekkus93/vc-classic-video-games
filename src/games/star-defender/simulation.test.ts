@@ -123,6 +123,55 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
+    name: "CR-006 using emergency to clear the wave does not refund the charge it just spent",
+    run: () => {
+      const simulation = new StarDefenderSimulation({
+        rng: new SeededRandomService(151),
+        difficulty: "patrol",
+        initialPlayer: player(100, 100),
+        // A single enemy so the emergency burst wipes the entire wave in one press.
+        initialEnemies: [enemy(1, "skimmer", 900, 100)],
+        initialInhabitants: [inhabitant(1, 600)],
+        initialEmergencyCharges: 2,
+        initialInvulnerabilitySeconds: 10,
+      });
+
+      const events = simulation.update({ ...NEUTRAL, emergency: true }, 0);
+      assert(
+        events.some((event) => event.type === "wave-cleared"),
+        "wiping the only enemy must clear the wave in the same tick the emergency fired",
+      );
+      assert(
+        simulation.emergencyCharges === 1,
+        `emergency must cost exactly one charge even when it clears the wave, got ${simulation.emergencyCharges}`,
+      );
+    },
+  },
+  {
+    name: "CR-006 an ordinary combat wave clear still refunds a charge",
+    run: () => {
+      const simulation = new StarDefenderSimulation({
+        rng: new SeededRandomService(151),
+        difficulty: "patrol",
+        initialPlayer: player(100, 118, 1),
+        initialEnemies: [enemy(1, "stalker", 112, 118)],
+        initialInhabitants: [inhabitant(1, 600)],
+        initialEmergencyCharges: 1,
+        initialInvulnerabilitySeconds: 10,
+      });
+
+      const events = simulation.update({ ...NEUTRAL, fire: true }, 0);
+      assert(
+        events.some((event) => event.type === "wave-cleared"),
+        "destroying the only enemy by lance fire must clear the wave",
+      );
+      assert(
+        simulation.emergencyCharges === 2,
+        `a combat-caused wave clear must still refund a charge, got ${simulation.emergencyCharges}`,
+      );
+    },
+  },
+  {
     name: "P15-007/P15-008 rescue sequence advances abduction falling catch and return states",
     run: () => {
       const x = 500;

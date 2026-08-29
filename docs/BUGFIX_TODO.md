@@ -72,7 +72,7 @@ any order, can be interleaved).
     its own equivalent test coverage for the same viewport sizes `viewport.test.ts` already covers
     (incl. 1366×768).
 
-- [ ] **CR-006 — Fix Star Defender free Emergency Burst refund**
+- [x] **CR-006 — Fix Star Defender free Emergency Burst refund**
   - Suppress the wave-clear charge refund specifically when the wave clear was caused by the
     emergency action that just fired. See `docs/BUGFIX_SPEC.md` §1.6.
   - Acceptance: a test presses the emergency burst against a full wave and asserts the charge
