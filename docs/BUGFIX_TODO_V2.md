@@ -73,7 +73,7 @@ default, flip the marker to `[ ]`, and proceed.
     retry. Existing `score-committer.test.ts` and all ten per-game score-submission tests pass
     untouched.
 
-- [ ] **CR2-006 — Rename `emergencyClearedWaveThisUpdate` to what it checks**
+- [x] **CR2-006 — Rename `emergencyClearedWaveThisUpdate` to what it checks** (ce8e0fd)
   - Rename to `emergencyFiredThisUpdate` and correct the comment. See spec §2.2.
   - Acceptance: no behavior change; both CR-006 tests pass untouched.
 
