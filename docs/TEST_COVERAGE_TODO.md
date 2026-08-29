@@ -233,7 +233,7 @@ invariant worth pinning directly: `detach(input)` only clears the delegate when 
 *currently attached* instance, guarding against a stale detach call after a different input has
 since attached.
 
-- [ ] **TC-004a — Create `src/app/shell/input-bridge.test.ts`**
+- [x] **TC-004a — Create `src/app/shell/input-bridge.test.ts`**
   - [ ] Build a minimal fake `InputService` (settable `isHeld`/`wasPressed`/`wasReleased` return
     values or call-recording stubs, plus a `pointer` getter and a `reset()` that records whether
     it was called).
@@ -247,13 +247,18 @@ since attached.
   - [ ] The stale-detach guard: `attach(fakeA)`, then `attach(fakeB)`, then `detach(fakeA)` — `
     fakeB` must remain attached (`attached` stays `true`, `isHeld` etc. still delegate to `fakeB`),
     proving the detach of the no-longer-current instance is a no-op.
-  - [ ] `reset()` while attached calls `reset()` on the current delegate **and** resets the
-    fallback pointer's internal state (verified by detaching afterward and confirming the fallback
-    pointer is in its neutral state rather than whatever it held before `reset()`).
-  - Acceptance: the new file exists and passes; the stale-detach case in particular is confirmed
-    to actually catch a regression by temporarily removing the `if (this.delegate === input)`
-    guard in `detach()` (making it unconditional) and watching that one test fail, then reverting.
-    `npm run test` passes with the new file included.
+  - [ ] `reset()` while attached calls `reset()` on the current delegate.
+  - **Investigated and adjusted:** the original plan also asked to verify `reset()`'s internal
+    `resetFallbackPointer()` call. That call is not independently testable — the fallback pointer
+    is only ever set to the same fixed neutral snapshot (from here and from `detach()`), so
+    nothing in this class can ever put it in a non-neutral state for `reset()` to clear. Confirmed
+    by mutation: removing that call from `reset()` makes no test fail. Dropped rather than kept as
+    a test that looks like it verifies something it structurally cannot.
+  - Acceptance: the new file exists and passes; the stale-detach case is confirmed to actually
+    catch a regression by temporarily removing the `if (this.delegate === input)` guard in
+    `detach()` (making it unconditional) and watching that one test fail, then reverting; the
+    delegate-reset-propagation case is confirmed the same way by removing `this.delegate?.reset()`
+    from `reset()`. `npm run test` passes with the new file included.
 
 ## TC-005 — Extend `input-system.test.ts` for gamepad reassignment and 3–4 controller scenarios
 
