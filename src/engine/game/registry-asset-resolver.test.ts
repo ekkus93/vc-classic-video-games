@@ -1,22 +1,25 @@
-import type { GameModule } from "./contracts.js";
-import { GameRegistry } from "./registry.js";
 import { assert, type TestCase } from "../../test/harness.js";
+import type { GameModule } from "./contracts.js";
+import { defineGameMetadata } from "./metadata.js";
+import { GameRegistry } from "./registry.js";
 
-const MODULE_WITH_ASSET_RESOLVER: GameModule = Object.freeze({
-  metadata: Object.freeze({
+// CR-021: merged from the former registry-assets.test.ts, which covered the same behavior under a
+// second task ID. Labelled P2-004 (the registry itself, which is what preserves the field);
+// the optional resolveAssetUrl hook it preserves arrived with P7-008's bundled audio, and the
+// per-game phases the old labels named (P9, P14) were only consumers of it.
+const MODULE_WITH_ASSET_RESOLVER: GameModule = {
+  metadata: defineGameMetadata({
     id: "resolver-fixture",
     title: "Resolver Fixture",
     description: "Registry asset-resolver preservation fixture.",
     version: 1,
-    players: Object.freeze([1]),
-    supportedInputs: Object.freeze(["keyboard"] as const),
+    players: [1],
+    supportedInputs: ["keyboard"],
     logicalWidth: 320,
     logicalHeight: 240,
-    defaultDifficulty: "default",
-    difficulties: Object.freeze([
-      Object.freeze({ id: "default", label: "Default" }),
-    ]),
-    controls: Object.freeze([]),
+    defaultDifficulty: "normal",
+    difficulties: [{ id: "normal", label: "Normal" }],
+    controls: [],
     assetManifest: "assets.json",
   }),
   create: () => ({
@@ -28,19 +31,23 @@ const MODULE_WITH_ASSET_RESOLVER: GameModule = Object.freeze({
     reset: () => undefined,
     destroy: () => undefined,
   }),
-  resolveAssetUrl: (path: string) => `fixture://${path}`,
-});
+  resolveAssetUrl: (path) => `bundle://${path}`,
+};
 
 export const tests: readonly TestCase[] = [
   {
-    name: "P14 registry validation preserves optional bundled asset resolver",
+    name: "P2-004 registry validation preserves a module's optional bundled asset resolver",
     run: () => {
-      const module = new GameRegistry([MODULE_WITH_ASSET_RESOLVER]).getModule(
-        "resolver-fixture",
+      const registered = new GameRegistry([MODULE_WITH_ASSET_RESOLVER]).getModule(
+        MODULE_WITH_ASSET_RESOLVER.metadata.id,
       );
       assert(
-        module.resolveAssetUrl?.("assets.json") === "fixture://assets.json",
-        "validated module must retain the resolver required by production asset preload",
+        registered.resolveAssetUrl !== undefined,
+        "validated registry module must retain its asset resolver, which production asset preload depends on",
+      );
+      assert(
+        registered.resolveAssetUrl?.("assets.json") === "bundle://assets.json",
+        "the preserved resolver must still be the module's own, not a stub",
       );
     },
   },

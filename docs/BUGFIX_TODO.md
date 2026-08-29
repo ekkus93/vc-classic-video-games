@@ -177,7 +177,7 @@ any order, can be interleaved).
     enemies don't, or both caps are lifted into named constants in `design.ts` with matching
     values if the asymmetry was unintentional.
 
-- [ ] **CR-021 — Consolidate duplicate P0-P3-area test files**
+- [x] **CR-021 — Consolidate duplicate P0-P3-area test files**
   - Acceptance: `registry-asset-resolver.test.ts` and `registry-assets.test.ts` are merged into
     one file with one accurate task-ID reference, keeping the better of the two coverage sets.
 
