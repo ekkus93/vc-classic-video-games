@@ -99,7 +99,7 @@ any order, can be interleaved).
     original two-rock/one-enemy shape now that the race is fixed, or add a new dedicated fixture
     for the race case rather than leaving it permanently avoided.
 
-- [ ] **CR-009 — Fix Deep Digger falling-rock same-column overlap**
+- [x] **CR-009 — Fix Deep Digger falling-rock same-column overlap**
   - Change `isRockAt`'s exclusion to per-rock (only the calling rock's own vacated cell), not a
     blanket exclusion of all falling rocks. See `docs/BUGFIX_SPEC.md` §1.9.
   - Acceptance: a test places two rocks in the same column (matching the shipped `ROCK_SPAWNS`

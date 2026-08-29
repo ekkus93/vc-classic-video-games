@@ -1,7 +1,7 @@
 import { DEEP_DIGGER_DIFFICULTIES } from "./design.js";
 import { createFakeGameServices } from "../../engine/testing/fake-services.js";
 import { assert, type TestCase } from "../../test/harness.js";
-import type { DeepDiggerLevelDefinition } from "./level.js";
+import { createDeepDiggerLevel, type DeepDiggerLevelDefinition } from "./level.js";
 import { DeepDiggerSimulation } from "./simulation.js";
 
 const IDLE_INPUT = Object.freeze({ move: null, attack: false } as const);
@@ -192,6 +192,107 @@ export const tests: readonly TestCase[] = [
         simulation.rocks.length === 1 && nextWaveRock !== undefined && nextWaveRock.state === "supported",
         "the next wave's rock population must start fresh (freshly supported) once the prior rock has been resolved",
       );
+    },
+  },
+  {
+    name: "CR-009 two rocks falling in the same column never share a cell",
+    run: () => {
+      // The shipped level's ROCK_SPAWNS table has a same-column pair (column 18, rows 4 and 8),
+      // both present from wave 1, so this is a reachable production configuration rather than a
+      // synthetic one. The fixture below reuses those exact cells and carves a column-18 shaft
+      // with a floor at row 11, so both rocks loosen on the first tick and fall together.
+      const shipped = createDeepDiggerLevel("survey", 1).rockSpawns;
+      assert(
+        shipped.some((cell, index) =>
+          shipped.some((other, otherIndex) => otherIndex !== index && other.column === cell.column),
+        ),
+        "fixture premise: the shipped wave-1 rock spawns must contain a same-column pair",
+      );
+
+      const services = createFakeGameServices(0xc009);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 24,
+          rows: 16,
+          tunnels: [
+            // The upper rock's shaft, down to the lower rock's cell (which the lower rock carves
+            // for itself the moment it starts falling).
+            { column: 18, row: 5 },
+            { column: 18, row: 6 },
+            { column: 18, row: 7 },
+            // The lower rock's shaft: two cells, then solid earth at row 11 as its floor.
+            { column: 18, row: 9 },
+            { column: 18, row: 10 },
+            // A sealed pocket for the player, with the one enemy parked on top of it so it never
+            // paths anywhere near the shaft and never clears the wave mid-test.
+            { column: 0, row: 15 },
+          ],
+          playerSpawn: { column: 0, row: 15 },
+          enemySpawns: [{ column: 0, row: 15 }],
+          rockSpawns: [
+            { column: 18, row: 4 },
+            { column: 18, row: 8 },
+          ],
+        },
+        initialInvulnerabilitySeconds: 100,
+      });
+
+      const assertNoOverlap = (label: string): void => {
+        const [upper, lower] = simulation.rocks;
+        assert(upper !== undefined && lower !== undefined, `${label}: both rocks must exist`);
+        assert(
+          !(upper.cell.column === lower.cell.column && upper.cell.row === lower.cell.row),
+          `${label}: two rocks must never occupy the same cell (both at ` +
+            `${upper.cell.column},${upper.cell.row})`,
+        );
+        assert(
+          upper.cell.row < lower.cell.row,
+          `${label}: the upper rock must never fall past the lower one (upper row ` +
+            `${upper.cell.row}, lower row ${lower.cell.row})`,
+        );
+      };
+
+      // Fine-grained ticks until the lower rock is falling in the last cell above its floor. It
+      // stays "falling" there for one fall-step interval before its next step lands it, which is
+      // the window the upper rock can be driven into.
+      let ticks = 0;
+      for (;;) {
+        simulation.update(IDLE_INPUT, 0.02);
+        ticks += 1;
+        assertNoOverlap(`tick ${ticks}`);
+        const lower = simulation.rocks[1];
+        assert(ticks < 200, "fixture must reach the lower rock's pre-landing window");
+        if (lower?.state === "falling" && lower.cell.row === 10) {
+          break;
+        }
+      }
+      const upperBeforeSpike = simulation.rocks[0];
+      assert(
+        upperBeforeSpike?.state === "falling" && upperBeforeSpike.cell.row < 10,
+        "the upper rock must still be mid-fall above the lower rock at the start of the spike frame",
+      );
+
+      // One catch-up-sized frame: enough fall-step time for the upper rock to cover every
+      // remaining cell in a single update()'s step loop, which is exactly when it used to walk
+      // straight through the still-falling lower rock (rocks are advanced in spawn order, so the
+      // upper rock moves while the lower one is still in its pre-frame cell).
+      simulation.update(IDLE_INPUT, 0.5);
+      assertNoOverlap("catch-up frame");
+
+      const [upper, lower] = simulation.rocks;
+      assert(
+        lower?.state === "resting" && lower.cell.row === 10,
+        "the lower rock must land on its floor",
+      );
+      assert(
+        upper?.state === "resting" && upper.cell.row === 9,
+        "the upper rock must come to rest directly on top of the lower rock, not inside it",
+      );
+
+      simulation.update(IDLE_INPUT, 0.5);
+      assertNoOverlap("settled frame");
     },
   },
 ];
