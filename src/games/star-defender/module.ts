@@ -12,13 +12,11 @@ import {
   type StarDefenderDifficultyId,
 } from "./design.js";
 import { StarDefenderEffects } from "./effects.js";
+import type { StarDefenderEnemy } from "./enemies.js";
+import type { StarDefenderInhabitant } from "./inhabitants.js";
 import { STAR_DEFENDER_METADATA } from "./metadata.js";
 import { StarDefenderScoreCommitter } from "./score-submission.js";
-import {
-  StarDefenderSimulation,
-  type StarDefenderEnemy,
-  type StarDefenderInhabitant,
-} from "./simulation.js";
+import { StarDefenderSimulation } from "./simulation.js";
 import {
   starDefenderCameraCenterX,
   starDefenderRadarX,

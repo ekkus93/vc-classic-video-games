@@ -1,52 +1,27 @@
 import type { RandomService, Vector2 } from "../../engine/index.js";
 import {
-  STAR_DEFENDER_DIFFICULTIES,
   STAR_DEFENDER_RUN_RULES,
   STAR_DEFENDER_SCORING,
   starDefenderWaveClearScore,
-  starDefenderWaveEnemyCount,
   type StarDefenderDifficultyId,
 } from "./design.js";
+import {
+  createStarDefenderWave,
+  updateStarDefenderEnemies,
+  type StarDefenderEnemy,
+} from "./enemies.js";
+import {
+  createInitialStarDefenderInhabitants,
+  resolveStarDefenderFallingCatches,
+  updateStarDefenderInhabitants,
+  type StarDefenderInhabitant,
+} from "./inhabitants.js";
 import {
   createStarDefenderPlayer,
   stepStarDefenderPlayer,
   type StarDefenderPlayerState,
 } from "./player.js";
-import {
-  starDefenderTerrainY,
-  wrapStarDefenderWorldX,
-  wrappedStarDefenderDeltaX,
-  wrappedStarDefenderDistanceSquared,
-} from "./world.js";
-
-export type StarDefenderEnemyType = "snatcher" | "stalker" | "skimmer";
-export type StarDefenderInhabitantState =
-  | "ground"
-  | "abducted"
-  | "falling"
-  | "carried"
-  | "lost";
-
-export interface StarDefenderEnemy {
-  readonly id: number;
-  readonly type: StarDefenderEnemyType;
-  readonly x: number;
-  readonly y: number;
-  readonly heading: -1 | 1;
-  readonly phase: number;
-  readonly ageSeconds: number;
-  readonly targetInhabitantId: number | null;
-  readonly carryingInhabitantId: number | null;
-}
-
-export interface StarDefenderInhabitant {
-  readonly id: number;
-  readonly x: number;
-  readonly y: number;
-  readonly state: StarDefenderInhabitantState;
-  readonly carrierEnemyId: number | null;
-  readonly velocityY: number;
-}
+import { wrapStarDefenderWorldX, wrappedStarDefenderDistanceSquared } from "./world.js";
 
 export interface StarDefenderProjectile {
   readonly id: number;
@@ -73,7 +48,7 @@ export type StarDefenderSimulationEvent =
     }
   | {
       readonly type: "enemy-destroyed";
-      readonly enemyType: StarDefenderEnemyType;
+      readonly enemyType: StarDefenderEnemy["type"];
       readonly points: number;
       readonly position: Vector2;
       readonly cause: "lance" | "emergency";
@@ -124,17 +99,10 @@ export interface StarDefenderSimulationOptions {
   readonly initialWave?: number;
 }
 
-const FALL_GRAVITY = 58;
-const SNATCHER_SPEED = 45;
-const STALKER_SPEED = 58;
-const SKIMMER_SPEED = 64;
-const SNATCHER_CAPTURE_RADIUS = 9;
 const PROJECTILE_HIT_RADIUS =
   STAR_DEFENDER_RUN_RULES.enemyRadius + STAR_DEFENDER_RUN_RULES.projectileRadius;
 const PLAYER_HIT_RADIUS =
   STAR_DEFENDER_RUN_RULES.enemyRadius + STAR_DEFENDER_RUN_RULES.playerRadius;
-const RESCUE_CATCH_RADIUS =
-  STAR_DEFENDER_RUN_RULES.playerRadius + STAR_DEFENDER_RUN_RULES.inhabitantRadius + 2;
 
 function requireDelta(dtSeconds: number): void {
   if (!Number.isFinite(dtSeconds) || dtSeconds < 0) {
@@ -142,29 +110,8 @@ function requireDelta(dtSeconds: number): void {
   }
 }
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.max(minimum, Math.min(maximum, value));
-}
-
-function moveToward(current: number, target: number, maximumDelta: number): number {
-  if (current < target) {
-    return Math.min(target, current + maximumDelta);
-  }
-  return Math.max(target, current - maximumDelta);
-}
-
-function enemyScore(type: StarDefenderEnemyType): number {
+function enemyScore(type: StarDefenderEnemy["type"]): number {
   return STAR_DEFENDER_SCORING[type];
-}
-
-function freezeEnemy(enemy: StarDefenderEnemy): StarDefenderEnemy {
-  return Object.freeze(enemy);
-}
-
-function freezeInhabitant(
-  inhabitant: StarDefenderInhabitant,
-): StarDefenderInhabitant {
-  return Object.freeze(inhabitant);
 }
 
 function freezeProjectile(
@@ -212,13 +159,13 @@ export class StarDefenderSimulation {
     this.invulnerabilityValue = options.initialInvulnerabilitySeconds ?? 0.75;
     this.inhabitantState = Object.freeze(
       options.initialInhabitants === undefined
-        ? this.createInitialInhabitants()
-        : options.initialInhabitants.map((entry) => freezeInhabitant({ ...entry })),
+        ? createInitialStarDefenderInhabitants(options.rng)
+        : options.initialInhabitants.map((entry) => Object.freeze({ ...entry })),
     );
     this.enemyState = Object.freeze(
       options.initialEnemies === undefined
         ? this.createWave(this.waveValue)
-        : options.initialEnemies.map((entry) => freezeEnemy({ ...entry })),
+        : options.initialEnemies.map((entry) => Object.freeze({ ...entry })),
     );
     this.nextEnemyId =
       this.enemyState.reduce((maximum, enemy) => Math.max(maximum, enemy.id), 0) + 1;
@@ -299,114 +246,29 @@ export class StarDefenderSimulation {
     return Object.freeze(events);
   }
 
-  private createInitialInhabitants(): readonly StarDefenderInhabitant[] {
-    const result: StarDefenderInhabitant[] = [];
-    const spacing =
-      STAR_DEFENDER_RUN_RULES.worldWidth / STAR_DEFENDER_RUN_RULES.inhabitantCount;
-    for (let index = 0; index < STAR_DEFENDER_RUN_RULES.inhabitantCount; index += 1) {
-      const jitter = (this.options.rng.nextFloat() - 0.5) * spacing * 0.28;
-      const x = wrapStarDefenderWorldX(spacing * (index + 0.5) + jitter);
-      result.push(
-        freezeInhabitant({
-          id: index + 1,
-          x,
-          y: starDefenderTerrainY(x) - 3,
-          state: "ground",
-          carrierEnemyId: null,
-          velocityY: 0,
-        }),
-      );
-    }
-    return Object.freeze(result);
-  }
-
   private createWave(wave: number): readonly StarDefenderEnemy[] {
-    const count = starDefenderWaveEnemyCount(wave, this.options.difficulty);
-    const result: StarDefenderEnemy[] = [];
-    for (let index = 0; index < count; index += 1) {
-      const selector = (index + wave) % 6;
-      const type: StarDefenderEnemyType =
-        selector < 3 ? "snatcher" : selector < 5 ? "stalker" : "skimmer";
-      const x = this.options.rng.nextFloat() * STAR_DEFENDER_RUN_RULES.worldWidth;
-      const y = 64 + this.options.rng.nextFloat() * 92;
-      const heading: -1 | 1 = this.options.rng.nextFloat() < 0.5 ? -1 : 1;
-      result.push(
-        freezeEnemy({
-          id: this.nextEnemyId,
-          type,
-          x,
-          y,
-          heading,
-          phase: this.options.rng.nextFloat() * Math.PI * 2,
-          ageSeconds: 0,
-          targetInhabitantId: null,
-          carryingInhabitantId: null,
-        }),
-      );
-      this.nextEnemyId += 1;
-    }
-    return Object.freeze(result);
+    const result = createStarDefenderWave(
+      this.options.rng,
+      this.options.difficulty,
+      wave,
+      this.nextEnemyId,
+    );
+    this.nextEnemyId = result.nextEnemyId;
+    return result.enemies;
   }
 
   private updateInhabitants(
     dtSeconds: number,
     events: StarDefenderSimulationEvent[],
   ): void {
-    const next = this.inhabitantState.map((inhabitant) => {
-      switch (inhabitant.state) {
-        case "ground":
-          return freezeInhabitant({
-            ...inhabitant,
-            y: starDefenderTerrainY(inhabitant.x) - 3,
-            velocityY: 0,
-          });
-        case "abducted":
-          return inhabitant;
-        case "falling": {
-          const velocityY = inhabitant.velocityY + FALL_GRAVITY * dtSeconds;
-          const y = inhabitant.y + velocityY * dtSeconds;
-          if (y >= starDefenderTerrainY(inhabitant.x) - 3) {
-            events.push(
-              Object.freeze({ type: "inhabitant-lost", inhabitantId: inhabitant.id }),
-            );
-            return freezeInhabitant({
-              ...inhabitant,
-              y: starDefenderTerrainY(inhabitant.x) - 3,
-              state: "lost",
-              velocityY: 0,
-            });
-          }
-          return freezeInhabitant({ ...inhabitant, y, velocityY });
-        }
-        case "carried": {
-          const x = this.playerState.x;
-          const y = this.playerState.y + 10;
-          if (this.playerState.y >= starDefenderTerrainY(x) - 19) {
-            const points = STAR_DEFENDER_SCORING.safeReturn;
-            this.scoreValue += points;
-            events.push(
-              Object.freeze({
-                type: "inhabitant-returned",
-                inhabitantId: inhabitant.id,
-                points,
-              }),
-            );
-            return freezeInhabitant({
-              ...inhabitant,
-              x,
-              y: starDefenderTerrainY(x) - 3,
-              state: "ground",
-              carrierEnemyId: null,
-              velocityY: 0,
-            });
-          }
-          return freezeInhabitant({ ...inhabitant, x, y, velocityY: 0 });
-        }
-        case "lost":
-          return inhabitant;
-      }
-    });
-    this.inhabitantState = Object.freeze(next);
+    const result = updateStarDefenderInhabitants(
+      this.inhabitantState,
+      this.playerState,
+      dtSeconds,
+      events,
+    );
+    this.inhabitantState = result.inhabitants;
+    this.scoreValue += result.scoreDelta;
   }
 
   private updateEnemies(
@@ -414,178 +276,15 @@ export class StarDefenderSimulation {
     events: StarDefenderSimulationEvent[],
   ): void {
     const inhabitants = [...this.inhabitantState];
-    const speedScale = STAR_DEFENDER_DIFFICULTIES[this.options.difficulty].enemySpeedScale;
-    const next = this.enemyState.map((enemy) => {
-      const ageSeconds = enemy.ageSeconds + dtSeconds;
-      switch (enemy.type) {
-        case "snatcher":
-          return this.updateSnatcher(
-            { ...enemy, ageSeconds },
-            inhabitants,
-            speedScale,
-            dtSeconds,
-            events,
-          );
-        case "stalker": {
-          const dx = wrappedStarDefenderDeltaX(enemy.x, this.playerState.x);
-          const heading: -1 | 1 = dx < 0 ? -1 : 1;
-          const x = wrapStarDefenderWorldX(
-            enemy.x + heading * STALKER_SPEED * speedScale * dtSeconds,
-          );
-          const y = moveToward(
-            enemy.y,
-            this.playerState.y,
-            STALKER_SPEED * 0.72 * speedScale * dtSeconds,
-          );
-          return freezeEnemy({ ...enemy, x, y, heading, ageSeconds });
-        }
-        case "skimmer": {
-          const x = wrapStarDefenderWorldX(
-            enemy.x + enemy.heading * SKIMMER_SPEED * speedScale * dtSeconds,
-          );
-          const targetY = 106 + Math.sin(ageSeconds * 1.75 + enemy.phase) * 28;
-          const y = moveToward(enemy.y, targetY, 46 * speedScale * dtSeconds);
-          return freezeEnemy({ ...enemy, x, y, ageSeconds });
-        }
-      }
-    });
-    this.enemyState = Object.freeze(next);
+    this.enemyState = updateStarDefenderEnemies(
+      this.enemyState,
+      inhabitants,
+      this.playerState,
+      this.options.difficulty,
+      dtSeconds,
+      events,
+    );
     this.inhabitantState = Object.freeze(inhabitants);
-  }
-
-  private updateSnatcher(
-    enemy: StarDefenderEnemy,
-    inhabitants: StarDefenderInhabitant[],
-    speedScale: number,
-    dtSeconds: number,
-    events: StarDefenderSimulationEvent[],
-  ): StarDefenderEnemy {
-    const abductionScale =
-      STAR_DEFENDER_DIFFICULTIES[this.options.difficulty].abductionSpeedScale;
-    const carryingId = enemy.carryingInhabitantId;
-    if (carryingId !== null) {
-      const inhabitantIndex = inhabitants.findIndex((entry) => entry.id === carryingId);
-      const inhabitant = inhabitants[inhabitantIndex];
-      const y = enemy.y - SNATCHER_SPEED * 0.72 * abductionScale * dtSeconds;
-      const x = wrapStarDefenderWorldX(
-        enemy.x + enemy.heading * SNATCHER_SPEED * 0.13 * speedScale * dtSeconds,
-      );
-      if (inhabitant !== undefined) {
-        if (y <= STAR_DEFENDER_RUN_RULES.playfieldTop + 2) {
-          inhabitants[inhabitantIndex] = freezeInhabitant({
-            ...inhabitant,
-            x,
-            y: STAR_DEFENDER_RUN_RULES.playfieldTop,
-            state: "lost",
-            carrierEnemyId: null,
-            velocityY: 0,
-          });
-          events.push(
-            Object.freeze({ type: "inhabitant-lost", inhabitantId: inhabitant.id }),
-          );
-          return freezeEnemy({
-            ...enemy,
-            x,
-            y: STAR_DEFENDER_RUN_RULES.playfieldTop + 8,
-            carryingInhabitantId: null,
-            targetInhabitantId: null,
-          });
-        }
-        inhabitants[inhabitantIndex] = freezeInhabitant({
-          ...inhabitant,
-          x,
-          y: y + 9,
-          state: "abducted",
-          carrierEnemyId: enemy.id,
-          velocityY: 0,
-        });
-      }
-      return freezeEnemy({ ...enemy, x, y });
-    }
-
-    const ground = inhabitants.filter((entry) => entry.state === "ground");
-    if (ground.length === 0) {
-      const x = wrapStarDefenderWorldX(
-        enemy.x + enemy.heading * SNATCHER_SPEED * 0.7 * speedScale * dtSeconds,
-      );
-      const y = moveToward(enemy.y, 92, 32 * speedScale * dtSeconds);
-      return freezeEnemy({
-        ...enemy,
-        x,
-        y,
-        targetInhabitantId: null,
-      });
-    }
-
-    let target = ground[0];
-    if (target === undefined) {
-      return freezeEnemy(enemy);
-    }
-    let closest = Math.abs(wrappedStarDefenderDeltaX(enemy.x, target.x));
-    for (const candidate of ground.slice(1)) {
-      const distance = Math.abs(wrappedStarDefenderDeltaX(enemy.x, candidate.x));
-      if (distance < closest) {
-        target = candidate;
-        closest = distance;
-      }
-    }
-
-    const dx = wrappedStarDefenderDeltaX(enemy.x, target.x);
-    const heading: -1 | 1 = dx < 0 ? -1 : 1;
-    const maximumHorizontal = SNATCHER_SPEED * speedScale * dtSeconds;
-    const x = wrapStarDefenderWorldX(
-      enemy.x + clamp(dx, -maximumHorizontal, maximumHorizontal),
-    );
-    const captureY = starDefenderTerrainY(target.x) - 14;
-    const y = moveToward(
-      enemy.y,
-      captureY,
-      SNATCHER_SPEED * 0.8 * speedScale * dtSeconds,
-    );
-    const closeEnough =
-      wrappedStarDefenderDistanceSquared(
-        { x, y },
-        { x: target.x, y: captureY },
-      ) <=
-      SNATCHER_CAPTURE_RADIUS * SNATCHER_CAPTURE_RADIUS;
-
-    if (closeEnough) {
-      const targetIndex = inhabitants.findIndex((entry) => entry.id === target.id);
-      const current = inhabitants[targetIndex];
-      if (current !== undefined && current.state === "ground") {
-        inhabitants[targetIndex] = freezeInhabitant({
-          ...current,
-          x,
-          y: y + 9,
-          state: "abducted",
-          carrierEnemyId: enemy.id,
-          velocityY: 0,
-        });
-        events.push(
-          Object.freeze({
-            type: "abduction-started",
-            inhabitantId: current.id,
-            enemyId: enemy.id,
-          }),
-        );
-        return freezeEnemy({
-          ...enemy,
-          x,
-          y,
-          heading,
-          targetInhabitantId: current.id,
-          carryingInhabitantId: current.id,
-        });
-      }
-    }
-
-    return freezeEnemy({
-      ...enemy,
-      x,
-      y,
-      heading,
-      targetInhabitantId: target.id,
-    });
   }
 
   private updateProjectiles(dtSeconds: number): void {
@@ -724,7 +423,7 @@ export class StarDefenderSimulation {
     if (inhabitant === undefined || inhabitant.state !== "abducted") {
       return;
     }
-    const falling = freezeInhabitant({
+    const falling = Object.freeze({
       ...inhabitant,
       x: enemy.x,
       y: enemy.y + 9,
@@ -743,33 +442,13 @@ export class StarDefenderSimulation {
   }
 
   private resolveFallingCatches(events: StarDefenderSimulationEvent[]): void {
-    const inhabitants = this.inhabitantState.map((inhabitant) => {
-      if (
-        inhabitant.state !== "falling" ||
-        wrappedStarDefenderDistanceSquared(inhabitant, this.playerState) >
-          RESCUE_CATCH_RADIUS * RESCUE_CATCH_RADIUS
-      ) {
-        return inhabitant;
-      }
-      const points = STAR_DEFENDER_SCORING.fallingCatch;
-      this.scoreValue += points;
-      events.push(
-        Object.freeze({
-          type: "inhabitant-caught",
-          inhabitantId: inhabitant.id,
-          points,
-        }),
-      );
-      return freezeInhabitant({
-        ...inhabitant,
-        x: this.playerState.x,
-        y: this.playerState.y + 10,
-        state: "carried",
-        carrierEnemyId: null,
-        velocityY: 0,
-      });
-    });
-    this.inhabitantState = Object.freeze(inhabitants);
+    const result = resolveStarDefenderFallingCatches(
+      this.inhabitantState,
+      this.playerState,
+      events,
+    );
+    this.inhabitantState = result.inhabitants;
+    this.scoreValue += result.scoreDelta;
   }
 
   private resolvePlayerHit(events: StarDefenderSimulationEvent[]): void {
@@ -832,7 +511,7 @@ export class StarDefenderSimulation {
     if (inhabitant === undefined || inhabitant.state !== "abducted") {
       return;
     }
-    const falling = freezeInhabitant({
+    const falling = Object.freeze({
       ...inhabitant,
       x: enemy.x,
       y: enemy.y + 9,

@@ -1,12 +1,12 @@
 import { SeededRandomService } from "../../engine/testing/fake-services.js";
 import { assert, type TestCase } from "../../test/harness.js";
 import { STAR_DEFENDER_RUN_RULES } from "./design.js";
+import type { StarDefenderEnemy } from "./enemies.js";
+import type { StarDefenderInhabitant } from "./inhabitants.js";
 import type { StarDefenderPlayerState } from "./player.js";
 import {
   StarDefenderSimulation,
-  type StarDefenderEnemy,
   type StarDefenderFrameInput,
-  type StarDefenderInhabitant,
 } from "./simulation.js";
 import { starDefenderTerrainY } from "./world.js";
 
