@@ -65,3 +65,58 @@ export const JUNGLE_QUEST_FINISH_X = 300;
 export const JUNGLE_QUEST_TOTAL_COLLECTIBLES = ROOMS.reduce((count, room) => count + room.collectibles.length, 0);
 export function jungleQuestRoom(id: JungleQuestRoomId): JungleQuestRoom { const room = ROOM_MAP.get(id); if (room === undefined) throw new Error(`Unknown Jungle Quest room: ${id}`); return room; }
 export function jungleQuestCollectibleIds(): readonly string[] { return Object.freeze(ROOMS.flatMap((room) => room.collectibles.map((collectible) => collectible.id))); }
+
+export type JungleQuestBoundarySide = "previous" | "next";
+const HALF_PLAYER_WIDTH = JUNGLE_QUEST_RUN_RULES.playerWidth / 2;
+/**
+ * How far above an arriving player's feet a platform may sit and still count as catching them.
+ * A player walking off the end of a platform dips a fraction of a pixel below its surface before
+ * anything catches them, so an exact "at or below the feet" test would read a level the player is
+ * standing on as being above them. This is deliberately far smaller than the gap between any two
+ * walkable heights in the world -- `world.test.ts` asserts that separation holds -- so widening
+ * past a sub-pixel dip can never blur the surface and the tunnel into the same level.
+ */
+export const JUNGLE_QUEST_ENTRY_SUPPORT_TOLERANCE = JUNGLE_QUEST_RUN_RULES.playerHeight / 2;
+/**
+ * How far a sealed passage's rock face extends into the room. The simulation stops the player at
+ * this face rather than at the screen edge, and the renderer draws the face this deep, so the two
+ * agree on where the wall is.
+ */
+export const JUNGLE_QUEST_SEALED_PASSAGE_DEPTH = 6;
+/** Where a player is put down after crossing into a room from the given side. */
+export function jungleQuestEntryX(side: JungleQuestBoundarySide): number {
+  return side === "next" ? HALF_PLAYER_WIDTH + 1 : JUNGLE_QUEST_RUN_RULES.logicalWidth - HALF_PLAYER_WIDTH - 1;
+}
+/**
+ * Whether a player whose feet are at `feetY` can travel out of `room` through `side`. A boundary
+ * is open only when there is a room behind it with a platform under the arrival point at (within
+ * `JUNGLE_QUEST_ENTRY_SUPPORT_TOLERANCE`) or below that height. The transition trigger itself is
+ * x-only and cannot see height, and height is exactly what differs between a surface crossing and
+ * a tunnel crossing: Echo Hollow's tunnel reaches its west edge, but Fern Gate beyond it has no
+ * tunnel, so at tunnel height that edge is a wall while at surface height it is a doorway.
+ */
+export function jungleQuestBoundaryOpen(room: JungleQuestRoom, side: JungleQuestBoundarySide, feetY: number): boolean {
+  const neighbourId = room[side];
+  if (neighbourId === null) return false;
+  const entryX = jungleQuestEntryX(side);
+  return jungleQuestRoom(neighbourId).platforms.some(
+    (platform) => platform.x1 <= entryX + HALF_PLAYER_WIDTH && platform.x2 >= entryX - HALF_PLAYER_WIDTH && platform.y >= feetY - JUNGLE_QUEST_ENTRY_SUPPORT_TOLERANCE,
+  );
+}
+export interface JungleQuestSealedPassage { readonly side: JungleQuestBoundarySide; readonly platform: JungleQuestPlatform; }
+/**
+ * Every platform in `room` that reaches an edge with a neighbouring room but cannot deliver the
+ * player into it -- the places a rock face belongs. Derived from `jungleQuestBoundaryOpen`, so the
+ * rendered wall and the simulated wall cannot drift apart.
+ */
+export function jungleQuestSealedPassages(room: JungleQuestRoom): readonly JungleQuestSealedPassage[] {
+  const sealed: JungleQuestSealedPassage[] = [];
+  for (const side of ["previous", "next"] as const) {
+    if (room[side] === null) continue;
+    const edgeX = side === "next" ? JUNGLE_QUEST_RUN_RULES.logicalWidth : 0;
+    for (const platform of room.platforms) {
+      if (platform.x1 <= edgeX && platform.x2 >= edgeX && !jungleQuestBoundaryOpen(room, side, platform.y)) sealed.push(Object.freeze({ side, platform }));
+    }
+  }
+  return Object.freeze(sealed);
+}

@@ -1,10 +1,10 @@
 import type { GameInstance, GameModule, GameRenderer, GameServices, GameStartOptions, Vector2 } from "../../engine/index.js";
-import { JUNGLE_QUEST_DIFFICULTIES, type JungleQuestDifficultyId } from "./design.js";
+import { JUNGLE_QUEST_DIFFICULTIES, JUNGLE_QUEST_RUN_RULES, type JungleQuestDifficultyId } from "./design.js";
 import { JungleQuestEffects } from "./effects.js";
 import { JUNGLE_QUEST_METADATA } from "./metadata.js";
 import { JungleQuestScoreCommitter } from "./score-submission.js";
 import { JungleQuestSimulation } from "./simulation.js";
-import type { JungleQuestPlatformKind } from "./world.js";
+import { JUNGLE_QUEST_SEALED_PASSAGE_DEPTH, jungleQuestSealedPassages, type JungleQuestPlatformKind, type JungleQuestRoom } from "./world.js";
 function resolveDifficulty(value: string): JungleQuestDifficultyId { if (!Object.hasOwn(JUNGLE_QUEST_DIFFICULTIES, value)) throw new Error(`Unsupported Jungle Quest difficulty: ${value}`); return value as JungleQuestDifficultyId; }
 function assetUrl(path: string): string | null { switch (path) {
   case "assets.json": return new URL("./assets.json", import.meta.url).href;
@@ -17,7 +17,24 @@ function assetUrl(path: string): string | null { switch (path) {
   default: return null;
 } }
 function platformColor(kind: JungleQuestPlatformKind): string { switch (kind) { case "surface": return "#8a6b42"; case "ledge": return "#6d824d"; case "tunnel": return "#4b3b4f"; } }
-function drawPlatform(renderer: GameRenderer, x1: number, x2: number, y: number, kind: JungleQuestPlatformKind): void { const height = kind === "tunnel" ? 14 : 8; renderer.fillRect(x1, y, x2 - x1, height, platformColor(kind)); renderer.drawLine(x1, y, x2, y, kind === "tunnel" ? "#8a6f8f" : "#a8b56d", 1); }
+function drawPlatform(renderer: GameRenderer, x1: number, x2: number, y: number, kind: JungleQuestPlatformKind): void { const height = kind === "tunnel" ? 14 : 8; renderer.fillRect(x1, y, x2 - x1, height, platformColor(kind)); renderer.drawLine(x1, y, x2, y, platformEdgeColor(kind), 1); }
+const TUNNEL_BAND_TOP = 198;
+function platformEdgeColor(kind: JungleQuestPlatformKind): string { return kind === "tunnel" ? "#8a6f8f" : "#a8b56d"; }
+/**
+ * Draws a rock face across every passage in `room` that reaches a room edge but is sealed at that
+ * height (see jungleQuestSealedPassages), so a dead end reads as a dead end before the player
+ * walks into it. The face is exactly as deep as the simulation's clamp, so the wall the player
+ * hits is the wall they see.
+ */
+export function drawSealedPassages(renderer: GameRenderer, room: JungleQuestRoom): void {
+  for (const { side, platform } of jungleQuestSealedPassages(room)) {
+    const x = side === "previous" ? 0 : JUNGLE_QUEST_RUN_RULES.logicalWidth - JUNGLE_QUEST_SEALED_PASSAGE_DEPTH;
+    const top = platform.kind === "tunnel" ? TUNNEL_BAND_TOP : platform.y - JUNGLE_QUEST_RUN_RULES.playerHeight;
+    renderer.fillRect(x, top, JUNGLE_QUEST_SEALED_PASSAGE_DEPTH, platform.y - top, room.palette.earth);
+    const faceX = side === "previous" ? x + JUNGLE_QUEST_SEALED_PASSAGE_DEPTH : x;
+    renderer.drawLine(faceX, top, faceX, platform.y, platformEdgeColor(platform.kind), 1);
+  }
+}
 function drawHazard(renderer: GameRenderer, x: number, y: number, width: number): void { const count = Math.max(2, Math.floor(width / 6)); const step = width / count; for (let index = 0; index < count; index += 1) { const left = x + index * step; renderer.fillPolygon([{ x: left, y: y + 8 }, { x: left + step / 2, y }, { x: left + step, y: y + 8 }], "#d6664d"); } }
 function drawRelic(renderer: GameRenderer, position: Vector2): void { renderer.fillPolygon([{ x: position.x, y: position.y - 5 }, { x: position.x + 5, y: position.y }, { x: position.x, y: position.y + 5 }, { x: position.x - 5, y: position.y }], "#f4d96b"); renderer.fillCircle(position.x, position.y, 1.5, "#fff4b0"); }
 function drawPlayer(renderer: GameRenderer, position: Vector2, facing: -1 | 1, mode: string): void {
@@ -41,8 +58,9 @@ export class JungleQuestGameInstance implements GameInstance {
     if (simulation === null) { renderer.clear("#102f35"); renderer.drawText("JUNGLE QUEST", renderer.logicalWidth / 2, renderer.logicalHeight / 2, { color: "#b7e57f", font: "bold 18px monospace", align: "center", baseline: "middle" }); return; }
     const room = simulation.room; renderer.clear(room.palette.sky); renderer.fillRect(0, 24, renderer.logicalWidth, 30, room.palette.canopy);
     for (let index = 0; index < 13; index += 1) { const x = (index * 29 + room.title.length * 7) % renderer.logicalWidth; renderer.drawLine(x, 38, x - 9, 58 + (index % 3) * 6, "#3c8a59", 3); }
-    renderer.fillRect(0, 198, renderer.logicalWidth, 42, room.palette.tunnel);
+    renderer.fillRect(0, TUNNEL_BAND_TOP, renderer.logicalWidth, 42, room.palette.tunnel);
     for (const platform of room.platforms) drawPlatform(renderer, platform.x1, platform.x2, platform.y, platform.kind);
+    drawSealedPassages(renderer, room);
     for (const ladder of room.ladders) { renderer.drawLine(ladder.x - 4, ladder.yTop, ladder.x - 4, ladder.yBottom, "#c39a63", 2); renderer.drawLine(ladder.x + 4, ladder.yTop, ladder.x + 4, ladder.yBottom, "#c39a63", 2); for (let y = ladder.yTop + 5; y < ladder.yBottom; y += 7) renderer.drawLine(ladder.x - 4, y, ladder.x + 4, y, "#d8b77c", 1); }
     for (const vine of room.vines) { const active = simulation.player.mode === "vine" && simulation.player.vineId === vine.id; const angle = active ? simulation.player.vineAngleRadians : 0; const endX = vine.anchorX + Math.sin(angle) * vine.length; const endY = vine.anchorY + Math.cos(angle) * vine.length; renderer.fillCircle(vine.anchorX, vine.anchorY, 3, "#8dc36b"); renderer.drawLine(vine.anchorX, vine.anchorY, endX, endY, "#77a84f", 2); }
     for (const hazard of room.hazards) drawHazard(renderer, hazard.x, hazard.y, hazard.width);

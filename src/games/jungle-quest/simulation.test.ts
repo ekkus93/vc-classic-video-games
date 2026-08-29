@@ -2,7 +2,7 @@ import { assert, type TestCase } from "../../test/harness.js";
 import { JUNGLE_QUEST_RUN_RULES, JUNGLE_QUEST_SCORING } from "./design.js";
 import { createJungleQuestPlayer, type JungleQuestPlayerState } from "./player.js";
 import { JungleQuestSimulation } from "./simulation.js";
-import { JUNGLE_QUEST_ROOMS, jungleQuestCollectibleIds } from "./world.js";
+import { JUNGLE_QUEST_ROOMS, JUNGLE_QUEST_SEALED_PASSAGE_DEPTH, jungleQuestCollectibleIds } from "./world.js";
 const N=Object.freeze({horizontal:0 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
 function player(x:number,y:number):JungleQuestPlayerState{return createJungleQuestPlayer({x,y});}
 export const tests: readonly TestCase[]=[
@@ -126,5 +126,20 @@ export const tests: readonly TestCase[]=[
     }
   }
   assert(crossings>0&&walls>0,`the sweep must exercise both outcomes, got ${crossings} crossings and ${walls} walls`);
+ }},
+ {name:"CR-001 a sealed passage stops the player at its rock face; a world edge stops them at the screen edge",run:()=>{
+  // The renderer draws the rock face JUNGLE_QUEST_SEALED_PASSAGE_DEPTH into the room, so the clamp
+  // must land the player's edge on that face, not on the screen edge inside the rock. A world edge
+  // with nothing drawn at it keeps the plain screen-edge clamp.
+  const HALF_WIDTH=JUNGLE_QUEST_RUN_RULES.playerWidth/2;
+  const HOLD_LEFT=Object.freeze({horizontal:-1 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
+  const HOLD_RIGHT=Object.freeze({horizontal:1 as const,vertical:0 as const,jumpPressed:false,vinePressed:false});
+  const sealed=new JungleQuestSimulation({difficulty:"expedition",initialRoomId:"echo-hollow",initialPlayer:player(40,218)});
+  for(let i=0;i<120;i+=1)sealed.update(HOLD_LEFT,1/60);
+  assert(sealed.roomId==="echo-hollow"&&sealed.lives===3,"the tunnel's west end must hold the player in the room, alive");
+  assert(Math.abs(sealed.player.position.x-(HALF_WIDTH+JUNGLE_QUEST_SEALED_PASSAGE_DEPTH))<1e-6,`the player must stop with their edge on the rock face, got x=${sealed.player.position.x}`);
+  const edge=new JungleQuestSimulation({difficulty:"expedition",initialRoomId:"sun-shrine",initialPlayer:player(300,182)});
+  for(let i=0;i<120;i+=1)edge.update(HOLD_RIGHT,1/60);
+  assert(Math.abs(edge.player.position.x-(JUNGLE_QUEST_RUN_RULES.logicalWidth-HALF_WIDTH))<1e-6,`a world edge must keep the screen-edge clamp, got x=${edge.player.position.x}`);
  }},
 ];

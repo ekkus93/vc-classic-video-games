@@ -1,6 +1,6 @@
 import { assert, assertDeepEqual, type TestCase } from "../../test/harness.js";
 import { JUNGLE_QUEST_RUN_RULES } from "./design.js";
-import { JUNGLE_QUEST_ROOMS, JUNGLE_QUEST_TOTAL_COLLECTIBLES, jungleQuestCollectibleIds } from "./world.js";
+import { JUNGLE_QUEST_ENTRY_SUPPORT_TOLERANCE, JUNGLE_QUEST_ROOMS, JUNGLE_QUEST_TOTAL_COLLECTIBLES, jungleQuestCollectibleIds, jungleQuestSealedPassages } from "./world.js";
 
 export const tests: readonly TestCase[] = [
   { name: "P13-001 authored world is a four-room connected expedition with unique relics", run: () => {
@@ -45,11 +45,18 @@ export const tests: readonly TestCase[] = [
     // arriving feet, to absorb the sub-pixel dip of walking off a platform end. That is only safe
     // while no two real walkable heights are that close together; if a room ever authored two
     // levels within the tolerance, the transition check could mistake one for the other.
-    const tolerance = JUNGLE_QUEST_RUN_RULES.playerHeight / 2;
+    const tolerance = JUNGLE_QUEST_ENTRY_SUPPORT_TOLERANCE;
     const heights = [...new Set(JUNGLE_QUEST_ROOMS.flatMap((room) => room.platforms.map((p) => p.y)))].sort((a, b) => a - b);
     for (let i = 1; i < heights.length; i += 1) {
       const gap = (heights[i] ?? 0) - (heights[i - 1] ?? 0);
       assert(gap > tolerance, `walkable heights ${String(heights[i - 1])} and ${String(heights[i])} are ${gap} apart, inside the ${tolerance} entry-support tolerance`);
     }
+  }},
+  { name: "CR-001 the only sealed passage in the world is the west end of Echo Hollow's tunnel", run: () => {
+    // Pins the world's dead ends explicitly. The renderer draws a rock face at every entry here
+    // and the simulation walls it, so a new one appearing (or this one disappearing) is a level
+    // change that should be made on purpose -- if Fern Gate ever gains a tunnel, update this.
+    const sealed = JUNGLE_QUEST_ROOMS.flatMap((room) => jungleQuestSealedPassages(room).map((passage) => `${room.id}.${passage.platform.id}:${passage.side}`));
+    assertDeepEqual(sealed, ["echo-hollow.echo-tunnel:previous"], "sealed passages must match the authored world");
   }},
 ];

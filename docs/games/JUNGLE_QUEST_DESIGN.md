@@ -16,7 +16,8 @@ instead of making the vine the only viable traversal mechanic. It spans the two 
 no further: Fern Gate has no tunnel, so the tunnel's west end is a wall rather than a doorway.
 A room boundary is only travelable when the room behind it has floor under the arrival point at
 the height the player arrives at, so a boundary the player cannot be delivered safely through
-holds them like the world edge instead of dropping them. To return west from the tunnel, climb
+is sealed: the renderer draws a rock face across the passage and the simulation stops the
+player at that face, both from the same rule, so the wall they hit is the wall they see. To return west from the tunnel, climb
 Echo Hollow's descent ladder back to the surface.
 
 ## Controls
