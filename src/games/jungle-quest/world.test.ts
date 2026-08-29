@@ -31,17 +31,26 @@ export const tests: readonly TestCase[] = [
     },
   },
   {
-    name: "P13-009 Echo Hollow and Root Vault expose a continuous lower tunnel route",
+    name: "P13-009 Echo Hollow through Sun Shrine expose a continuous lower tunnel route",
     run: () => {
-      const middle = JUNGLE_QUEST_ROOMS.slice(1, 3);
-      assert(
-        middle.every((room) => room.platforms.some((p) => p.kind === "tunnel" && p.x1 === 0 && p.x2 === 320)),
-        "middle rooms must expose the alternate tunnel route",
-      );
+      // CR3-004: derive the set of rooms that actually carry a full-width tunnel by scanning
+      // every room, then compare the derived list against the pin -- not a positional slice of
+      // the room list (JUNGLE_QUEST_ROOMS.slice(1, 3), what this test used to do). A fixed-length
+      // slice of the middle cannot notice a room outside it gaining a tunnel: Fern Gate sits at
+      // index 0, outside any "middle" slice, so "giving Fern Gate a tunnel must fail this test"
+      // would silently not hold under the slice form. Filtering over JUNGLE_QUEST_ROOMS, which is
+      // in chain order, also verifies the route is contiguous and runs in the documented
+      // direction -- no separate adjacency check is needed. Pinning the derived list rather than
+      // asserting a bare property is the same reason CR-001's sealed-passage test pins its own
+      // list: a room gaining or losing the route should be a deliberate edit that fails a test.
+      const width = JUNGLE_QUEST_RUN_RULES.logicalWidth;
+      const withFullWidthTunnel = JUNGLE_QUEST_ROOMS.filter((room) =>
+        room.platforms.some((p) => p.kind === "tunnel" && p.x1 === 0 && p.x2 === width),
+      ).map((room) => room.id);
       assertDeepEqual(
-        middle.map((room) => room.id),
-        ["echo-hollow", "root-vault"],
-        "alternate route must span the two middle rooms",
+        withFullWidthTunnel,
+        ["echo-hollow", "root-vault", "sun-shrine"],
+        "the alternate tunnel route must span exactly Echo Hollow, Root Vault, and Sun Shrine, in that order",
       );
     },
   },

@@ -57,7 +57,7 @@ the marker to `[ ]`, and proceed.
     (the range where they currently diverge) as well as a realistic range. No behavior change at
     any size ≥ 1; the CR2-003 pointer tests pass untouched.
 
-- [ ] **CR3-004 — Un-stale the `P13-009` tunnel-route test after CR2-004**
+- [x] **CR3-004 — Un-stale the `P13-009` tunnel-route test after CR2-004**
   - Three rooms now carry a full-width tunnel, but the test still names two and asserts "the two
     middle rooms". Broaden it to the route as it exists and rename to match. The test must *derive*
     which rooms carry a full-width tunnel by scanning every room, then `assertDeepEqual` that
