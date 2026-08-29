@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { App } from "./App.js";
+import { App, type AppProps } from "./App.js";
 import { createDefaultShellController } from "./shell/default-controller.js";
 import { assert, type TestCase } from "../test/harness.js";
 
@@ -13,7 +13,9 @@ export const tests: readonly TestCase[] = [
         allowBrowserPreview: true,
         nativeBridgeAvailable: () => false,
       });
-      const markup = renderToStaticMarkup(createElement(App, { controller }));
+      const markup = renderToStaticMarkup(
+        createElement<AppProps>(App, { controller }),
+      );
       assert(
         markup.includes("VC Classic Video Games"),
         "launcher identity must render",
