@@ -104,9 +104,12 @@ default, flip the marker to `[ ]`, and proceed.
   - Acceptance: type-only change; all effects tests pass untouched; `grep -r "interface Burst"
     src/games` returns nothing.
 
-- [ ] **CR2-011 — Move Jungle Quest room drawing into `render.ts`**
-  - Move the draw helpers and `drawSealedPassages` out of `module.ts`; the CR-001 render test
-    imports from `render.ts`. May be folded into CR2-009. See spec §3.3.
+- [x] **CR2-011 — Move Jungle Quest's sealed-passage rendering out of `module.ts`** (22e516e) —
+  spec §3.3's premise ("matching the games that already separate rendering into `render.ts`") did
+  not hold: no game has a `render.ts`. Asked the user; moved only `drawSealedPassages` (plus
+  `platformEdgeColor`/`TUNNEL_BAND_TOP`) into a narrow `sealed-passages.ts` instead of introducing
+  a first-of-its-kind whole-file rendering convention. `module.ts` now exports exactly
+  `JungleQuestGameInstance`/`JUNGLE_QUEST_MODULE`, matching every other game.
   - Acceptance: `module.ts` exports only the module; the render test passes; the game renders
     identically (the existing lifecycle/render tests pass untouched).
 
