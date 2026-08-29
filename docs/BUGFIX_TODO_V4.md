@@ -43,7 +43,7 @@ it, flip the marker to `[ ]`, and proceed.
 
 ## 2. Test-coverage gaps
 
-- [ ] **CR4-002 — Make the render/pointer agreement test actually compare the two paths**
+- [x] **CR4-002 — Make the render/pointer agreement test actually compare the two paths**
   - Depends on CR4-004 (the helper's new import path). The current test drives
     `pointerViewportPhysicalSize` with a square fixture (`{ clientWidth: size, clientHeight: size }`)
     and compares it against an inline `devicePhysicalSize(size, dpr)` rather than against
