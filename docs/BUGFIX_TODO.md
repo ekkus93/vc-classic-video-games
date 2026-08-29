@@ -88,7 +88,7 @@ any order, can be interleaved).
     asserts exactly one outcome occurs (vault credit *or* hit, never both) in a single `update()`
     call. Existing generous-clearance vault test continues to pass unchanged.
 
-- [ ] **CR-008 — Fix Deep Digger wave-clear discarding in-flight rocks**
+- [x] **CR-008 — Fix Deep Digger wave-clear discarding in-flight rocks**
   - Preserve `"shaking"`/`"falling"` rocks across `resolveWaveClear` instead of unconditionally
     repopulating rock state. See `docs/BUGFIX_SPEC.md` §1.8 for the two acceptable resolution
     strategies (let it finish falling, or explicitly settle-and-event it).

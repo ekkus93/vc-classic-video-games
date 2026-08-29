@@ -606,6 +606,17 @@ export class DeepDiggerSimulation {
     if (this.gameOverValue || this.enemyState.length !== 0) {
       return;
     }
+    // CR-008: settle any rock still "shaking"/"falling" before the level, terrain, and rockState
+    // are torn down and replaced with the next wave's fresh spawns below. Without this, a rock
+    // mid-fall when the last enemy dies was silently discarded -- its in-flight state and any
+    // cellsFallen score it was about to earn just vanished, with no event. Landing it in place
+    // here first (0 points for a rock that hadn't started falling yet, its earned points
+    // otherwise) preserves that outcome instead of losing it to iteration order.
+    for (const rock of this.rockState) {
+      if (rock.state === "shaking" || rock.state === "falling") {
+        this.landRock(rock, events);
+      }
+    }
     const clearedWave = this.waveValue;
     const bonus = deepDiggerWaveClearScore(clearedWave);
     this.scoreValue += bonus;

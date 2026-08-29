@@ -127,4 +127,71 @@ export const tests: readonly TestCase[] = [
       );
     },
   },
+  {
+    name: "CR-008 defeating the last enemy while a rock is mid-fall still lands and scores that rock",
+    run: () => {
+      // A long player/enemy corridor at row 1, plus a rock at (2,0) whose support tunnel (2,1)
+      // is already open, so it starts shaking immediately -- and a deep open shaft below (2,1)
+      // so the rock stays "falling" for several ticks instead of landing on its first step,
+      // leaving a window to defeat the enemy while it's still mid-air. The enemy closes one cell
+      // of distance on every update() call once its movement budget is exhausted (it starts
+      // exhausted), including the two setup calls below and each of the three pump calls that
+      // follow (firePump always runs before that tick's enemy movement, so each pump still sees
+      // the enemy at its pre-move distance) -- the corridor is long enough that the enemy is
+      // never closer than 1 cell from the player until the final, defeating pump.
+      const services = createFakeGameServices(0xc008);
+      const simulation = new DeepDiggerSimulation({
+        rng: services.rng,
+        difficulty: "survey",
+        level: {
+          columns: 8,
+          rows: 6,
+          tunnels: [
+            { column: 0, row: 1 },
+            { column: 1, row: 1 },
+            { column: 2, row: 1 },
+            { column: 3, row: 1 },
+            { column: 4, row: 1 },
+            { column: 5, row: 1 },
+            { column: 6, row: 1 },
+            { column: 7, row: 1 },
+            { column: 2, row: 2 },
+            { column: 2, row: 3 },
+            { column: 2, row: 4 },
+            { column: 2, row: 5 },
+          ],
+          playerSpawn: { column: 1, row: 1 },
+          enemySpawns: [{ column: 6, row: 1 }],
+          rockSpawns: [{ column: 2, row: 0 }],
+        },
+        initialInvulnerabilitySeconds: 10,
+      });
+
+      const loosened = simulation.update(IDLE_INPUT, 0);
+      assert(loosened.some((event) => event.type === "rock-loosened"), "fixture must loosen the rock immediately");
+
+      const fell = simulation.update(IDLE_INPUT, SURVEY_SHAKE_SECONDS);
+      assert(fell.some((event) => event.type === "rock-falling"), "shake threshold must start the fall");
+      assert(simulation.rocks[0]?.state === "falling", "rock must be mid-fall, not yet landed, going into the pump attacks");
+
+      // The enemy's own pathfinding has already closed two cells of distance during the setup
+      // calls above, so the player stays put here (facing "right" from spawn) for the sequence.
+      simulation.update({ move: null, attack: true }, 0);
+      simulation.update({ move: null, attack: true }, 0);
+      assert(simulation.rocks[0]?.state === "falling", "rock must still be mid-fall while the pump sequence is in progress");
+      const defeated = simulation.update({ move: null, attack: true }, 0);
+
+      assert(defeated.some((event) => event.type === "enemy-defeated"), "third pump must defeat the last enemy");
+      assert(
+        defeated.some((event) => event.type === "rock-landed"),
+        "the rock still mid-fall when the wave cleared must be landed and scored, not silently discarded",
+      );
+      assert(defeated.some((event) => event.type === "wave-cleared"), "defeating the last enemy must still clear the wave");
+      const nextWaveRock = simulation.rocks[0];
+      assert(
+        simulation.rocks.length === 1 && nextWaveRock !== undefined && nextWaveRock.state === "supported",
+        "the next wave's rock population must start fresh (freshly supported) once the prior rock has been resolved",
+      );
+    },
+  },
 ];
