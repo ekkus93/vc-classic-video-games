@@ -1,0 +1,21 @@
+/*
+ * WebKitGTK can put the accelerated game canvas in its own compositing layer. Give shell chrome
+ * an explicit hit-testing order while the pause overlay is present instead of relying on paint
+ * order alone.
+ */
+.game-screen__hud {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pause-backdrop {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.pause-menu,
+.pause-menu button {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
