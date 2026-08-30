@@ -5,6 +5,7 @@ import { App } from "./App.js";
 import { ErrorBoundary } from "./ErrorBoundary.js";
 import { shouldInjectFailure } from "./failure-injection.js";
 import "./styles.css";
+import "./shell/pause-pointer-layer.css";
 
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
