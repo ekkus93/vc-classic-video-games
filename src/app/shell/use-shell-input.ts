@@ -11,7 +11,6 @@ import {
 } from "./audio-unlock-gesture.js";
 import type { ShellController } from "./controller.js";
 import type { ShellGameInputBridge } from "./input-bridge.js";
-import "./pause-pointer-layer.css";
 import { createPointerBoundsResolver } from "./pointer-bounds.js";
 import { pointerViewportPhysicalSize } from "./pointer-viewport.js";
 import { attachShellUiPointerRouting } from "./shell-ui-pointer-routing.js";
