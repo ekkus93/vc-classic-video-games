@@ -44,16 +44,20 @@ function isolateShellUiPointer(event: PointerEvent): HTMLButtonElement | null {
 export function attachShellUiPointerRouting(surface: HTMLElement): () => void {
   const onPointerDown = (event: PointerEvent): void => {
     const button = isolateShellUiPointer(event);
-    if (button !== null && event.button === 0 && !button.disabled) {
-      button.focus();
+    if (button !== null) {
+      // WebKitGTK can lose or retarget the matching pointerup when a composited canvas sits under
+      // the pause overlay. We know pointerdown reaches the visible button (and is the user's
+      // activation gesture), so perform the button activation here instead of waiting for an
+      // unreliable pointerup/compatibility-click sequence. The synthetic click still goes through
+      // the button's normal React onClick handler, preserving one source of command semantics.
+      activateShellUiButton(button, event.button);
     }
   };
 
   const onPointerUp = (event: PointerEvent): void => {
-    const button = isolateShellUiPointer(event);
-    if (button !== null) {
-      activateShellUiButton(button, event.button);
-    }
+    // Swallow the rest of the shell-UI pointer sequence so gameplay never observes a release for
+    // a press it did not receive. Activation already happened on pointerdown above.
+    isolateShellUiPointer(event);
   };
 
   // Capture before BrowserPointerAdapter's bubbling listeners on the shell surface.
