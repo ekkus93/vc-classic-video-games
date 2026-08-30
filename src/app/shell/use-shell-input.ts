@@ -11,8 +11,10 @@ import {
 } from "./audio-unlock-gesture.js";
 import type { ShellController } from "./controller.js";
 import type { ShellGameInputBridge } from "./input-bridge.js";
+import "./pause-pointer-layer.css";
 import { createPointerBoundsResolver } from "./pointer-bounds.js";
 import { pointerViewportPhysicalSize } from "./pointer-viewport.js";
+import { attachShellUiPointerRouting } from "./shell-ui-pointer-routing.js";
 
 export function useShellInput(
   controller: ShellController,
@@ -78,6 +80,8 @@ export function useShellInput(
         ? () => undefined
         : attachAudioUnlockGestures(window, surface, audioUnlock);
 
+    const detachShellUiPointerRouting = attachShellUiPointerRouting(surface);
+
     input.attach();
     gameInput?.attach(input.input);
     frame = window.requestAnimationFrame(poll);
@@ -85,6 +89,7 @@ export function useShellInput(
     return () => {
       window.cancelAnimationFrame(frame);
       detachAudioUnlock();
+      detachShellUiPointerRouting();
       gameInput?.detach(input.input);
       input.detach();
     };
