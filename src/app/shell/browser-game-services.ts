@@ -83,7 +83,10 @@ export class BrowserGameServices {
     private readonly input: ShellGameInputBridge,
     private readonly logger: GameLogger,
     private readonly reportPersistence: GamePersistenceReporter,
-    private readonly fetchImpl: BrowserFetch = fetch,
+    // Keep the browser fetch call attached to the global object. WebKitGTK performs a receiver
+    // check for Window.fetch and rejects a raw function copied onto BrowserGameServices because
+    // `this.fetchImpl(...)` would otherwise invoke it with the service instance as `this`.
+    private readonly fetchImpl: BrowserFetch = (input) => globalThis.fetch(input),
     // The `typeof AudioContext === "undefined"` guard lives in this default rather than in
     // requireAudioContext() itself, so an injected test factory (which supplies its own fake and
     // never references the global) isn't blocked by it running in an environment -- this test
